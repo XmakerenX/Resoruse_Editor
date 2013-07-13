@@ -1,0 +1,976 @@
+#include "CMySprite.h"
+
+D3DXHANDLE CMySprite::s_hTexture = NULL;
+D3DXHANDLE CMySprite::s_hHighlight = NULL;
+D3DXHANDLE CMySprite::s_hTextureBool = NULL;
+
+//-----------------------------------------------------------------------------
+// Name : CMySprite (constructor)
+//-----------------------------------------------------------------------------
+CMySprite::CMySprite(void)
+{
+	m_pDevice = NULL;
+
+	for (int i = 0; i < 3; i++)
+	{
+		m_vBuffers[i] = NULL;
+		m_iBuffers[i] = NULL;
+	}
+
+// 	m_vb = NULL;
+// 	m_ib = NULL;
+
+	UINT m_bufferVertCount = 0;
+	UINT m_bufferIndicesCount = 0;
+
+	m_fScaleX = 0;
+	m_fscaleY = 0;
+
+	m_bRefresh = true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : CMySprite (destructor)
+//-----------------------------------------------------------------------------
+CMySprite::~CMySprite(void)
+{
+}
+
+//-----------------------------------------------------------------------------
+// Name : render ()
+// Desc : render to the screen all the Quads that were queued for rendering
+// Note : all the Quads that share the same texture are being batch together
+//		  for rendering
+//-----------------------------------------------------------------------------
+HRESULT CMySprite::render(ID3DXEffect * effect)
+{
+	HRESULT hRet;
+	
+	LPVOID  pBufVertices   = NULL;
+	LPVOID  pBufIndices    = NULL;
+
+	//DWORD vState;
+
+	m_pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+
+	m_pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+	m_pDevice->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATEREQUAL);
+	m_pDevice->SetRenderState(D3DRS_ALPHAREF, (DWORD)8);
+	m_pDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE); 
+
+	m_pDevice->SetRenderState(D3DRS_SRCBLEND,D3DBLEND_SRCALPHA);
+	m_pDevice->SetRenderState(D3DRS_DESTBLEND,D3DBLEND_INVSRCALPHA);
+	m_pDevice->SetRenderState(D3DRS_BLENDOP,D3DBLENDOP_ADD);
+
+	// check if we are using the fixed pipeline or using a shader
+	if (effect == NULL)
+	{
+		// sets the texture stage states D3DTOP_SELECTARG2
+		m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+		m_pDevice->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+		m_pDevice->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+
+		m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+		m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
+		m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+
+		m_pDevice->SetTextureStageState(0, D3DTSS_TEXCOORDINDEX ,0);
+		m_pDevice->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
+		m_pDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+		m_pDevice->SetTextureStageState(1, 	D3DTSS_COLOROP, D3DTOP_DISABLE);
+	}
+
+	UINT numPasses;
+
+	effect->SetBool(s_hHighlight, FALSE);
+
+	if (effect != NULL)
+		effect->Begin(&numPasses, 0);
+
+	for (UINT numPass = 0; numPass < numPasses; numPass++)
+	{
+		renderQuads(effect, numPass);
+// 		for (UINT i = 0; i < m_vertexStream.size(); i++)
+// 		{
+// // 			if( m_pDevice )
+// // 				m_pDevice->SetRenderState( D3DRS_ZENABLE, FALSE );
+// 			renderQuads(effect, m_vertexStream[i], numPass);
+// // 			if( m_pDevice )
+// // 				m_pDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
+// 		}
+
+		hRet = effect->SetBool(s_hHighlight, TRUE);
+		//effect->CommitChanges();
+
+// 		for (UINT i = 0; i < m_highLightVertStream.size(); i++)
+// 		{
+// 			//renderQuads(effect, m_highLightVertStream[i], numPass);
+// 		}
+
+		hRet = effect->SetBool(s_hHighlight, FALSE);
+
+		//for (UINT i = 0; i < m_TopVertStream.size(); i++)
+		//{
+			//renderQuads(effect, numPass);
+		//}
+
+// 		if (m_highLightVertStream.pTexture != NULL)
+// 			renderQuads(effect, m_highLightVertStream, numPass);
+		
+	}
+
+	if (effect != NULL)
+		effect->End();
+
+	// clear the vertex Stream after all the quads were rendered to the screen
+	for (UINT i = 0; i < m_vertexStream.size(); i++)
+	{
+		// free the memory allocated (TO NOT LEAK GOD DAMN MEMORY!!!)
+		delete [m_vertexStream[i].numVertices] m_vertexStream[i].pVertices;
+		delete [m_vertexStream[i].numIndices] m_vertexStream[i].pIndices;
+	}
+	m_vertexStream.clear();
+
+
+	for (UINT i = 0; i < m_highLightVertStream.size(); i++)
+	{
+		// free the memory allocated (TO NOT LEAK GOD DAMN MEMORY!!!)
+		delete [m_highLightVertStream[i].numVertices] m_highLightVertStream[i].pVertices;
+		delete [m_highLightVertStream[i].numIndices] m_highLightVertStream[i].pIndices;
+	}
+	m_highLightVertStream.clear();
+
+	for (UINT i = 0; i < m_TopVertStream.size(); i++)
+	{
+		// free the memory allocated (TO NOT LEAK GOD DAMN MEMORY!!!)
+		delete [m_TopVertStream[i].numVertices] m_TopVertStream[i].pVertices;
+		delete [m_TopVertStream[i].numIndices] m_TopVertStream[i].pIndices;
+	}
+	m_TopVertStream.clear();
+
+	if (effect == NULL)
+	{
+		m_pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+		//m_pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+		//m_pDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+	}
+
+	return S_OK;
+}
+
+//-----------------------------------------------------------------------------
+// Name : renderQuads ()
+// Desc : render all the quads that are in the current vertex stream
+//-----------------------------------------------------------------------------
+HRESULT CMySprite::renderQuads(ID3DXEffect * effect, UINT numPass)
+{
+	HRESULT hRet;
+
+	LPVOID  pBufVertices   = NULL;
+	LPVOID  pBufIndices    = NULL;
+
+// 	if (vertexStream.pTexture)
+// 	{
+// 		// reEnable the texture rendering if it was disabled
+// 		effect->SetBool(s_hTextureBool, TRUE);
+// 		// selects the current texture in the shader
+// 		effect->SetTexture(s_hTexture, vertexStream.pTexture);
+// 	}
+// 	else
+// 	{
+// 		// no texture was given disable texture rendering
+// 		m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_SELECTARG2 );
+// 		m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2 );
+// 		hRet = effect->SetBool(s_hTextureBool, FALSE);
+// 	}
+
+	if (true)
+	{
+		numVerticesToRender = 0;
+		numIndicesToRender = 0;
+	
+		for (UINT i = 0; i < m_vertexStream.size(); i++)
+		{
+			numVerticesToRender += m_vertexStream[i].numVertices;
+			numIndicesToRender += m_vertexStream[i].numIndices;
+		}
+	
+		for (UINT i = 0; i < m_highLightVertStream.size(); i++)
+		{
+			numVerticesToRender += m_highLightVertStream[i].numVertices;
+			numIndicesToRender += m_highLightVertStream[i].numIndices;
+		}
+	
+		for (UINT i = 0; i < m_TopVertStream.size(); i++)
+		{
+			numVerticesToRender += m_TopVertStream[i].numVertices;
+			numIndicesToRender += m_TopVertStream[i].numIndices;
+		}
+		
+		hRet = m_vBuffers[REGLUAR]->Lock(0, numVerticesToRender, &pBufVertices, D3DLOCK_DISCARD);
+		if ( FAILED(hRet) ) return hRet;
+	
+		hRet = m_iBuffers[REGLUAR]->Lock(0, numIndicesToRender, &pBufIndices, D3DLOCK_DISCARD);
+		if ( FAILED(hRet) ) return hRet;
+	
+		//enter the vertex streams to the buffer in the following order
+	    // 	******* ****** ********** ***** **  (!!There are no spaces between textures it is only for clarity)
+	    // 	tex1    tex2   tex3       high  top
+		m_bufferVertCount = 0;
+		m_bufferIndicesCount = 0;
+		m_indicesOffset = 0;
+		m_topQuadsStartIndex = 0;
+		m_TexBuffersBounds.clear();
+	
+		addStreamToBuffer(pBufVertices, pBufIndices, m_vertexStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+		addStreamToBuffer(pBufVertices, pBufIndices, m_highLightVertStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+	
+		m_topQuadsStartIndex = m_TexBuffersBounds.size();
+		addStreamToBuffer(pBufVertices, pBufIndices, m_TopVertStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+		m_bRefresh = false;
+	}
+
+
+	//--------------------------------------
+	//Attempt to stop crazy stuff so lets make my a static quad
+	//--------------------------------------
+	// creates the four vertices of our quad 
+// 	CSpriteVertex * pVertices;
+// 
+// 	pVertices = new CSpriteVertex[4];
+// 
+// 	pVertices[0].x		= 0;
+// 	pVertices[0].y		= 0;
+// 	pVertices[0].z		= 0;
+// 	pVertices[0].rhw		= 1;
+// 	pVertices[0].diffuse  = d3d::GREEN;
+// 	pVertices[0].tu		= 0;
+// 	pVertices[0].tv		= 0;
+// 
+// 
+// 	pVertices[1].x		= 0 + 500;
+// 	pVertices[1].y		= 0;
+// 	pVertices[1].z		= 0;
+// 	pVertices[1].rhw		= 1;
+// 	pVertices[1].diffuse	=  d3d::GREEN;
+// 	pVertices[1].tu		= 0;
+// 	pVertices[1].tv		= 0;
+// 
+// 
+// 	pVertices[2].x		= 0;
+// 	pVertices[2].y		= 0 + 500;
+// 	pVertices[2].z		= 0;
+// 	pVertices[2].rhw		= 1;
+// 	pVertices[2].diffuse	=  d3d::GREEN;
+// 	pVertices[2].tu		= 0;
+// 	pVertices[2].tv		= 0;
+// 
+// 	pVertices[3].x		= 0 + 500;
+// 	pVertices[3].y		= 0 + 500;
+// 	pVertices[3].z		= 0;
+// 	pVertices[3].rhw		= 1;
+// 	pVertices[3].diffuse	=  d3d::GREEN;
+// 	pVertices[3].tu		= 0;
+// 	pVertices[3].tv		= 0;
+// 
+// 	USHORT* pIndices = new USHORT[6];
+// 
+// 	//triangle 201
+// 	pIndices[0] = 0 + 2; // #2 vertex	 0---1 4---5
+// 	pIndices[1] = 0;	 // #0 vertex    -   - -
+// 	pIndices[2] = 0 + 1; // #1 vertex    2---3 6---7
+// 
+// 	//triangle 213
+// 	pIndices[3] = 0 + 2;     // #2 vertex
+// 	pIndices[4] = 0 + 1;     // #1 vertex
+// 	pIndices[5] = 0 + 2 + 1; // #3 vertex
+// 
+// 	memcpy(pBufVertices, pVertices, 4 * sizeof(CSpriteVertex));
+// 	memcpy(pBufIndices, pIndices, 6 * sizeof(USHORT));
+// 
+// 	delete [4]pVertices;
+// 	delete [6]pIndices;
+// 
+// 	UINT temp = sizeof(CSpriteVertex);
+// 	UINT temp2 = sizeof(USHORT);
+// 
+// 	char* pBufVertIndex;
+// 	char* pBufIndicesIndex;
+// 
+// 	pBufVertIndex = static_cast<char*>(pBufVertices);
+// 	pBufVertIndex += 4 * sizeof(CSpriteVertex);
+// 
+// 	pBufIndicesIndex = static_cast<char*>(pBufIndices);
+// 	pBufIndicesIndex += 6 * sizeof(USHORT);
+// 
+// // 	INT_PTR pIntBufVert = reinterpret_cast<INT_PTR>(pBufVertices);
+// // 	pIntBufVert += 4 * sizeof(CSpriteVertex) * 8;
+// // 	pBufVertIndex = reinterpret_cast<LPVOID>(pIntBufVert);
+// // 
+// // 	INT_PTR pIntBufIndcies = reinterpret_cast<INT_PTR>(pBufIndices);
+// // 	pIntBufIndcies += 6 * sizeof(USHORT) * 8;
+// // 	pBufIndicesIndex = reinterpret_cast<LPVOID>(pIntBufVert);
+// 
+// 	pVertices = new CSpriteVertex[4];
+// 
+// 	pVertices[0].x		= 800;
+// 	pVertices[0].y		= 0;
+// 	pVertices[0].z		= 0;
+// 	pVertices[0].rhw		= 1;
+// 	pVertices[0].diffuse  = d3d::RED;
+// 	pVertices[0].tu		= 0;
+// 	pVertices[0].tv		= 0;
+// 
+// 
+// 	pVertices[1].x		= 800 + 500;
+// 	pVertices[1].y		= 0;
+// 	pVertices[1].z		= 0;
+// 	pVertices[1].rhw		= 1;
+// 	pVertices[1].diffuse	=  d3d::RED;
+// 	pVertices[1].tu		= 0;
+// 	pVertices[1].tv		= 0;
+// 
+// 
+// 	pVertices[2].x		= 800;
+// 	pVertices[2].y		= 0 + 500;
+// 	pVertices[2].z		= 0;
+// 	pVertices[2].rhw		= 1;
+// 	pVertices[2].diffuse	=  d3d::RED;
+// 	pVertices[2].tu		= 0;
+// 	pVertices[2].tv		= 0;
+// 
+// 	pVertices[3].x		= 800 + 500;
+// 	pVertices[3].y		= 0 + 500;
+// 	pVertices[3].z		= 0;
+// 	pVertices[3].rhw		= 1;
+// 	pVertices[3].diffuse	=  d3d::RED;
+// 	pVertices[3].tu		= 0;
+// 	pVertices[3].tv		= 0;
+// 
+// 	pIndices = new USHORT[6];
+// 
+// 	//triangle 201
+// 	pIndices[0] = 4 + 2; // #2 vertex	 0---1 4---5
+// 	pIndices[1] = 4;	 // #0 vertex    -   - -
+// 	pIndices[2] = 4 + 1; // #1 vertex    2---3 6---7
+// 
+// 	//triangle 213
+// 	pIndices[3] = 4 + 2;     // #2 vertex
+// 	pIndices[4] = 4 + 1;     // #1 vertex
+// 	pIndices[5] = 4 + 2 + 1; // #3 vertex
+// 
+// 	memcpy(pBufVertIndex, pVertices, 4 * sizeof(CSpriteVertex));
+// 	memcpy(pBufIndicesIndex, pIndices, 6 * sizeof(USHORT));
+// 
+// 	delete [4]pVertices;
+// 	delete [6]pIndices;
+// 
+	m_iBuffers[REGLUAR]->Unlock();
+	m_vBuffers[REGLUAR]->Unlock();
+// 
+	// input the vertex and indices buffers to the device
+	m_pDevice->SetStreamSource(0, m_vBuffers[REGLUAR], 0, sizeof(CSpriteVertex));
+	m_pDevice->SetFVF(SVertex_FVF);
+	m_pDevice->SetIndices(m_iBuffers[REGLUAR]);
+// 
+// 	m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_SELECTARG2 );
+// 	m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2 );
+// 	hRet = effect->SetBool(s_hTextureBool, FALSE);
+// 
+// 	effect->BeginPass(numPass);
+// 	hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 4, 0, 6 / 3);
+// 	hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 4, 4, 6, 6 / 3);
+// 
+// 	effect->EndPass();
+
+	for(UINT i = 0; i < m_topQuadsStartIndex; i++)
+	{
+		if (m_TexBuffersBounds[i].pTexture)
+		{
+			// reEnable the texture rendering if it was disabled
+			effect->SetBool(s_hTextureBool, TRUE);
+			// selects the current texture in the shader
+			effect->SetTexture(s_hTexture, m_TexBuffersBounds[i].pTexture);
+		}
+		else
+		{
+			// no texture was given disable texture rendering
+			m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_SELECTARG2 );
+			m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2 );
+			hRet = effect->SetBool(s_hTextureBool, FALSE);
+		}
+
+		BUFFER_BOUNDS curTexBufBound = m_TexBuffersBounds[i];
+		UINT vertCount = (curTexBufBound.bufferEndVert - curTexBufBound.bufferStartVert) / sizeof(CSpriteVertex);
+		UINT indicesCount = (curTexBufBound.bufferEndIndices - curTexBufBound.bufferStartIndices) / sizeof(USHORT);
+
+		if (effect == NULL)
+		{
+			m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertCount, curTexBufBound.bufferStartIndices, indicesCount / 3);
+		}
+		else
+		{
+//  			UINT numPasses;
+//  			effect->Begin(&numPasses, 0);
+// 
+// 			for (UINT numPass = 0; numPass < numPasses; numPass++)
+			{
+				hRet = effect->BeginPass(numPass);
+
+				int vertStart = curTexBufBound.bufferStartVert / sizeof(CSpriteVertex);
+				int indicesStart = curTexBufBound.bufferStartIndices / sizeof(USHORT);
+
+
+				hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, vertStart, vertCount, indicesStart, indicesCount / 3);
+				//hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 8, 0, indicesCount / 3);
+				if ( FAILED(hRet) )
+				{
+					UINT x = 5;
+					x += 5;
+				}
+				//hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertCount, 0, indicesCount / 3);
+
+				effect->EndPass();
+			}
+
+			//effect->End();
+		}
+
+		if (!m_TexBuffersBounds[i].pTexture)
+		{
+			m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+			m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+		}
+	}
+
+// 	if (effect == NULL)
+// 	{
+// 		m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, m_bufferVertCount, 0, m_bufferIndicesCount / 3);
+// 	}
+// 	else
+// 	{
+// 		//UINT numPasses;
+// 		//effect->Begin(&numPasses, 0);
+// 
+// 		//for (UINT numPass = 0; numPass < numPasses; numPass++)
+// 		{
+// 			effect->BeginPass(numPass);
+// 			hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, m_bufferVertCount, 0, m_bufferIndicesCount / 3);
+// 
+// 			effect->EndPass();
+// 		}
+
+		//effect->End();
+//	}
+
+// 	if (!vertexStream.pTexture)
+// 	{
+// 		m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+// 		m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+// 	}
+
+	return S_OK;
+}
+
+//-----------------------------------------------------------------------------
+// Name : createQuad ()
+// Desc : TODO: write description for this func and name it better
+//-----------------------------------------------------------------------------
+HRESULT CMySprite::createQuad(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPos, D3DCOLOR tintColor, bool bHighLight, bool bTop)
+{
+	if (bHighLight)
+		return addQuadToVertStream(pTexture, srcRect, quadPos, tintColor, m_highLightVertStream);
+
+	if (bTop)
+		return addQuadToVertStream(pTexture, srcRect, quadPos, tintColor, m_TopVertStream);
+
+	return addQuadToVertStream(pTexture, srcRect, quadPos, tintColor, m_vertexStream);
+
+// 	if (bHighLight)
+// 	{
+// 		for (UINT i = 0; i < m_highLightVertStream.size(); i++)
+// 		{
+// 			if (pTexture == m_highLightVertStream[i].pTexture)
+// 			{
+// 				// add the quad we got as a the quad to highlight
+// 				addQuad(pTexture, srcRect, quadPos, m_highLightVertStream[i], tintColor);
+// 				return S_OK;
+// 			}
+// 		}
+// 
+// 		VERTEX_STREAM vertHighLightStream;
+// 
+// 		vertHighLightStream.pTexture = NULL;
+// 		vertHighLightStream.numVertices = 0;
+// 		vertHighLightStream.numIndices = 0;
+// 
+// 		addQuad(pTexture, srcRect, quadPos, vertHighLightStream, tintColor);
+// 
+// 		m_highLightVertStream.push_back(vertHighLightStream);
+// 
+// 		return S_OK;
+// 
+// 	}
+// 
+// 	//TODO: add something to catch new when it fails!
+// 	for (UINT i = 0; i < m_vertexStream.size(); i++)
+// 	{
+// 		if (pTexture == m_vertexStream[i].pTexture)
+// 		{
+// 			addQuad(pTexture, srcRect, quadPos, m_vertexStream[i], tintColor);
+// 
+// 			return S_OK;
+// 		}
+// 	}
+// 
+// 	VERTEX_STREAM vertexStream;
+// 
+// 	vertexStream.pTexture = NULL;
+// 	vertexStream.numVertices = 0;
+// 	vertexStream.numIndices = 0;
+// 
+// 	addQuad(pTexture, srcRect, quadPos, vertexStream, tintColor);
+// 
+// 	m_vertexStream.push_back(vertexStream);
+// 
+// 	return S_OK;
+}
+
+//-----------------------------------------------------------------------------
+// Name : addQuadToVertStream ()
+// Note : the Quads are being batched by texture
+//-----------------------------------------------------------------------------
+HRESULT CMySprite::addQuadToVertStream(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPos, D3DCOLOR tintColor, std::vector<VERTEX_STREAM>& vertStream)
+{
+	for (UINT i = 0; i < vertStream.size(); i++)
+	{
+		if (pTexture == vertStream[i].pTexture)
+		{
+			addQuad(pTexture, srcRect, quadPos, vertStream[i], tintColor);
+			return S_OK;
+		}
+	}
+
+	VERTEX_STREAM vertexStream;
+
+	vertexStream.pTexture = NULL;
+	vertexStream.numVertices = 0;
+	vertexStream.numIndices = 0;
+
+	addQuad(pTexture, srcRect, quadPos, vertexStream, tintColor);
+
+	vertStream.push_back(vertexStream);
+	return S_OK;
+}
+
+//-----------------------------------------------------------------------------
+// Name : addQuad ()
+// Desc : TODO: write description for this func and name it better
+//-----------------------------------------------------------------------------
+void CMySprite::addQuad(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPos, VERTEX_STREAM& vertexStream, D3DCOLOR tintColor)
+{
+	// if no Texture was given the quad will use the tintColor as its background Color
+	//if (pTexture == NULL)
+	//	return;
+
+	UINT vertexCount = vertexStream.numVertices;
+
+	//float fScaleX;
+	//float fScaleY;
+
+	CSpriteVertex * pVertices;
+
+	// check if there are vertices in the vertex Stream
+	if (vertexCount > 0)
+	{
+		// Creates a new buffer that will include all previous vertices and the 4 new ones
+		pVertices = new CSpriteVertex[4 + vertexCount];
+
+		// copies the the content of the old buffer the new one
+		memcpy(pVertices, vertexStream.pVertices, sizeof(CSpriteVertex) * vertexCount);
+
+		// clears the old buffer
+		delete []vertexStream.pVertices;
+	}
+	else
+	{
+		// Creates a new buffer of size 4 for the 4 vertices of the Quad
+		pVertices = new CSpriteVertex[4];
+	}
+
+
+	// gets the texture info to find its width and height
+	D3DSURFACE_DESC textureInfo;
+	//pTexture->GetLevelDesc(0, &textureInfo);
+
+	float textureWidth, textureHeight;
+	float fScaleU, fScaleV;
+	float startU, startV;
+	// calculate how much to scale  the UV coordinates of the texture
+	if (pTexture)
+	{
+		pTexture->GetLevelDesc(0, &textureInfo);
+
+		textureWidth  = srcRect.right - srcRect.left;
+		textureHeight = srcRect.bottom - srcRect.top;
+
+		fScaleU = float(srcRect.right  - srcRect.left)  / textureInfo.Width;
+		fScaleV = float(srcRect.bottom - srcRect.top) / textureInfo.Height;
+
+		startU = float(srcRect.left) / float(textureInfo.Width);
+		startV = float(srcRect.top) / float(textureInfo.Height);
+	}
+	else
+	{
+		// there is no texture so zero everything that is related to the texture
+		textureWidth = srcRect.right - srcRect.left;
+		textureHeight = srcRect.bottom - srcRect.top;
+		fScaleU = 0;
+		fScaleV = 0;
+		startU = 0;
+		startV = 0;
+	}
+
+	// creates the four vertices of our quad 
+	pVertices[vertexCount].x		= quadPos.x;
+	pVertices[vertexCount].y		= quadPos.y;
+	pVertices[vertexCount].z		= 0;
+	pVertices[vertexCount].rhw		= 1;
+	pVertices[vertexCount].diffuse  = tintColor;
+	pVertices[vertexCount].tu		= startU;
+	pVertices[vertexCount++].tv		= startV;
+
+
+	pVertices[vertexCount].x		= quadPos.x + textureWidth * m_fScaleX;
+	pVertices[vertexCount].y		= quadPos.y;
+	pVertices[vertexCount].z		= 0;
+	pVertices[vertexCount].rhw		= 1;
+	pVertices[vertexCount].diffuse	= tintColor;
+	pVertices[vertexCount].tu		= startU + 1 * fScaleU;
+	pVertices[vertexCount++].tv		= startV;
+
+
+	pVertices[vertexCount].x		= quadPos.x;
+	pVertices[vertexCount].y		= quadPos.y + textureHeight * m_fscaleY;
+	pVertices[vertexCount].z		= 0;
+	pVertices[vertexCount].rhw		= 1;
+	pVertices[vertexCount].diffuse	= tintColor;
+	pVertices[vertexCount].tu		= startU;
+	pVertices[vertexCount++].tv		= startV + 1 * fScaleV;
+
+	pVertices[vertexCount].x		= quadPos.x + textureWidth * m_fScaleX;
+	pVertices[vertexCount].y		= quadPos.y + textureHeight * m_fscaleY;
+	pVertices[vertexCount].z		= 0;
+	pVertices[vertexCount].rhw		= 1;
+	pVertices[vertexCount].diffuse	= tintColor;
+	pVertices[vertexCount].tu		= startU + 1 * fScaleU;
+	pVertices[vertexCount++].tv		= startV + 1 * fScaleV;
+
+	// update the struct with the new vertex buffer and the new vertex count
+	vertexStream.pVertices = pVertices;
+	vertexStream.numVertices = vertexCount;
+
+	UINT indicesCount = vertexStream.numIndices;
+
+
+	// Creates a new buffer that will include all previous indices and the 9 new ones
+	USHORT* pIndices = new USHORT[6 + indicesCount];
+
+	// check if there were already indices in the vertex Stream
+	if (indicesCount > 0)
+	{
+		// copies the content of the old buffer to the new one
+		memcpy(pIndices,vertexStream.pIndices, sizeof(USHORT) * indicesCount);
+
+		// clear the old buffer memory
+		delete []vertexStream.pIndices;
+	}
+
+	// get the our current vertex index and our index count
+	USHORT vIndex = vertexCount - 4;
+	UINT iCount = vertexStream.numIndices;
+
+	//triangle 201
+	pIndices[iCount++] = vIndex + 2; // #2 vertex	 0---1 4---5
+	pIndices[iCount++] = vIndex;	 // #0 vertex    -   - -
+	pIndices[iCount++] = vIndex + 1; // #1 vertex    2---3 6---7
+
+	//triangle 213
+	pIndices[iCount++] = vIndex + 2;     // #2 vertex
+	pIndices[iCount++] = vIndex + 1;     // #1 vertex
+	pIndices[iCount++] = vIndex + 2 + 1; // #3 vertex
+
+	vertexStream.pIndices = pIndices;
+	vertexStream.numIndices = iCount;
+
+	// if we just created this vertex stream store in it it's texture handle
+	if (vertexStream.pTexture == NULL)
+		vertexStream.pTexture = pTexture;
+
+}
+
+//-----------------------------------------------------------------------------
+// Name : init ()
+// Desc : initialize the sprite class and create the vertex and indices buffers
+//        that are going to be used to render the Quads
+//-----------------------------------------------------------------------------
+HRESULT CMySprite::init(LPDIRECT3DDEVICE9 pDevice)
+{
+	HRESULT hRet;
+
+	// check that we got a valid device handle
+	if (pDevice == NULL)
+		return S_FALSE;
+
+	m_pDevice = pDevice;
+
+	// TODO: check if I need to add more usage flags
+	// Creates a vertex buffer to store the sprite vertices 
+	for (int i = 0; i < BUFFERS_NUM; i++)
+	{
+		hRet = m_pDevice->CreateVertexBuffer(sizeof(CSpriteVertex) * 4 * MAX_QUADS, D3DUSAGE_DYNAMIC, SVertex_FVF, D3DPOOL_SYSTEMMEM, &m_vBuffers[i], NULL);
+		if ( FAILED(hRet) ) return hRet;
+		hRet = m_pDevice->CreateIndexBuffer(sizeof(USHORT) * 6 * MAX_QUADS, D3DUSAGE_DYNAMIC, D3DFMT_INDEX16, D3DPOOL_SYSTEMMEM, &m_iBuffers[i], NULL);
+		if ( FAILED(hRet) ) return hRet;
+
+	}
+
+	//m_highLightVertStream.numIndices = 0;
+	//m_highLightVertStream.numVertices = 0;
+	//m_highLightVertStream.pIndices = NULL;
+	//m_highLightVertStream.pVertices = NULL;
+	//m_highLightVertStream.pTexture = NULL;
+
+	return S_OK;
+}
+
+//-----------------------------------------------------------------------------
+// Name : setScale ()
+//-----------------------------------------------------------------------------
+void CMySprite::setScale(float fscaleX, float fscaleY)
+{
+	m_fScaleX = fscaleX;
+	m_fscaleY = fscaleY;
+}
+
+//-----------------------------------------------------------------------------
+// Name : setShadersHandles ()
+//-----------------------------------------------------------------------------
+void CMySprite::setShadersHandles(D3DXHANDLE hTexture, D3DXHANDLE hHightLight, D3DXHANDLE hTextureBool)
+{
+	s_hTexture = hTexture;
+	s_hHighlight = hHightLight;
+	s_hTextureBool = hTextureBool;
+}
+
+//-----------------------------------------------------------------------------
+// Name : onLostDevice ()
+// Desc : release the recourses we allocated on the d3d device
+//-----------------------------------------------------------------------------
+void CMySprite::onLostDevice()
+{
+	//TODO: change the var name from temp to something better
+	ULONG temp;
+	for (int i = 0; i < BUFFERS_NUM; i++)
+	{
+		temp = m_vBuffers[i]->Release();
+		temp = m_iBuffers[i]->Release();
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : onResetDevice ()
+// Desc : reallocate our vertex and index buffers after the device was lost
+//-----------------------------------------------------------------------------
+HRESULT CMySprite::onResetDevice()
+{
+	HRESULT hRet;
+
+	for (int i = 0; i < BUFFERS_NUM; i++)
+	{
+		// Creates a vertex buffer to store the sprite vertices 
+		hRet = m_pDevice->CreateVertexBuffer(sizeof(CSpriteVertex) * 4 * MAX_QUADS,D3DUSAGE_WRITEONLY, SVertex_FVF, D3DPOOL_MANAGED, &m_vBuffers[i], NULL);
+		if ( FAILED(hRet) ) return hRet;
+
+		// Creates a indices buffer to store the sprite indices
+		hRet = m_pDevice->CreateIndexBuffer(sizeof(USHORT) * 6 * MAX_QUADS, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16, D3DPOOL_MANAGED, &m_iBuffers[i], NULL);
+		if ( FAILED(hRet) ) return hRet;
+	}
+}
+//-----------------------------------------------------------------------------
+// Name : addStramToBuffer ()
+// Desc : adds the given vertex stream to the buffer we use to draw the sprites
+//		  to the screen
+//-----------------------------------------------------------------------------
+void CMySprite::addStreamToBuffer(LPVOID  pBufVertices, LPVOID pBufIndices, std::vector<VERTEX_STREAM>& vertStream, UINT& bufferVertCount, UINT& bufferIndiceCount, UINT& indicesOffset)
+{
+	// sanity check
+	if (!pBufVertices)
+		return;
+
+	if (!pBufIndices)
+		return;
+
+	//enter the vertex streams to the buffer in the following order
+	// 	******* ****** ********** ***** **  (!!There are no spaces between textures it is only for clarity)
+	// 	tex1    tex2   tex3       high  top
+	//UINT bufferVertCount = 0;
+	//m_TexBuffersBounds.clear();
+
+	for (UINT i = 0; i < vertStream.size(); i++)
+	{
+		BUFFER_BOUNDS texBufferBounds;
+
+		// convert the buffer void pointer to char pointer in order to move forward in the buffer more easily
+		char* pBufVertIndex = static_cast<char*>(pBufVertices);
+		pBufVertIndex += bufferVertCount /** sizeof(CSpriteVertex)*/;
+
+		texBufferBounds.bufferStartVert = bufferVertCount;
+
+// 		for (UINT j = 0; j < vertStream[i].numVertices; j++)
+// 		{
+// 			CSpriteVertex temp = vertStream[i].pVertices[j];
+// 			UINT x = 0;
+// 			x += 4;
+// 		}
+		
+		memcpy(pBufVertIndex, vertStream[i].pVertices,
+			vertStream[i].numVertices * sizeof(CSpriteVertex) );
+		bufferVertCount += vertStream[i].numVertices * sizeof(CSpriteVertex);
+
+		texBufferBounds.bufferEndVert = bufferVertCount;
+
+		// convert the buffer void pointer to char pointer in order to move forward in the buffer more easily
+		char* pBufIndicesIndex = static_cast<char*>(pBufIndices);
+		pBufIndicesIndex += bufferIndiceCount;
+
+		texBufferBounds.bufferStartIndices = bufferIndiceCount;
+
+		if ( indicesOffset > 0)
+		{
+			for (UINT j = 0; j < vertStream[i].numIndices; j++)
+			{
+				vertStream[i].pIndices[j] += indicesOffset;
+			}
+		}
+
+		indicesOffset = vertStream[i].pIndices[vertStream[i].numIndices - 1] + 1;
+
+		memcpy( pBufIndicesIndex , vertStream[i].pIndices,
+			vertStream[i].numIndices * sizeof(USHORT) );
+		bufferIndiceCount += vertStream[i].numIndices * sizeof(USHORT);
+
+		texBufferBounds.bufferEndIndices = bufferIndiceCount;
+
+		texBufferBounds.pTexture = vertStream[i].pTexture;
+
+		m_TexBuffersBounds.push_back(texBufferBounds);
+	}
+}
+
+HRESULT CMySprite::renderTopQuads(ID3DXEffect * effect)
+{
+	HRESULT hRet = S_OK;
+
+	m_pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+
+	m_pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+	m_pDevice->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATEREQUAL);
+	m_pDevice->SetRenderState(D3DRS_ALPHAREF, (DWORD)8);
+	m_pDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE); 
+
+	m_pDevice->SetRenderState(D3DRS_SRCBLEND,D3DBLEND_SRCALPHA);
+	m_pDevice->SetRenderState(D3DRS_DESTBLEND,D3DBLEND_INVSRCALPHA);
+	m_pDevice->SetRenderState(D3DRS_BLENDOP,D3DBLENDOP_ADD);
+
+	// check if we are using the fixed pipeline or using a shader
+	if (effect == NULL)
+	{
+		// sets the texture stage states D3DTOP_SELECTARG2
+		m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+		m_pDevice->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+		m_pDevice->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+
+		m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+		m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE );
+		m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE );
+
+		m_pDevice->SetTextureStageState(0, D3DTSS_TEXCOORDINDEX ,0);
+		m_pDevice->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_DISABLE);
+		m_pDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+		m_pDevice->SetTextureStageState(1, 	D3DTSS_COLOROP, D3DTOP_DISABLE);
+	}
+
+	m_pDevice->SetStreamSource(0, m_vBuffers[REGLUAR], 0, sizeof(CSpriteVertex));
+	m_pDevice->SetFVF(SVertex_FVF);
+	m_pDevice->SetIndices(m_iBuffers[REGLUAR]);
+
+	UINT numPasses;
+
+	if (effect != NULL)
+		effect->Begin(&numPasses, 0);
+
+	for (UINT numPass = 0; numPass < numPasses; numPass++)
+	{
+		for(UINT i = m_topQuadsStartIndex; i < m_TexBuffersBounds.size(); i++)
+		{
+			if (m_TexBuffersBounds[i].pTexture)
+			{
+				// reEnable the texture rendering if it was disabled
+				effect->SetBool(s_hTextureBool, TRUE);
+				// selects the current texture in the shader
+				effect->SetTexture(s_hTexture, m_TexBuffersBounds[i].pTexture);
+			}
+			else
+			{
+				// no texture was given disable texture rendering
+				m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_SELECTARG2 );
+				m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2 );
+				hRet = effect->SetBool(s_hTextureBool, FALSE);
+			}
+
+			BUFFER_BOUNDS curTexBufBound = m_TexBuffersBounds[i];
+			UINT vertCount = (curTexBufBound.bufferEndVert - curTexBufBound.bufferStartVert) / sizeof(CSpriteVertex);
+			UINT indicesCount = (curTexBufBound.bufferEndIndices - curTexBufBound.bufferStartIndices) / sizeof(USHORT);
+
+			if (effect == NULL)
+			{
+				m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertCount, curTexBufBound.bufferStartIndices, indicesCount / 3);
+			}
+			else
+			{
+				hRet = effect->BeginPass(numPass);
+
+				int vertStart = curTexBufBound.bufferStartVert / sizeof(CSpriteVertex);
+				int indicesStart = curTexBufBound.bufferStartIndices / sizeof(USHORT);
+
+
+				hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, vertStart, vertCount, indicesStart, indicesCount / 3);
+				//hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 8, 0, indicesCount / 3);
+				if ( FAILED(hRet) )
+				{
+					UINT x = 5;
+					x += 5;
+				}
+
+				effect->EndPass();;
+			}
+
+			if (!m_TexBuffersBounds[i].pTexture)
+			{
+				m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+				m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+			}
+		}
+	}
+
+	if (effect != NULL)
+		effect->End();
+
+	return hRet;
+}
+
+void CMySprite::setIfToRefresh(bool bToRefresh)
+{
+	m_bRefresh = bToRefresh;
+}
