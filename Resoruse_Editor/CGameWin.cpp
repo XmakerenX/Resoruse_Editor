@@ -83,6 +83,8 @@ CGameWin::CGameWin() :Width(1024),Height(768)//640 480
 	m_cameraIndex = 0;
 	m_numActiveLights = 0;
 
+	m_GenControlNum = 0;
+	m_controlInCreation = false;
 // 	m_GuiDialog.Init(&m_GuiDilaogResManger, &m_timer);
 // 	m_GuiSelectPawn.Init(&m_GuiDilaogResManger, &m_timer);
 }
@@ -162,7 +164,27 @@ LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_LBUTTONDOWN:
 		{
+			if (m_controlInCreation)
+			{	
+				POINT genDailogLoc = m_GenDialog.getLocation();
+				int x = (int)LOWORD(lParam) - genDailogLoc.x;
+				int y = (int)HIWORD(lParam) - genDailogLoc.y;
+				m_GenDialog.getControl(IDC_GENCONTROLID + m_GenControlNum + 1)->setLocation(x, y);
+				m_controlInCreation = false;
+				m_GenControlNum++;
+			}
 
+// 			if (m_controlRelocate && m_CurSelcetedControl)
+// 			{
+// 				POINT mousePoint;
+// 				mousePoint.x = (int)LOWORD(lParam) - m_GenDialog.getX();
+// 				mousePoint.y = (int)HIWORD(lParam) - m_GenDialog.getX();
+// 				//ClientToScreen(m_hWnd,&mousePoint);
+// 
+// 				m_CurSelcetedControl->SetLocation(mousePoint.x,mousePoint.y);
+// 				m_controlRelocate = false;
+// 				m_DrawLine = false;
+// 			}
 
 			// Capture the mouse
 			/*m_hWnd=hWnd;*/
@@ -171,6 +193,29 @@ LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			m_bCamRotate = true;
 		}
 		break;
+
+	case  WM_MOUSEMOVE:
+		{
+			if (m_controlInCreation)
+			{		
+				POINT genDialogLog = m_GenDialog.getLocation();
+				int x = (int)LOWORD(lParam);
+				int y = (int)HIWORD(lParam);
+				m_GenDialog.getControl(IDC_GENCONTROLID + m_GenControlNum + 1)->setLocation( x - genDialogLog.x, y - genDialogLog.y);
+
+			}
+
+// 			if (m_controlRelocate && m_CurSelcetedControl)
+// 			{
+// 				POINT mousePoint;
+// 
+// 				mousePoint.x = (int)LOWORD(lParam);
+// 				mousePoint.y = (int)HIWORD(lParam);
+// 				//ClientToScreen(hWnd,&mousePoint);
+// 
+// 				m_CurSelcetedControl->SetLocation(mousePoint.x - m_GenDialog.getX() ,mousePoint.y - m_GenDialog.getY() );
+// 			}
+		}break;
 
 	case WM_LBUTTONUP:
 		{		
@@ -1352,10 +1397,10 @@ void CGameWin::OnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserCon
 			LPCTSTR pControlText;
 			
 			ULONG selectedItem = (ULONG)m_EditDialog.getComboBox(IDC_COMBOX)->GetSelectedData();
-			UINT  controlWidth =  atoi( m_EditDialog.getEditBox(IDC_WIDTHSTATIC)->GetText() );
-			UINT  controlHeight = atoi( m_EditDialog.getEditBox(IDC_HEIGHTSTATIC)->GetText() );
+			UINT  controlWidth =  atoi( m_EditDialog.getEditBox(IDC_WIDTHEDITBOX)->GetText() );
+			UINT  controlHeight = atoi( m_EditDialog.getEditBox(IDC_HEIGHTEDITBOX)->GetText() );
 
-			pControlText = m_EditDialog.getEditBox(IDC_CONTROLTEXT)->GetText();
+			pControlText = m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->GetText();
 
 			GetCursorPos( &cursorPoint );
 			ScreenToClient( m_hWnd, &cursorPoint );
@@ -1364,46 +1409,62 @@ void CGameWin::OnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserCon
 			{
 			case CControlUI::BUTTON:
 				{
-					m_GenDialog.addButton(IDC_CREATECONTROL + m_GenControlNum + 1, pControlText, cursorPoint.x,
+					m_GenDialog.addButton(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
 						cursorPoint.y, controlWidth, controlWidth, 0);
 					m_controlInCreation = true;
 				}break;
 
 			case CControlUI::CHECKBOX:
 				{
-					m_GenDialog.addCheckBox(IDC_CREATECONTROL + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+					m_GenDialog.addCheckBox(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
 						controlWidth, controlHeight, 0);
 					m_controlInCreation = true;
 				}break;
 
+			case CControlUI::RADIOBUTTON:
+				{
+					m_GenDialog.addRadioButton(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x,
+						cursorPoint.y, controlWidth, controlHeight, 0, 0);
+					m_controlInCreation = true;
+				}
+
 			case CControlUI::COMBOBOX:
 				{
-					m_GenDialog.addComboBox(IDC_CREATECONTROL + m_GenControlNum + 1, pControlText, cursorPoint.x,
+					m_GenDialog.addComboBox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
 						cursorPoint.y, controlWidth, controlHeight, 0);
 					m_controlInCreation = true;
 				}break;
 
+			case CControlUI::STATIC:
+				{
+					m_GenDialog.addStatic(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+						cursorPoint.y, controlWidth, controlHeight);
+					m_controlInCreation = true;
+				}
+
 			case CControlUI::EDITBOX:
 				{
-					m_GenDialog.addEditbox(IDC_CREATECONTROL + m_GenControlNum + 1, pControlText, cursorPoint.x,
+					m_GenDialog.addEditbox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
 						cursorPoint.y, controlWidth, controlHeight, m_timer);
 					m_controlInCreation = true;
 				}break;
 
 			case CControlUI::LISTBOX:
 				{
-					m_GenDialog.addListBox(IDC_CREATECONTROL + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+					m_GenDialog.addListBox(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
 						controlWidth, controlHeight);
 					m_controlInCreation = true;
 				}break;
 
 			case CControlUI::SLIDER:
 				{
-
+					m_GenDialog.addSlider(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+						controlWidth, controlHeight, 0, 0, 0);
+					m_controlInCreation = true;
 				}break;
 			}
 
-			MessageBox(m_hWnd,"lolz button pressed","lolz lolz lolz",MB_OK);
+			//MessageBox(m_hWnd,"lolz button pressed","lolz lolz lolz",MB_OK);
 		}break;
 // 	case IDC_KNIGHT:
 // 		{

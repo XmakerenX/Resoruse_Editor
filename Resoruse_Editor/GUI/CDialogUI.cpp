@@ -1108,7 +1108,28 @@ void CDialogUI::ClearFocus()
 }
 
 //-----------------------------------------------------------------------------
-// Name : GetControl 
+// Name : getControl 
+// Desc : searches for a control base on ID ONLY
+//-----------------------------------------------------------------------------
+CControlUI* CDialogUI::getControl( int ID )
+{
+	// Try to find the control with the given ID
+	for( UINT i = 0; i < m_Controls.size(); i++ )
+	{
+		CControlUI* pControl = m_Controls[i];
+
+		if( pControl->getID() == ID )
+		{
+			return pControl;
+		}
+	}
+
+	// Not found
+	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Name : getControl 
 // Desc : searches for a control base on ID and Control Type
 //-----------------------------------------------------------------------------
 CControlUI* CDialogUI::getControl( int ID, UINT nControlType )

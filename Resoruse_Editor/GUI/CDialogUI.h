@@ -72,6 +72,7 @@ public:
 	bool    addSlider		 (int ID, int x, int y, int width, int height, int min, int max, int nValue, CSliderUI** ppSliderCreated = NULL);
 	bool    addEditbox		 (int ID, LPCTSTR strText, int x, int y, int width, int height, CTimer* timer, CEditBoxUI** ppEditBoxCreated = NULL );
 
+	CControlUI     * getControl		( int ID );
 	CControlUI     * getControl		( int ID, UINT nControlType );
 	CStaticUI      * getStatic		( int ID );
 	CButtonUI      * getButton		( int ID );
