@@ -89,34 +89,110 @@ HRESULT CMySprite::render(ID3DXEffect * effect)
 
 	for (UINT numPass = 0; numPass < numPasses; numPass++)
 	{
-		renderQuads(effect, numPass);
-// 		for (UINT i = 0; i < m_vertexStream.size(); i++)
-// 		{
-// // 			if( m_pDevice )
-// // 				m_pDevice->SetRenderState( D3DRS_ZENABLE, FALSE );
-// 			renderQuads(effect, m_vertexStream[i], numPass);
-// // 			if( m_pDevice )
-// // 				m_pDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
-// 		}
+		//renderQuads(effect, numPass);
+		HRESULT hRet;
 
-		hRet = effect->SetBool(s_hHighlight, TRUE);
-		//effect->CommitChanges();
+		LPVOID  pBufVertices   = NULL;
+		LPVOID  pBufIndices    = NULL;
 
-// 		for (UINT i = 0; i < m_highLightVertStream.size(); i++)
-// 		{
-// 			//renderQuads(effect, m_highLightVertStream[i], numPass);
-// 		}
+		if (true)
+		{
+			numVerticesToRender = 0;
+			numIndicesToRender = 0;
 
-		hRet = effect->SetBool(s_hHighlight, FALSE);
+			for (UINT i = 0; i < m_vertexStream.size(); i++)
+			{
+				numVerticesToRender += m_vertexStream[i].numVertices;
+				numIndicesToRender += m_vertexStream[i].numIndices;
+			}
 
-		//for (UINT i = 0; i < m_TopVertStream.size(); i++)
-		//{
-			//renderQuads(effect, numPass);
-		//}
+			for (UINT i = 0; i < m_highLightVertStream.size(); i++)
+			{
+				numVerticesToRender += m_highLightVertStream[i].numVertices;
+				numIndicesToRender += m_highLightVertStream[i].numIndices;
+			}
 
-// 		if (m_highLightVertStream.pTexture != NULL)
-// 			renderQuads(effect, m_highLightVertStream, numPass);
-		
+			for (UINT i = 0; i < m_TopVertStream.size(); i++)
+			{
+				numVerticesToRender += m_TopVertStream[i].numVertices;
+				numIndicesToRender += m_TopVertStream[i].numIndices;
+			}
+
+			hRet = m_vBuffers[REGLUAR]->Lock(0, numVerticesToRender, &pBufVertices, D3DLOCK_DISCARD);
+			if ( FAILED(hRet) ) return hRet;
+
+			hRet = m_iBuffers[REGLUAR]->Lock(0, numIndicesToRender, &pBufIndices, D3DLOCK_DISCARD);
+			if ( FAILED(hRet) ) return hRet;
+
+			//enter the vertex streams to the buffer in the following order
+			// 	******* ****** ********** ***** **  (!!There are no spaces between textures it is only for clarity)
+			// 	tex1    tex2   tex3       high  top
+			m_bufferVertCount = 0;
+			m_bufferIndicesCount = 0;
+			m_indicesOffset = 0;
+			m_topQuadsStartIndex = 0;
+			m_TexBuffersBounds.clear();
+
+			addStreamToBuffer(pBufVertices, pBufIndices, m_vertexStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+			addStreamToBuffer(pBufVertices, pBufIndices, m_highLightVertStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+
+			m_topQuadsStartIndex = m_TexBuffersBounds.size();
+			addStreamToBuffer(pBufVertices, pBufIndices, m_TopVertStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+			m_bRefresh = false;
+		}
+
+		m_iBuffers[REGLUAR]->Unlock();
+		m_vBuffers[REGLUAR]->Unlock();
+		// 
+		// input the vertex and indices buffers to the device
+		m_pDevice->SetStreamSource(0, m_vBuffers[REGLUAR], 0, sizeof(CSpriteVertex));
+		m_pDevice->SetFVF(SVertex_FVF);
+		m_pDevice->SetIndices(m_iBuffers[REGLUAR]);
+
+		for(UINT i = 0; i < m_topQuadsStartIndex; i++)
+		{
+			if (m_TexBuffersBounds[i].pTexture)
+			{
+				// reEnable the texture rendering if it was disabled
+				effect->SetBool(s_hTextureBool, TRUE);
+				// selects the current texture in the shader
+				effect->SetTexture(s_hTexture, m_TexBuffersBounds[i].pTexture);
+			}
+			else
+			{
+				// no texture was given disable texture rendering
+				m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_SELECTARG2 );
+				m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2 );
+				hRet = effect->SetBool(s_hTextureBool, FALSE);
+			}
+
+			BUFFER_BOUNDS curTexBufBound = m_TexBuffersBounds[i];
+			UINT vertCount = (curTexBufBound.bufferEndVert - curTexBufBound.bufferStartVert) / sizeof(CSpriteVertex);
+			UINT indicesCount = (curTexBufBound.bufferEndIndices - curTexBufBound.bufferStartIndices) / sizeof(USHORT);
+
+			if (effect == NULL)
+			{
+				m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertCount, curTexBufBound.bufferStartIndices, indicesCount / 3);
+			}
+			else
+			{
+				hRet = effect->BeginPass(numPass);
+
+				int vertStart = curTexBufBound.bufferStartVert / sizeof(CSpriteVertex);
+				int indicesStart = curTexBufBound.bufferStartIndices / sizeof(USHORT);
+
+
+				hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, vertStart, vertCount, indicesStart, indicesCount / 3);
+
+				effect->EndPass();
+			}
+
+			if (!m_TexBuffersBounds[i].pTexture)
+			{
+				m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+				m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+			}
+		}		
 	}
 
 	if (effect != NULL)
@@ -162,315 +238,165 @@ HRESULT CMySprite::render(ID3DXEffect * effect)
 // Name : renderQuads ()
 // Desc : render all the quads that are in the current vertex stream
 //-----------------------------------------------------------------------------
-HRESULT CMySprite::renderQuads(ID3DXEffect * effect, UINT numPass)
-{
-	HRESULT hRet;
-
-	LPVOID  pBufVertices   = NULL;
-	LPVOID  pBufIndices    = NULL;
-
-// 	if (vertexStream.pTexture)
+// HRESULT CMySprite::renderQuads(ID3DXEffect * effect, UINT numPass)
+// {
+// 	HRESULT hRet;
+// 
+// 	LPVOID  pBufVertices   = NULL;
+// 	LPVOID  pBufIndices    = NULL;
+// 
+// 	if (true)
 // 	{
-// 		// reEnable the texture rendering if it was disabled
-// 		effect->SetBool(s_hTextureBool, TRUE);
-// 		// selects the current texture in the shader
-// 		effect->SetTexture(s_hTexture, vertexStream.pTexture);
-// 	}
-// 	else
-// 	{
-// 		// no texture was given disable texture rendering
-// 		m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_SELECTARG2 );
-// 		m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2 );
-// 		hRet = effect->SetBool(s_hTextureBool, FALSE);
-// 	}
-
-	if (true)
-	{
-		numVerticesToRender = 0;
-		numIndicesToRender = 0;
-	
-		for (UINT i = 0; i < m_vertexStream.size(); i++)
-		{
-			numVerticesToRender += m_vertexStream[i].numVertices;
-			numIndicesToRender += m_vertexStream[i].numIndices;
-		}
-	
-		for (UINT i = 0; i < m_highLightVertStream.size(); i++)
-		{
-			numVerticesToRender += m_highLightVertStream[i].numVertices;
-			numIndicesToRender += m_highLightVertStream[i].numIndices;
-		}
-	
-		for (UINT i = 0; i < m_TopVertStream.size(); i++)
-		{
-			numVerticesToRender += m_TopVertStream[i].numVertices;
-			numIndicesToRender += m_TopVertStream[i].numIndices;
-		}
-		
-		hRet = m_vBuffers[REGLUAR]->Lock(0, numVerticesToRender, &pBufVertices, D3DLOCK_DISCARD);
-		if ( FAILED(hRet) ) return hRet;
-	
-		hRet = m_iBuffers[REGLUAR]->Lock(0, numIndicesToRender, &pBufIndices, D3DLOCK_DISCARD);
-		if ( FAILED(hRet) ) return hRet;
-	
-		//enter the vertex streams to the buffer in the following order
-	    // 	******* ****** ********** ***** **  (!!There are no spaces between textures it is only for clarity)
-	    // 	tex1    tex2   tex3       high  top
-		m_bufferVertCount = 0;
-		m_bufferIndicesCount = 0;
-		m_indicesOffset = 0;
-		m_topQuadsStartIndex = 0;
-		m_TexBuffersBounds.clear();
-	
-		addStreamToBuffer(pBufVertices, pBufIndices, m_vertexStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
-		addStreamToBuffer(pBufVertices, pBufIndices, m_highLightVertStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
-	
-		m_topQuadsStartIndex = m_TexBuffersBounds.size();
-		addStreamToBuffer(pBufVertices, pBufIndices, m_TopVertStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
-		m_bRefresh = false;
-	}
-
-
-	//--------------------------------------
-	//Attempt to stop crazy stuff so lets make my a static quad
-	//--------------------------------------
-	// creates the four vertices of our quad 
-// 	CSpriteVertex * pVertices;
-// 
-// 	pVertices = new CSpriteVertex[4];
-// 
-// 	pVertices[0].x		= 0;
-// 	pVertices[0].y		= 0;
-// 	pVertices[0].z		= 0;
-// 	pVertices[0].rhw		= 1;
-// 	pVertices[0].diffuse  = d3d::GREEN;
-// 	pVertices[0].tu		= 0;
-// 	pVertices[0].tv		= 0;
-// 
-// 
-// 	pVertices[1].x		= 0 + 500;
-// 	pVertices[1].y		= 0;
-// 	pVertices[1].z		= 0;
-// 	pVertices[1].rhw		= 1;
-// 	pVertices[1].diffuse	=  d3d::GREEN;
-// 	pVertices[1].tu		= 0;
-// 	pVertices[1].tv		= 0;
-// 
-// 
-// 	pVertices[2].x		= 0;
-// 	pVertices[2].y		= 0 + 500;
-// 	pVertices[2].z		= 0;
-// 	pVertices[2].rhw		= 1;
-// 	pVertices[2].diffuse	=  d3d::GREEN;
-// 	pVertices[2].tu		= 0;
-// 	pVertices[2].tv		= 0;
-// 
-// 	pVertices[3].x		= 0 + 500;
-// 	pVertices[3].y		= 0 + 500;
-// 	pVertices[3].z		= 0;
-// 	pVertices[3].rhw		= 1;
-// 	pVertices[3].diffuse	=  d3d::GREEN;
-// 	pVertices[3].tu		= 0;
-// 	pVertices[3].tv		= 0;
-// 
-// 	USHORT* pIndices = new USHORT[6];
-// 
-// 	//triangle 201
-// 	pIndices[0] = 0 + 2; // #2 vertex	 0---1 4---5
-// 	pIndices[1] = 0;	 // #0 vertex    -   - -
-// 	pIndices[2] = 0 + 1; // #1 vertex    2---3 6---7
-// 
-// 	//triangle 213
-// 	pIndices[3] = 0 + 2;     // #2 vertex
-// 	pIndices[4] = 0 + 1;     // #1 vertex
-// 	pIndices[5] = 0 + 2 + 1; // #3 vertex
-// 
-// 	memcpy(pBufVertices, pVertices, 4 * sizeof(CSpriteVertex));
-// 	memcpy(pBufIndices, pIndices, 6 * sizeof(USHORT));
-// 
-// 	delete [4]pVertices;
-// 	delete [6]pIndices;
-// 
-// 	UINT temp = sizeof(CSpriteVertex);
-// 	UINT temp2 = sizeof(USHORT);
-// 
-// 	char* pBufVertIndex;
-// 	char* pBufIndicesIndex;
-// 
-// 	pBufVertIndex = static_cast<char*>(pBufVertices);
-// 	pBufVertIndex += 4 * sizeof(CSpriteVertex);
-// 
-// 	pBufIndicesIndex = static_cast<char*>(pBufIndices);
-// 	pBufIndicesIndex += 6 * sizeof(USHORT);
-// 
-// // 	INT_PTR pIntBufVert = reinterpret_cast<INT_PTR>(pBufVertices);
-// // 	pIntBufVert += 4 * sizeof(CSpriteVertex) * 8;
-// // 	pBufVertIndex = reinterpret_cast<LPVOID>(pIntBufVert);
-// // 
-// // 	INT_PTR pIntBufIndcies = reinterpret_cast<INT_PTR>(pBufIndices);
-// // 	pIntBufIndcies += 6 * sizeof(USHORT) * 8;
-// // 	pBufIndicesIndex = reinterpret_cast<LPVOID>(pIntBufVert);
-// 
-// 	pVertices = new CSpriteVertex[4];
-// 
-// 	pVertices[0].x		= 800;
-// 	pVertices[0].y		= 0;
-// 	pVertices[0].z		= 0;
-// 	pVertices[0].rhw		= 1;
-// 	pVertices[0].diffuse  = d3d::RED;
-// 	pVertices[0].tu		= 0;
-// 	pVertices[0].tv		= 0;
-// 
-// 
-// 	pVertices[1].x		= 800 + 500;
-// 	pVertices[1].y		= 0;
-// 	pVertices[1].z		= 0;
-// 	pVertices[1].rhw		= 1;
-// 	pVertices[1].diffuse	=  d3d::RED;
-// 	pVertices[1].tu		= 0;
-// 	pVertices[1].tv		= 0;
-// 
-// 
-// 	pVertices[2].x		= 800;
-// 	pVertices[2].y		= 0 + 500;
-// 	pVertices[2].z		= 0;
-// 	pVertices[2].rhw		= 1;
-// 	pVertices[2].diffuse	=  d3d::RED;
-// 	pVertices[2].tu		= 0;
-// 	pVertices[2].tv		= 0;
-// 
-// 	pVertices[3].x		= 800 + 500;
-// 	pVertices[3].y		= 0 + 500;
-// 	pVertices[3].z		= 0;
-// 	pVertices[3].rhw		= 1;
-// 	pVertices[3].diffuse	=  d3d::RED;
-// 	pVertices[3].tu		= 0;
-// 	pVertices[3].tv		= 0;
-// 
-// 	pIndices = new USHORT[6];
-// 
-// 	//triangle 201
-// 	pIndices[0] = 4 + 2; // #2 vertex	 0---1 4---5
-// 	pIndices[1] = 4;	 // #0 vertex    -   - -
-// 	pIndices[2] = 4 + 1; // #1 vertex    2---3 6---7
-// 
-// 	//triangle 213
-// 	pIndices[3] = 4 + 2;     // #2 vertex
-// 	pIndices[4] = 4 + 1;     // #1 vertex
-// 	pIndices[5] = 4 + 2 + 1; // #3 vertex
-// 
-// 	memcpy(pBufVertIndex, pVertices, 4 * sizeof(CSpriteVertex));
-// 	memcpy(pBufIndicesIndex, pIndices, 6 * sizeof(USHORT));
-// 
-// 	delete [4]pVertices;
-// 	delete [6]pIndices;
-// 
-	m_iBuffers[REGLUAR]->Unlock();
-	m_vBuffers[REGLUAR]->Unlock();
-// 
-	// input the vertex and indices buffers to the device
-	m_pDevice->SetStreamSource(0, m_vBuffers[REGLUAR], 0, sizeof(CSpriteVertex));
-	m_pDevice->SetFVF(SVertex_FVF);
-	m_pDevice->SetIndices(m_iBuffers[REGLUAR]);
-// 
-// 	m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_SELECTARG2 );
-// 	m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2 );
-// 	hRet = effect->SetBool(s_hTextureBool, FALSE);
-// 
-// 	effect->BeginPass(numPass);
-// 	hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 4, 0, 6 / 3);
-// 	hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 4, 4, 6, 6 / 3);
-// 
-// 	effect->EndPass();
-
-	for(UINT i = 0; i < m_topQuadsStartIndex; i++)
-	{
-		if (m_TexBuffersBounds[i].pTexture)
-		{
-			// reEnable the texture rendering if it was disabled
-			effect->SetBool(s_hTextureBool, TRUE);
-			// selects the current texture in the shader
-			effect->SetTexture(s_hTexture, m_TexBuffersBounds[i].pTexture);
-		}
-		else
-		{
-			// no texture was given disable texture rendering
-			m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_SELECTARG2 );
-			m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2 );
-			hRet = effect->SetBool(s_hTextureBool, FALSE);
-		}
-
-		BUFFER_BOUNDS curTexBufBound = m_TexBuffersBounds[i];
-		UINT vertCount = (curTexBufBound.bufferEndVert - curTexBufBound.bufferStartVert) / sizeof(CSpriteVertex);
-		UINT indicesCount = (curTexBufBound.bufferEndIndices - curTexBufBound.bufferStartIndices) / sizeof(USHORT);
-
-		if (effect == NULL)
-		{
-			m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertCount, curTexBufBound.bufferStartIndices, indicesCount / 3);
-		}
-		else
-		{
-//  			UINT numPasses;
-//  			effect->Begin(&numPasses, 0);
-// 
-// 			for (UINT numPass = 0; numPass < numPasses; numPass++)
-			{
-				hRet = effect->BeginPass(numPass);
-
-				int vertStart = curTexBufBound.bufferStartVert / sizeof(CSpriteVertex);
-				int indicesStart = curTexBufBound.bufferStartIndices / sizeof(USHORT);
-
-
-				hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, vertStart, vertCount, indicesStart, indicesCount / 3);
-				//hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 8, 0, indicesCount / 3);
-				if ( FAILED(hRet) )
-				{
-					UINT x = 5;
-					x += 5;
-				}
-				//hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertCount, 0, indicesCount / 3);
-
-				effect->EndPass();
-			}
-
-			//effect->End();
-		}
-
-		if (!m_TexBuffersBounds[i].pTexture)
-		{
-			m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
-			m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
-		}
-	}
-
-// 	if (effect == NULL)
-// 	{
-// 		m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, m_bufferVertCount, 0, m_bufferIndicesCount / 3);
-// 	}
-// 	else
-// 	{
-// 		//UINT numPasses;
-// 		//effect->Begin(&numPasses, 0);
-// 
-// 		//for (UINT numPass = 0; numPass < numPasses; numPass++)
+// 		numVerticesToRender = 0;
+// 		numIndicesToRender = 0;
+// 	
+// 		for (UINT i = 0; i < m_vertexStream.size(); i++)
 // 		{
-// 			effect->BeginPass(numPass);
-// 			hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, m_bufferVertCount, 0, m_bufferIndicesCount / 3);
-// 
-// 			effect->EndPass();
+// 			numVerticesToRender += m_vertexStream[i].numVertices;
+// 			numIndicesToRender += m_vertexStream[i].numIndices;
 // 		}
-
-		//effect->End();
-//	}
-
-// 	if (!vertexStream.pTexture)
-// 	{
-// 		m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
-// 		m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+// 	
+// 		for (UINT i = 0; i < m_highLightVertStream.size(); i++)
+// 		{
+// 			numVerticesToRender += m_highLightVertStream[i].numVertices;
+// 			numIndicesToRender += m_highLightVertStream[i].numIndices;
+// 		}
+// 	
+// 		for (UINT i = 0; i < m_TopVertStream.size(); i++)
+// 		{
+// 			numVerticesToRender += m_TopVertStream[i].numVertices;
+// 			numIndicesToRender += m_TopVertStream[i].numIndices;
+// 		}
+// 		
+// 		hRet = m_vBuffers[REGLUAR]->Lock(0, numVerticesToRender, &pBufVertices, D3DLOCK_DISCARD);
+// 		if ( FAILED(hRet) ) return hRet;
+// 	
+// 		hRet = m_iBuffers[REGLUAR]->Lock(0, numIndicesToRender, &pBufIndices, D3DLOCK_DISCARD);
+// 		if ( FAILED(hRet) ) return hRet;
+// 	
+// 		//enter the vertex streams to the buffer in the following order
+// 	    // 	******* ****** ********** ***** **  (!!There are no spaces between textures it is only for clarity)
+// 	    // 	tex1    tex2   tex3       high  top
+// 		m_bufferVertCount = 0;
+// 		m_bufferIndicesCount = 0;
+// 		m_indicesOffset = 0;
+// 		m_topQuadsStartIndex = 0;
+// 		m_TexBuffersBounds.clear();
+// 	
+// 		addStreamToBuffer(pBufVertices, pBufIndices, m_vertexStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+// 		addStreamToBuffer(pBufVertices, pBufIndices, m_highLightVertStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+// 	
+// 		m_topQuadsStartIndex = m_TexBuffersBounds.size();
+// 		addStreamToBuffer(pBufVertices, pBufIndices, m_TopVertStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+// 		m_bRefresh = false;
 // 	}
-
-	return S_OK;
-}
+// 
+// 	m_iBuffers[REGLUAR]->Unlock();
+// 	m_vBuffers[REGLUAR]->Unlock();
+// // 
+// 	// input the vertex and indices buffers to the device
+// 	m_pDevice->SetStreamSource(0, m_vBuffers[REGLUAR], 0, sizeof(CSpriteVertex));
+// 	m_pDevice->SetFVF(SVertex_FVF);
+// 	m_pDevice->SetIndices(m_iBuffers[REGLUAR]);
+// // 
+// // 	m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_SELECTARG2 );
+// // 	m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2 );
+// // 	hRet = effect->SetBool(s_hTextureBool, FALSE);
+// // 
+// // 	effect->BeginPass(numPass);
+// // 	hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 4, 0, 6 / 3);
+// // 	hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 4, 4, 6, 6 / 3);
+// // 
+// // 	effect->EndPass();
+// 
+// 	for(UINT i = 0; i < m_topQuadsStartIndex; i++)
+// 	{
+// 		if (m_TexBuffersBounds[i].pTexture)
+// 		{
+// 			// reEnable the texture rendering if it was disabled
+// 			effect->SetBool(s_hTextureBool, TRUE);
+// 			// selects the current texture in the shader
+// 			effect->SetTexture(s_hTexture, m_TexBuffersBounds[i].pTexture);
+// 		}
+// 		else
+// 		{
+// 			// no texture was given disable texture rendering
+// 			m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_SELECTARG2 );
+// 			m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG2 );
+// 			hRet = effect->SetBool(s_hTextureBool, FALSE);
+// 		}
+// 
+// 		BUFFER_BOUNDS curTexBufBound = m_TexBuffersBounds[i];
+// 		UINT vertCount = (curTexBufBound.bufferEndVert - curTexBufBound.bufferStartVert) / sizeof(CSpriteVertex);
+// 		UINT indicesCount = (curTexBufBound.bufferEndIndices - curTexBufBound.bufferStartIndices) / sizeof(USHORT);
+// 
+// 		if (effect == NULL)
+// 		{
+// 			m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertCount, curTexBufBound.bufferStartIndices, indicesCount / 3);
+// 		}
+// 		else
+// 		{
+// //  			UINT numPasses;
+// //  			effect->Begin(&numPasses, 0);
+// // 
+// // 			for (UINT numPass = 0; numPass < numPasses; numPass++)
+// 			{
+// 				hRet = effect->BeginPass(numPass);
+// 
+// 				int vertStart = curTexBufBound.bufferStartVert / sizeof(CSpriteVertex);
+// 				int indicesStart = curTexBufBound.bufferStartIndices / sizeof(USHORT);
+// 
+// 
+// 				hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, vertStart, vertCount, indicesStart, indicesCount / 3);
+// 				//hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 8, 0, indicesCount / 3);
+// 				if ( FAILED(hRet) )
+// 				{
+// 					UINT x = 5;
+// 					x += 5;
+// 				}
+// 				//hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, vertCount, 0, indicesCount / 3);
+// 
+// 				effect->EndPass();
+// 			}
+// 
+// 			//effect->End();
+// 		}
+// 
+// 		if (!m_TexBuffersBounds[i].pTexture)
+// 		{
+// 			m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+// 			m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+// 		}
+// 	}
+// 
+// // 	if (effect == NULL)
+// // 	{
+// // 		m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, m_bufferVertCount, 0, m_bufferIndicesCount / 3);
+// // 	}
+// // 	else
+// // 	{
+// // 		//UINT numPasses;
+// // 		//effect->Begin(&numPasses, 0);
+// // 
+// // 		//for (UINT numPass = 0; numPass < numPasses; numPass++)
+// // 		{
+// // 			effect->BeginPass(numPass);
+// // 			hRet = m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, m_bufferVertCount, 0, m_bufferIndicesCount / 3);
+// // 
+// // 			effect->EndPass();
+// // 		}
+// 
+// 		//effect->End();
+// //	}
+// 
+// // 	if (!vertexStream.pTexture)
+// // 	{
+// // 		m_pDevice->SetTextureStageState( 0, D3DTSS_COLOROP,   D3DTOP_MODULATE );
+// // 		m_pDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE );
+// // 	}
+// 
+// 	return S_OK;
+// }
 
 //-----------------------------------------------------------------------------
 // Name : createQuad ()

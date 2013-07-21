@@ -100,7 +100,7 @@ public:
 	HRESULT init		(LPDIRECT3DDEVICE9 pDevice);
 
 	HRESULT render		(ID3DXEffect * effect);
-	HRESULT renderQuads (ID3DXEffect * effect, UINT numPass);
+	//HRESULT renderQuads (ID3DXEffect * effect, UINT numPass);
 	HRESULT renderTopQuads (ID3DXEffect * effect);
 
 	void	setScale	(float fscaleX, float fscaleY);
