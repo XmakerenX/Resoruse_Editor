@@ -1,21 +1,18 @@
 #include "CMySprite.h"
 
-D3DXHANDLE CMySprite::s_hTexture = NULL;
-D3DXHANDLE CMySprite::s_hHighlight = NULL;
-D3DXHANDLE CMySprite::s_hTextureBool = NULL;
+D3DXHANDLE CMySprite::s_hTexture = nullptr;
+D3DXHANDLE CMySprite::s_hHighlight = nullptr;
+D3DXHANDLE CMySprite::s_hTextureBool = nullptr;
 
 //-----------------------------------------------------------------------------
 // Name : CMySprite (constructor)
 //-----------------------------------------------------------------------------
 CMySprite::CMySprite(void)
 {
-	m_pDevice = NULL;
+	m_pDevice = nullptr;
 
-	for (int i = 0; i < 3; i++)
-	{
-		m_vBuffers[i] = NULL;
-		m_iBuffers[i] = NULL;
-	}
+	m_vBuffer = nullptr;
+	m_iBuffer = nullptr;
 
 // 	m_vb = NULL;
 // 	m_ib = NULL;
@@ -117,11 +114,11 @@ HRESULT CMySprite::render(ID3DXEffect * effect)
 				numVerticesToRender += m_TopVertStream[i].numVertices;
 				numIndicesToRender += m_TopVertStream[i].numIndices;
 			}
-
-			hRet = m_vBuffers[REGLUAR]->Lock(0, numVerticesToRender, &pBufVertices, D3DLOCK_DISCARD);
+			
+			hRet = m_vBuffer->Lock(0, numVerticesToRender, &pBufVertices, D3DLOCK_DISCARD);
 			if ( FAILED(hRet) ) return hRet;
 
-			hRet = m_iBuffers[REGLUAR]->Lock(0, numIndicesToRender, &pBufIndices, D3DLOCK_DISCARD);
+			hRet = m_iBuffer->Lock(0, numIndicesToRender, &pBufIndices, D3DLOCK_DISCARD);
 			if ( FAILED(hRet) ) return hRet;
 
 			//enter the vertex streams to the buffer in the following order
@@ -141,13 +138,13 @@ HRESULT CMySprite::render(ID3DXEffect * effect)
 			m_bRefresh = false;
 		}
 
-		m_iBuffers[REGLUAR]->Unlock();
-		m_vBuffers[REGLUAR]->Unlock();
+		m_iBuffer->Unlock();
+		m_vBuffer->Unlock();
 		// 
 		// input the vertex and indices buffers to the device
-		m_pDevice->SetStreamSource(0, m_vBuffers[REGLUAR], 0, sizeof(CSpriteVertex));
+		m_pDevice->SetStreamSource(0, m_vBuffer, 0, sizeof(CSpriteVertex));
 		m_pDevice->SetFVF(SVertex_FVF);
-		m_pDevice->SetIndices(m_iBuffers[REGLUAR]);
+		m_pDevice->SetIndices(m_iBuffer);
 
 		for(UINT i = 0; i < m_topQuadsStartIndex; i++)
 		{
@@ -654,9 +651,9 @@ HRESULT CMySprite::init(LPDIRECT3DDEVICE9 pDevice)
 	// Creates a vertex buffer to store the sprite vertices 
 	for (int i = 0; i < BUFFERS_NUM; i++)
 	{
-		hRet = m_pDevice->CreateVertexBuffer(sizeof(CSpriteVertex) * 4 * MAX_QUADS, D3DUSAGE_DYNAMIC, SVertex_FVF, D3DPOOL_SYSTEMMEM, &m_vBuffers[i], NULL);
+		hRet = m_pDevice->CreateVertexBuffer(sizeof(CSpriteVertex) * 4 * MAX_QUADS, D3DUSAGE_DYNAMIC, SVertex_FVF, D3DPOOL_SYSTEMMEM, &m_vBuffer, NULL);
 		if ( FAILED(hRet) ) return hRet;
-		hRet = m_pDevice->CreateIndexBuffer(sizeof(USHORT) * 6 * MAX_QUADS, D3DUSAGE_DYNAMIC, D3DFMT_INDEX16, D3DPOOL_SYSTEMMEM, &m_iBuffers[i], NULL);
+		hRet = m_pDevice->CreateIndexBuffer(sizeof(USHORT) * 6 * MAX_QUADS, D3DUSAGE_DYNAMIC, D3DFMT_INDEX16, D3DPOOL_SYSTEMMEM, &m_iBuffer, NULL);
 		if ( FAILED(hRet) ) return hRet;
 
 	}
@@ -695,13 +692,13 @@ void CMySprite::setShadersHandles(D3DXHANDLE hTexture, D3DXHANDLE hHightLight, D
 //-----------------------------------------------------------------------------
 void CMySprite::onLostDevice()
 {
-	//TODO: change the var name from temp to something better
-	ULONG temp;
-	for (int i = 0; i < BUFFERS_NUM; i++)
-	{
-		temp = m_vBuffers[i]->Release();
-		temp = m_iBuffers[i]->Release();
-	}
+	// gets how many refrences to the buffers are left 
+	// should return 0..
+	ULONG refrenceCount;
+
+	refrenceCount = m_vBuffer->Release();
+	refrenceCount = m_iBuffer->Release();
+
 }
 
 //-----------------------------------------------------------------------------
@@ -715,11 +712,11 @@ HRESULT CMySprite::onResetDevice()
 	for (int i = 0; i < BUFFERS_NUM; i++)
 	{
 		// Creates a vertex buffer to store the sprite vertices 
-		hRet = m_pDevice->CreateVertexBuffer(sizeof(CSpriteVertex) * 4 * MAX_QUADS,D3DUSAGE_WRITEONLY, SVertex_FVF, D3DPOOL_MANAGED, &m_vBuffers[i], NULL);
+		hRet = m_pDevice->CreateVertexBuffer(sizeof(CSpriteVertex) * 4 * MAX_QUADS,D3DUSAGE_WRITEONLY, SVertex_FVF, D3DPOOL_MANAGED, &m_vBuffer, NULL);
 		if ( FAILED(hRet) ) return hRet;
 
 		// Creates a indices buffer to store the sprite indices
-		hRet = m_pDevice->CreateIndexBuffer(sizeof(USHORT) * 6 * MAX_QUADS, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16, D3DPOOL_MANAGED, &m_iBuffers[i], NULL);
+		hRet = m_pDevice->CreateIndexBuffer(sizeof(USHORT) * 6 * MAX_QUADS, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16, D3DPOOL_MANAGED, &m_iBuffer, NULL);
 		if ( FAILED(hRet) ) return hRet;
 	}
 }
@@ -827,9 +824,9 @@ HRESULT CMySprite::renderTopQuads(ID3DXEffect * effect)
 		m_pDevice->SetTextureStageState(1, 	D3DTSS_COLOROP, D3DTOP_DISABLE);
 	}
 
-	m_pDevice->SetStreamSource(0, m_vBuffers[REGLUAR], 0, sizeof(CSpriteVertex));
+	m_pDevice->SetStreamSource(0, m_vBuffer, 0, sizeof(CSpriteVertex));
 	m_pDevice->SetFVF(SVertex_FVF);
-	m_pDevice->SetIndices(m_iBuffers[REGLUAR]);
+	m_pDevice->SetIndices(m_iBuffer);
 
 	UINT numPasses;
 

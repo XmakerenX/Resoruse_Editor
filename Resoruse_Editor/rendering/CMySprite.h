@@ -9,8 +9,10 @@ class CSpriteVertex;
 
 #define SVertex_FVF			D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1
 
-enum BUFFERTYPE {TOP,HIGHLIGHT,REGLUAR};
 const UINT MAX_QUADS = 60;
+
+// when adding types to STREAMTYPE  REMEMBER TO UPDATE STREAMTYPE_MAX!!!
+enum STREAMTYPE {BACKGROUND,REGLUAR, HiGHLIGHT, TOP, STREAMTYPE_MAX = 4};
 const UINT BUFFERS_NUM = 3;
 
 // groups together all the quads vertices and indices that have the same texture 
@@ -120,8 +122,8 @@ private:
 	ID3DXMesh* m_pMesh;
 	LPDIRECT3DDEVICE9 m_pDevice;
 
-	LPDIRECT3DVERTEXBUFFER9 m_vBuffers[BUFFERS_NUM];
-	PDIRECT3DINDEXBUFFER9   m_iBuffers[BUFFERS_NUM];
+	LPDIRECT3DVERTEXBUFFER9 m_vBuffer;
+	PDIRECT3DINDEXBUFFER9   m_iBuffer;
 
 	std::vector<BUFFER_BOUNDS> m_TexBuffersBounds;
 	UINT m_bufferVertCount;
@@ -140,6 +142,8 @@ private:
 // 
 // 	LPDIRECT3DVERTEXBUFFER9 m_topVB;
 // 	PDIRECT3DINDEXBUFFER9   m_topIB;
+
+	std::vector<VERTEX_STREAM> m_vertexSteam[];
 
 	std::vector<VERTEX_STREAM> m_vertexStream; // vertex stream for all the regular sprites
 
