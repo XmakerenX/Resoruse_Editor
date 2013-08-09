@@ -16,7 +16,8 @@ CControlUI::CControlUI(void)
 
 	m_ID = -1;
 
-	m_bVisible   = false;
+	m_bEnabled = true;
+	m_bVisible   = true;
 	m_bMouseOver = false;
 	m_bHasFocus  = false;
 	//m_bHasFocus  = false;
@@ -165,7 +166,7 @@ UINT CControlUI::getType()
 // Desc : render a Rect using the given texture and texture Rect
 // Note : the function also scale the texture to fit the Rect being rendered
 //-----------------------------------------------------------------------------
-void CControlUI::renderRect(RECT& rcTexture, RECT& rcWindow, CMySprite* sprite, LPDIRECT3DTEXTURE9 pTexture, D3DCOLOR color, bool bHighLight, bool bTop, POINT offset)
+void CControlUI::renderRect(RECT& rcTexture, RECT& rcWindow, CMySprite* sprite, LPDIRECT3DTEXTURE9 pTexture, D3DCOLOR color, STREAMTYPE streamType, POINT offset)
 {
 	UINT m_texWidth = rcTexture.right - rcTexture .left;
 	UINT m_texHeight = rcTexture.bottom - rcTexture.top;
@@ -196,9 +197,9 @@ void CControlUI::renderRect(RECT& rcTexture, RECT& rcWindow, CMySprite* sprite, 
 	//pos.y /= fScaleY;
 
 	if (pTexture)
-		sprite->createQuad(pTexture, rcTexture, pos, color, bHighLight, bTop);
+		sprite->createQuad(pTexture, rcTexture, pos, color, streamType);
 	else
-		sprite->createQuad(pTexture, rcWindow, pos, color, bHighLight, bTop);
+		sprite->createQuad(pTexture, rcWindow, pos, color, streamType);
 	//sprite->Draw( pTexture, &rcTexture, NULL, &vPos, color);
 }
 
@@ -260,11 +261,27 @@ void CControlUI::setEnabled(bool bEnabled)
 }
 
 //-----------------------------------------------------------------------------
+// Name : setVisible 
+//-----------------------------------------------------------------------------
+void CControlUI::setVisible(bool m_bVisible)
+{
+	m_bVisible = m_bVisible;
+}
+
+//-----------------------------------------------------------------------------
 // Name : getEnabled 
 //-----------------------------------------------------------------------------
 bool CControlUI::getEnabled()
 {
 	return m_bEnabled;
+}
+
+//-----------------------------------------------------------------------------
+// Name : getVisible 
+//-----------------------------------------------------------------------------
+bool CControlUI::getVisible()
+{
+	return m_bVisible;
 }
 
 //-----------------------------------------------------------------------------

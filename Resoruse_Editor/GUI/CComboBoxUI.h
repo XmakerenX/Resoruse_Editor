@@ -55,7 +55,6 @@ public:
 	void    *		GetItemData( int nIndex );
 
 	void            SetDropHeight( UINT nHeight );
-	//void			SetTextFont  (UINT fontIndex, CAssetManager& assetManger);
 
 	int             GetScrollBarWidth() const;
 	void            SetScrollBarWidth( int nWidth );

@@ -13,7 +13,6 @@ const UINT MAX_QUADS = 60;
 
 // when adding types to STREAMTYPE  REMEMBER TO UPDATE STREAMTYPE_MAX!!!
 enum STREAMTYPE {BACKGROUND,REGLUAR, HiGHLIGHT, TOP, STREAMTYPE_MAX = 4};
-const UINT BUFFERS_NUM = 3;
 
 // groups together all the quads vertices and indices that have the same texture 
 struct VERTEX_STREAM
@@ -94,10 +93,12 @@ public:
 	//-------------------------------------------------------------------------
 	// public functions for This Class.
 	//-------------------------------------------------------------------------
-	HRESULT createQuad	(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPos, D3DCOLOR tintColor, bool bHighLight, bool bTop);
+	HRESULT createQuad	(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPos, D3DCOLOR tintColor, STREAMTYPE vertexType);
 	void    addQuad		(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPos, VERTEX_STREAM& vertexStream, D3DCOLOR tintColor);
 
-	HRESULT addQuadToVertStream(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPos, D3DCOLOR tintColor, std::vector<VERTEX_STREAM>& vertStream);
+	HRESULT addQuadToVertStream			(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPos, D3DCOLOR tintColor, std::vector<VERTEX_STREAM>& vertStream);
+	void	getQuadsToRenderfromStream	(UINT& numVerticesToRender, UINT& numIndicesToRender, std::vector<VERTEX_STREAM>& vertexStream);
+	void	clearVertexStream			(std::vector<VERTEX_STREAM>& vertexStream);
 
 	HRESULT init		(LPDIRECT3DDEVICE9 pDevice);
 
@@ -143,13 +144,11 @@ private:
 // 	LPDIRECT3DVERTEXBUFFER9 m_topVB;
 // 	PDIRECT3DINDEXBUFFER9   m_topIB;
 
-	std::vector<VERTEX_STREAM> m_vertexSteam[];
 
-	std::vector<VERTEX_STREAM> m_vertexStream; // vertex stream for all the regular sprites
+	//STREAM TYPES are BACKGROUND REGULAR HIGHTLIGHT TOP
+	std::vector<VERTEX_STREAM> m_vertexStreams[STREAMTYPE_MAX];
 
-	//VERTEX_STREAM m_highLightVertStream;
-	std::vector<VERTEX_STREAM> m_highLightVertStream; // vertex stream for all highlighted sprites
-	std::vector<VERTEX_STREAM> m_TopVertStream; // vertex stream for all sprites that must be on top
+	//std::vector<VERTEX_STREAM> m_vertexStream; // vertex stream for all the regular sprites
 
 	float m_fScaleX;
 	float m_fscaleY;

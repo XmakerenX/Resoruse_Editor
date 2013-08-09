@@ -4,7 +4,6 @@
 //-----------------------------------------------------------------------------
 // Name : CComboBoxUI(constructor) 
 //-----------------------------------------------------------------------------
-//TODO: Delete fontIndex!
 CComboBoxUI::CComboBoxUI(int ID, LPCTSTR strText, int x, int y, UINT width, UINT height, UINT nHotkey)
 	:CButtonUI(ID, strText, x, y, width, height, nHotkey)
 {
@@ -117,7 +116,7 @@ bool CComboBoxUI::HandleMouse(HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPA
 					if( pItem->bVisible && PtInRect( &pItem->rcActive, pt ) )
 					{
 						m_iFocused = m_iSelected = i;
-						//m_pDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, this );
+						m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, m_ID, hWnd );
 						m_bOpened = false;
 						m_bMouseOver = false;
 
@@ -136,7 +135,7 @@ bool CComboBoxUI::HandleMouse(HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPA
 			{
 				m_iFocused = m_iSelected;
 
-				//m_pDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, this );
+				m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, m_ID, hWnd);
 				m_bOpened = false;
 			}
 
@@ -234,7 +233,7 @@ void    CComboBoxUI::Render( CAssetManager& assetManger)
 
 		// acquire a pointer for the dropdown texture
 		pTexture = assetManger.getTexturePtr(m_elementsGFX[DROPDOWN].iTexture);
-		renderRect(m_elementsGFX[DROPDOWN].rcTexture, m_rcDropdown, sprite, pTexture, d3d::WHITE, false, true, dialogPos);
+		renderRect(m_elementsGFX[DROPDOWN].rcTexture, m_rcDropdown, sprite, pTexture, d3d::WHITE, TOP, dialogPos);
 
 	}
 
@@ -269,7 +268,7 @@ void    CComboBoxUI::Render( CAssetManager& assetManger)
 				LPDIRECT3DTEXTURE9 pTexture = assetManger.getTexturePtr((m_elementsGFX[SELECTION].iTexture) );
 
 				SetRect( &rc, m_rcDropdown.left, pItem->rcActive.top - 2, m_rcDropdown.right, pItem->rcActive.bottom + 2 );
-				renderRect(m_elementsGFX[SELECTION].rcTexture,rc , sprite, pTexture, d3d::WHITE, false, true, dialogPos);
+				renderRect(m_elementsGFX[SELECTION].rcTexture,rc , sprite, pTexture, d3d::WHITE, TOP, dialogPos);
 				RenderText(pItem->strText, rc, font.pFont, DT_LEFT | DT_VCENTER,assetManger.getTopSprite(), d3d::WHITE, dialogPos);
 				//m_pDialog->DrawSprite( pSelectionElement, &rc, DXUT_NEAR_BUTTON_DEPTH );
 				//m_pDialog->DrawText( pItem->strText, pSelectionElement, &pItem->rcActive );
@@ -288,24 +287,24 @@ void    CComboBoxUI::Render( CAssetManager& assetManger)
 	//if the button is not pressed or doesn't have the cursor on it render it normally
 	if (!m_bMouseOver && !m_bOpened)
 	{
-		renderRect(m_elementsGFX[BUTTON].rcTexture, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 200, 200, 200 ), false, false, dialogPos );
-		renderRect(m_elementsGFX[MAIN].rcTexture, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 200, 200, 200 ), false, false, dialogPos );
+		renderRect(m_elementsGFX[BUTTON].rcTexture, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 200, 200, 200 ), REGLUAR, dialogPos );
+		renderRect(m_elementsGFX[MAIN].rcTexture, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 200, 200, 200 ), REGLUAR, dialogPos );
 	}
 	else
 	{
 		// if the button is pressed and the cursor is on it darken it to showed it is pressed
 		if (m_bMouseOver && m_bPressed)
 		{
-			renderRect(m_elementsGFX[BUTTON].rcTexMouseOver, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 150, 150, 150 ), false, false, dialogPos );
-			renderRect(m_elementsGFX[MAIN].rcTexMouseOver, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 150, 150, 150 ), false, false, dialogPos );
+			renderRect(m_elementsGFX[BUTTON].rcTexMouseOver, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 150, 150, 150 ), REGLUAR, dialogPos );
+			renderRect(m_elementsGFX[MAIN].rcTexMouseOver, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 150, 150, 150 ), REGLUAR, dialogPos );
 		}
 		else
 			// if the button has the cursor on it high light 
 			if (m_bMouseOver || m_bOpened)
 			{
 				//drawButtonRect(m_controlGfx.rcTexMouseOver, rcWindow, sprite, pTexture, D3DCOLOR_ARGB( 200, 250, 250, 250 ));
-				renderRect(m_elementsGFX[BUTTON].rcTexMouseOver, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 255, 255, 255 ), true, false, dialogPos);
-				renderRect(m_elementsGFX[MAIN].rcTexMouseOver, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 255, 255, 255 ), true, false, dialogPos);
+				renderRect(m_elementsGFX[BUTTON].rcTexMouseOver, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 255, 255, 255 ), HiGHLIGHT, dialogPos);
+				renderRect(m_elementsGFX[MAIN].rcTexMouseOver, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 255, 255, 255 ), HiGHLIGHT, dialogPos);
 			}
 	}
 
@@ -523,15 +522,6 @@ void CComboBoxUI::SetDropHeight( UINT nHeight )
 }
 
 //-----------------------------------------------------------------------------
-// Name : SetTextFont() 
-//-----------------------------------------------------------------------------
-// void CComboBoxUI::SetTextFont(UINT fontIndex, CAssetManager& assetManger)
-// {
-// 	m_nFontHeight = assetManger.getFontItem(fontIndex).height;
-// 	m_fontIndex = fontIndex;
-// }
-
-//-----------------------------------------------------------------------------
 // Name : GetScrollBarWidth() 
 //-----------------------------------------------------------------------------
 int CComboBoxUI::GetScrollBarWidth() const
@@ -657,9 +647,8 @@ HRESULT CComboBoxUI::SetSelectedByData( void* pData )
 //-----------------------------------------------------------------------------
 bool CComboBoxUI::CanHaveFocus()
 {
-	return true;
-	//TODO: write the stuff that enable those flags
-	//return ( m_bVisible && m_bEnabled );
+	//return true;
+	return ( m_bVisible && m_bEnabled );
 }
 
 //-----------------------------------------------------------------------------

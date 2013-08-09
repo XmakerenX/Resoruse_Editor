@@ -83,18 +83,18 @@ void CButtonUI::Render( CAssetManager& assetManger)
 	//if the button is not pressed or doesn't have the cursor on it render it normally
 	if (!m_bMouseOver)
 	{
-		renderRect(m_elementsGFX[BUTTON].rcTexture, rcWindow, sprite, pTexture, D3DCOLOR_ARGB( 255, 200, 200, 200 ), false, false, dialogPos );
+		renderRect(m_elementsGFX[BUTTON].rcTexture, rcWindow, sprite, pTexture, D3DCOLOR_ARGB( 255, 200, 200, 200 ), REGLUAR, dialogPos );
 	}
 	else
 	{
 		// if the button is pressed and the cursor is on it darken it to showed it is pressed
 		if (m_bMouseOver && m_bPressed)
-			renderRect(m_elementsGFX[MOUSEOVER].rcTexMouseOver, rcWindow, sprite, pTexture, D3DCOLOR_ARGB( 255, 150, 150, 150 ), false, false, dialogPos );
+			renderRect(m_elementsGFX[MOUSEOVER].rcTexMouseOver, rcWindow, sprite, pTexture, D3DCOLOR_ARGB( 255, 150, 150, 150 ), REGLUAR, dialogPos );
 		else
 			// if the button has the cursor on it high light 
 			if (m_bMouseOver)
 				//drawButtonRect(m_controlGfx.rcTexMouseOver, rcWindow, sprite, pTexture, D3DCOLOR_ARGB( 200, 250, 250, 250 ));
-				renderRect(m_elementsGFX[MOUSEOVER].rcTexMouseOver, rcWindow, sprite, pTexture, D3DCOLOR_ARGB( 255, 255, 255, 255 ), true, false, dialogPos);
+				renderRect(m_elementsGFX[MOUSEOVER].rcTexMouseOver, rcWindow, sprite, pTexture, D3DCOLOR_ARGB( 255, 255, 255, 255 ), HiGHLIGHT, dialogPos);
 	}
 	
 	LPD3DXFONT pFont;
@@ -221,7 +221,6 @@ void CButtonUI::setHotKey(UINT nHotKey)
 //-----------------------------------------------------------------------------
 bool CButtonUI::CanHaveFocus()
 {
-	//TODO: write the functions that enable visible and enable for the button
-	return true;
-	//return ( m_bVisible && m_bEnabled );
+	//return true; 
+	return ( m_bVisible && m_bEnabled );
 }

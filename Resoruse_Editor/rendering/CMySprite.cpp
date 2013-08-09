@@ -97,23 +97,10 @@ HRESULT CMySprite::render(ID3DXEffect * effect)
 			numVerticesToRender = 0;
 			numIndicesToRender = 0;
 
-			for (UINT i = 0; i < m_vertexStream.size(); i++)
-			{
-				numVerticesToRender += m_vertexStream[i].numVertices;
-				numIndicesToRender += m_vertexStream[i].numIndices;
-			}
-
-			for (UINT i = 0; i < m_highLightVertStream.size(); i++)
-			{
-				numVerticesToRender += m_highLightVertStream[i].numVertices;
-				numIndicesToRender += m_highLightVertStream[i].numIndices;
-			}
-
-			for (UINT i = 0; i < m_TopVertStream.size(); i++)
-			{
-				numVerticesToRender += m_TopVertStream[i].numVertices;
-				numIndicesToRender += m_TopVertStream[i].numIndices;
-			}
+			getQuadsToRenderfromStream(numVerticesToRender, numIndicesToRender, m_vertexStreams[BACKGROUND]);
+			getQuadsToRenderfromStream(numVerticesToRender, numIndicesToRender, m_vertexStreams[REGLUAR]);
+			getQuadsToRenderfromStream(numVerticesToRender, numIndicesToRender, m_vertexStreams[HiGHLIGHT]);
+			getQuadsToRenderfromStream(numVerticesToRender, numIndicesToRender, m_vertexStreams[TOP]);
 			
 			hRet = m_vBuffer->Lock(0, numVerticesToRender, &pBufVertices, D3DLOCK_DISCARD);
 			if ( FAILED(hRet) ) return hRet;
@@ -130,11 +117,12 @@ HRESULT CMySprite::render(ID3DXEffect * effect)
 			m_topQuadsStartIndex = 0;
 			m_TexBuffersBounds.clear();
 
-			addStreamToBuffer(pBufVertices, pBufIndices, m_vertexStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
-			addStreamToBuffer(pBufVertices, pBufIndices, m_highLightVertStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+			addStreamToBuffer(pBufVertices, pBufIndices, m_vertexStreams[BACKGROUND], m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+			addStreamToBuffer(pBufVertices, pBufIndices, m_vertexStreams[REGLUAR], m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+			addStreamToBuffer(pBufVertices, pBufIndices, m_vertexStreams[HiGHLIGHT], m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
 
 			m_topQuadsStartIndex = m_TexBuffersBounds.size();
-			addStreamToBuffer(pBufVertices, pBufIndices, m_TopVertStream, m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
+			addStreamToBuffer(pBufVertices, pBufIndices, m_vertexStreams[TOP], m_bufferVertCount, m_bufferIndicesCount, m_indicesOffset);
 			m_bRefresh = false;
 		}
 
@@ -196,30 +184,11 @@ HRESULT CMySprite::render(ID3DXEffect * effect)
 		effect->End();
 
 	// clear the vertex Stream after all the quads were rendered to the screen
-	for (UINT i = 0; i < m_vertexStream.size(); i++)
-	{
-		// free the memory allocated (TO NOT LEAK GOD DAMN MEMORY!!!)
-		delete [m_vertexStream[i].numVertices] m_vertexStream[i].pVertices;
-		delete [m_vertexStream[i].numIndices] m_vertexStream[i].pIndices;
-	}
-	m_vertexStream.clear();
 
-
-	for (UINT i = 0; i < m_highLightVertStream.size(); i++)
-	{
-		// free the memory allocated (TO NOT LEAK GOD DAMN MEMORY!!!)
-		delete [m_highLightVertStream[i].numVertices] m_highLightVertStream[i].pVertices;
-		delete [m_highLightVertStream[i].numIndices] m_highLightVertStream[i].pIndices;
-	}
-	m_highLightVertStream.clear();
-
-	for (UINT i = 0; i < m_TopVertStream.size(); i++)
-	{
-		// free the memory allocated (TO NOT LEAK GOD DAMN MEMORY!!!)
-		delete [m_TopVertStream[i].numVertices] m_TopVertStream[i].pVertices;
-		delete [m_TopVertStream[i].numIndices] m_TopVertStream[i].pIndices;
-	}
-	m_TopVertStream.clear();
+	clearVertexStream(m_vertexStreams[BACKGROUND]);
+	clearVertexStream(m_vertexStreams[REGLUAR]);
+	clearVertexStream(m_vertexStreams[HiGHLIGHT]);
+	clearVertexStream(m_vertexStreams[TOP]);
 
 	if (effect == NULL)
 	{
@@ -399,64 +368,32 @@ HRESULT CMySprite::render(ID3DXEffect * effect)
 // Name : createQuad ()
 // Desc : TODO: write description for this func and name it better
 //-----------------------------------------------------------------------------
-HRESULT CMySprite::createQuad(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPos, D3DCOLOR tintColor, bool bHighLight, bool bTop)
+HRESULT CMySprite::createQuad(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPos, D3DCOLOR tintColor, STREAMTYPE vertexType)
 {
-	if (bHighLight)
-		return addQuadToVertStream(pTexture, srcRect, quadPos, tintColor, m_highLightVertStream);
+	switch (vertexType)
+	{
 
-	if (bTop)
-		return addQuadToVertStream(pTexture, srcRect, quadPos, tintColor, m_TopVertStream);
+	case REGLUAR:
+		{
+			return addQuadToVertStream(pTexture, srcRect, quadPos, tintColor, m_vertexStreams[REGLUAR]);
+		}break;
 
-	return addQuadToVertStream(pTexture, srcRect, quadPos, tintColor, m_vertexStream);
+	case BACKGROUND:
+		{
+			return addQuadToVertStream(pTexture, srcRect, quadPos, tintColor, m_vertexStreams[BACKGROUND]);
+		}break;
 
-// 	if (bHighLight)
-// 	{
-// 		for (UINT i = 0; i < m_highLightVertStream.size(); i++)
-// 		{
-// 			if (pTexture == m_highLightVertStream[i].pTexture)
-// 			{
-// 				// add the quad we got as a the quad to highlight
-// 				addQuad(pTexture, srcRect, quadPos, m_highLightVertStream[i], tintColor);
-// 				return S_OK;
-// 			}
-// 		}
-// 
-// 		VERTEX_STREAM vertHighLightStream;
-// 
-// 		vertHighLightStream.pTexture = NULL;
-// 		vertHighLightStream.numVertices = 0;
-// 		vertHighLightStream.numIndices = 0;
-// 
-// 		addQuad(pTexture, srcRect, quadPos, vertHighLightStream, tintColor);
-// 
-// 		m_highLightVertStream.push_back(vertHighLightStream);
-// 
-// 		return S_OK;
-// 
-// 	}
-// 
-// 	//TODO: add something to catch new when it fails!
-// 	for (UINT i = 0; i < m_vertexStream.size(); i++)
-// 	{
-// 		if (pTexture == m_vertexStream[i].pTexture)
-// 		{
-// 			addQuad(pTexture, srcRect, quadPos, m_vertexStream[i], tintColor);
-// 
-// 			return S_OK;
-// 		}
-// 	}
-// 
-// 	VERTEX_STREAM vertexStream;
-// 
-// 	vertexStream.pTexture = NULL;
-// 	vertexStream.numVertices = 0;
-// 	vertexStream.numIndices = 0;
-// 
-// 	addQuad(pTexture, srcRect, quadPos, vertexStream, tintColor);
-// 
-// 	m_vertexStream.push_back(vertexStream);
-// 
-// 	return S_OK;
+	case HiGHLIGHT:
+		{
+			return addQuadToVertStream(pTexture, srcRect, quadPos, tintColor, m_vertexStreams[HiGHLIGHT]);
+		}break;
+
+	case TOP:
+		{
+			return addQuadToVertStream(pTexture, srcRect, quadPos, tintColor, m_vertexStreams[TOP]);
+		}break;
+
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -649,14 +586,10 @@ HRESULT CMySprite::init(LPDIRECT3DDEVICE9 pDevice)
 
 	// TODO: check if I need to add more usage flags
 	// Creates a vertex buffer to store the sprite vertices 
-	for (int i = 0; i < BUFFERS_NUM; i++)
-	{
-		hRet = m_pDevice->CreateVertexBuffer(sizeof(CSpriteVertex) * 4 * MAX_QUADS, D3DUSAGE_DYNAMIC, SVertex_FVF, D3DPOOL_SYSTEMMEM, &m_vBuffer, NULL);
-		if ( FAILED(hRet) ) return hRet;
-		hRet = m_pDevice->CreateIndexBuffer(sizeof(USHORT) * 6 * MAX_QUADS, D3DUSAGE_DYNAMIC, D3DFMT_INDEX16, D3DPOOL_SYSTEMMEM, &m_iBuffer, NULL);
-		if ( FAILED(hRet) ) return hRet;
-
-	}
+	hRet = m_pDevice->CreateVertexBuffer(sizeof(CSpriteVertex) * 4 * MAX_QUADS, D3DUSAGE_DYNAMIC, SVertex_FVF, D3DPOOL_SYSTEMMEM, &m_vBuffer, NULL);
+	if ( FAILED(hRet) ) return hRet;
+	hRet = m_pDevice->CreateIndexBuffer(sizeof(USHORT) * 6 * MAX_QUADS, D3DUSAGE_DYNAMIC, D3DFMT_INDEX16, D3DPOOL_SYSTEMMEM, &m_iBuffer, NULL);
+	if ( FAILED(hRet) ) return hRet;
 
 	//m_highLightVertStream.numIndices = 0;
 	//m_highLightVertStream.numVertices = 0;
@@ -709,16 +642,14 @@ HRESULT CMySprite::onResetDevice()
 {
 	HRESULT hRet;
 
-	for (int i = 0; i < BUFFERS_NUM; i++)
-	{
-		// Creates a vertex buffer to store the sprite vertices 
-		hRet = m_pDevice->CreateVertexBuffer(sizeof(CSpriteVertex) * 4 * MAX_QUADS,D3DUSAGE_WRITEONLY, SVertex_FVF, D3DPOOL_MANAGED, &m_vBuffer, NULL);
-		if ( FAILED(hRet) ) return hRet;
+	// Creates a vertex buffer to store the sprite vertices 
+	hRet = m_pDevice->CreateVertexBuffer(sizeof(CSpriteVertex) * 4 * MAX_QUADS,D3DUSAGE_WRITEONLY, SVertex_FVF, D3DPOOL_MANAGED, &m_vBuffer, NULL);
+	if ( FAILED(hRet) ) return hRet;
 
-		// Creates a indices buffer to store the sprite indices
-		hRet = m_pDevice->CreateIndexBuffer(sizeof(USHORT) * 6 * MAX_QUADS, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16, D3DPOOL_MANAGED, &m_iBuffer, NULL);
-		if ( FAILED(hRet) ) return hRet;
-	}
+	// Creates a indices buffer to store the sprite indices
+	hRet = m_pDevice->CreateIndexBuffer(sizeof(USHORT) * 6 * MAX_QUADS, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16, D3DPOOL_MANAGED, &m_iBuffer, NULL);
+	if ( FAILED(hRet) ) return hRet;
+	
 }
 //-----------------------------------------------------------------------------
 // Name : addStramToBuffer ()
@@ -791,6 +722,10 @@ void CMySprite::addStreamToBuffer(LPVOID  pBufVertices, LPVOID pBufIndices, std:
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Name : renderTopQuads ()
+// Desc : render only the quads that should be on top all the other quads
+//-----------------------------------------------------------------------------
 HRESULT CMySprite::renderTopQuads(ID3DXEffect * effect)
 {
 	HRESULT hRet = S_OK;
@@ -893,7 +828,38 @@ HRESULT CMySprite::renderTopQuads(ID3DXEffect * effect)
 	return hRet;
 }
 
+//-----------------------------------------------------------------------------
+// Name : setIfToRefresh ()
+// Desc : currently not used 
+// TODO : If no use will be found to m_bRefresh DELETE this functions
+//-----------------------------------------------------------------------------
 void CMySprite::setIfToRefresh(bool bToRefresh)
 {
 	m_bRefresh = bToRefresh;
+}
+
+//-----------------------------------------------------------------------------
+// Name : getQuadsToRenderfromStream ()
+//-----------------------------------------------------------------------------
+void CMySprite::getQuadsToRenderfromStream(UINT& numVerticesToRender, UINT& numIndicesToRender, std::vector<VERTEX_STREAM>& vertexStream)
+{
+	for (UINT i = 0; i < vertexStream.size(); i++)
+	{
+		numVerticesToRender += vertexStream[i].numVertices;
+		numIndicesToRender += vertexStream[i].numIndices;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : clearVertexStream ()
+//-----------------------------------------------------------------------------
+void CMySprite::clearVertexStream(std::vector<VERTEX_STREAM>& vertexStream)
+{
+	for (UINT i = 0; i < vertexStream.size(); i++)
+	{
+		// free the memory allocated (TO NOT LEAK GOD DAMN MEMORY!!!)
+		delete [vertexStream[i].numVertices] vertexStream[i].pVertices;
+		delete [vertexStream[i].numIndices]  vertexStream[i].pIndices;
+	}
+	vertexStream.clear();
 }

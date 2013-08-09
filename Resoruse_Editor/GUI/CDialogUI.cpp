@@ -525,10 +525,11 @@ HRESULT CDialogUI::OnRender(float fElapsedTime, D3DXVECTOR3 vPos, LPD3DXEFFECT e
 	else
 		SetRect(&rcDialogBox, 0, 0, m_width, m_height);
 
+
 	pMySprite->setScale(fScaleX, fScaleY);
-	pMySprite->createQuad(pTexture, rcDialogBox, pos, m_dialogColor, false, false);
+	pMySprite->createQuad(pTexture, rcDialogBox, pos, m_dialogColor, BACKGROUND);
 	pMySprite->setScale(1.0f, 1.0f);
-	pMySprite->createQuad(NULL, m_rcCaptionBox, pos, D3DCOLOR_ARGB(200,255,0,0), false, true);
+	pMySprite->createQuad(NULL, m_rcCaptionBox, pos, D3DCOLOR_ARGB(200,255,0,0), TOP);
 
 	//sprite->Draw( texture, NULL, NULL, &vPos, d3d::WHITE);
 	//m_Controls[0]->Render(assetManger);

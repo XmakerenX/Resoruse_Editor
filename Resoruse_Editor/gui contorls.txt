@@ -1,0 +1,48 @@
+Static
+width height 
+ID
+Text
+create
+
+button
+width height
+id 
+text
+create
+
+checkbox
+width height
+id 
+create
+
+radiobutton
+width height
+id 
+group number
+create
+
+combobox
+width height
+id 
+list of Items
+create
+
+listbox
+width height
+id 
+list of items
+style??
+create
+
+slider
+width height
+id 
+min max
+value
+
+editbox
+width height
+id 
+text
+create
+

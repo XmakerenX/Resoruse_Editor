@@ -244,7 +244,7 @@ void CScrollBarUI::Render( CAssetManager& assetManger)
 		
 		POINT dialogPos = m_pParentDialog->getLocation();
 
-		renderRect(m_elementsGFX[i].rcTexture, m_rcElements[i], sprite, pTexture, d3d::WHITE, false, true, dialogPos);
+		renderRect(m_elementsGFX[i].rcTexture, m_rcElements[i], sprite, pTexture, d3d::WHITE, TOP, dialogPos);
 	}
 }
 

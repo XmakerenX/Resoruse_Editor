@@ -64,6 +64,8 @@ class CMyObject;
 #define IDC_SLIDERMAX			 113
 #define IDC_SLIDERMINTEXT		 114
 #define IDC_SLIDERMAXTEXT		 115
+#define IDC_RADIOGROUPTEXT       116
+#define IDC_RADIOBUTTONGROUP     117
 
 #define IDC_GENCONTROLID         200
 // #define IDC_LISTBOX     6

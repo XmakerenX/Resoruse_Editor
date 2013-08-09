@@ -8,6 +8,21 @@
 //-----------------------------------------------------------------------------
 // Typedefs, Structures and Enumerators
 //-----------------------------------------------------------------------------
+#define EVENT_BUTTON_CLICKED                0x0101
+#define EVENT_COMBOBOX_SELECTION_CHANGED    0x0201
+#define EVENT_RADIOBUTTON_CHANGED           0x0301
+#define EVENT_CHECKBOX_CHANGED              0x0401
+#define EVENT_SLIDER_VALUE_CHANGED          0x0501
+#define EVENT_EDITBOX_STRING                0x0601
+// EVENT_EDITBOX_CHANGE is sent when the listbox content changes
+// due to user input.
+#define EVENT_EDITBOX_CHANGE                0x0602
+#define EVENT_LISTBOX_ITEM_DBLCLK           0x0701
+// EVENT_LISTBOX_SELECTION is fired off when the selection changes in
+// a single selection list box.
+#define EVENT_LISTBOX_SELECTION             0x0702
+#define EVENT_LISTBOX_SELECTION_END         0x0703
+
 struct ELEMENT_FONT
 {
 	ELEMENT_FONT::ELEMENT_FONT()
@@ -101,8 +116,8 @@ public:
 
 	 //TODO: need to decide how time between frames will be given to the render function
 	virtual void    Render	(CAssetManager& assetManger) = 0; //pure abstract function 
-
-	void	renderRect		(RECT& rcTexture, RECT& rcWindow, CMySprite* sprite, LPDIRECT3DTEXTURE9 pTexture, D3DCOLOR color, bool bHighLight, bool bTop, POINT offset);
+	
+	void	renderRect		(RECT& rcTexture, RECT& rcWindow, CMySprite* sprite, LPDIRECT3DTEXTURE9 pTexture, D3DCOLOR color, STREAMTYPE streamType, POINT offset);
 	void	RenderText		(const char strText[], RECT rcDest, LPD3DXFONT pFont, DWORD format, LPD3DXSPRITE pSprite, D3DCOLOR textColor, POINT offset);
 
 	BOOL ContainsPoint(POINT pt);
@@ -121,10 +136,12 @@ public:
 	void    setControlGFX		(std::vector<ELEMENT_GFX>& elementsGFX);
 	void    setControlFonts     (std::vector<ELEMENT_FONT>& elementsFonts);
 	void	setEnabled			(bool bEnabled);
+	void    setVisible			(bool bVisible);
 
 	int		getID				();
 	UINT    getType				();
 	bool	getEnabled			();
+	bool    getVisible			();
 	CDialogUI* getParentDialog  ();
 	
 
@@ -143,10 +160,10 @@ protected:
 	RECT m_rcBoundingBox;           // Rectangle defining the active region of the control
 
 	bool m_bVisible;                // Shown/hidden flag
+	bool m_bEnabled;                // Enabled/disabled flag
+
 	bool m_bMouseOver;              // Mouse pointer is above control
 	bool m_bHasFocus;               // Control has input focus;
-
-	bool m_bEnabled;                // Enabled/disabled flag
 
 	//CONTROL_GFX m_controlGfx;
 	std::vector<ELEMENT_GFX>  m_elementsGFX;

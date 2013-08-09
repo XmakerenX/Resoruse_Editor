@@ -1001,7 +1001,8 @@ void CGameWin::setRenderStates()
 // Desc : add a string to the debug text buffer also allows to give a variable that
 //		  has a conversion function to string
 //-----------------------------------------------------------------------------
-template <class ValueType> void CGameWin::addDebugText(char* Text,ValueType value )
+template <class ValueType> 
+void CGameWin::addDebugText(char* Text,ValueType value )
 {
 	std::stringstream out;
 
@@ -1033,6 +1034,7 @@ bool CGameWin::BuildObjects()
 
 	// TODO: check if m_hWnd is set to valid value!
 	m_EditDialog.SetCallback(StaticOnGUIEvent);
+	m_GenDialog.SetCallback (StaticOnGUIEvent);
 
 	m_EditDialog.init(500,500,18, "Edit Dialog","", d3d::GREEN, m_hWnd, m_assetManger);
 	m_EditDialog.setLocation(550,0);
@@ -1062,7 +1064,10 @@ bool CGameWin::BuildObjects()
 	m_EditDialog.addStatic(IDC_CONTROLTEXT, "Control Text", 125, 168, 200, 34);
 	m_EditDialog.addEditbox(IDC_TEXTEDITBOX, "", 125, 202, 200, 34, m_timer);
 
-	m_EditDialog.addButton(IDC_CREATECONTROL, "Create Control",150, 240, 150, 20, 0);
+	m_EditDialog.addStatic(IDC_RADIOGROUPTEXT, "Radio Button Group", 125, 236, 200, 34);
+	m_EditDialog.addEditbox(IDC_RADIOBUTTONGROUP, "0", 125, 270, 30, 34, m_timer);
+
+	m_EditDialog.addButton(IDC_CREATECONTROL, "Create Control",150, 240, 150, 25, 0);
 	//m_EditDialog.
 
 	//m_GenDialog.SetCallback(StaticOnGUIEvent);
@@ -1426,7 +1431,7 @@ void CGameWin::OnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserCon
 					m_GenDialog.addRadioButton(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x,
 						cursorPoint.y, controlWidth, controlHeight, 0, 0);
 					m_controlInCreation = true;
-				}
+				}break;
 
 			case CControlUI::COMBOBOX:
 				{
@@ -1440,7 +1445,7 @@ void CGameWin::OnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserCon
 					m_GenDialog.addStatic(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
 						cursorPoint.y, controlWidth, controlHeight);
 					m_controlInCreation = true;
-				}
+				}break;
 
 			case CControlUI::EDITBOX:
 				{
@@ -1465,6 +1470,35 @@ void CGameWin::OnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserCon
 			}
 
 			//MessageBox(m_hWnd,"lolz button pressed","lolz lolz lolz",MB_OK);
+		}break;
+
+	case IDC_COMBOX: 
+		{
+			switch (nEvent)
+			{
+			case EVENT_COMBOBOX_SELECTION_CHANGED: 
+				{
+					CComboBoxUI* pSelectionBox =  m_EditDialog.getComboBox(IDC_COMBOX);
+					ComboBoxItem* pSelectedItem =  pSelectionBox->GetSelectedItem();
+
+					UINT selectedItem = (UINT)pSelectedItem->pData;
+
+					switch(selectedItem)
+					{
+					case CControlUI::STATIC:
+						{
+							m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(false);
+							m_EditDialog.getComboBox(IDC_RADIOBUTTONGROUP)->setVisible(false);
+						}break;
+					case CControlUI::RADIOBUTTON:
+						{
+							m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(true);
+							m_EditDialog.getComboBox(IDC_RADIOBUTTONGROUP)->setVisible(true);
+						}break;
+					}
+				}break;
+			}
+
 		}break;
 // 	case IDC_KNIGHT:
 // 		{

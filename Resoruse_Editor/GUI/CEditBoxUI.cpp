@@ -51,8 +51,8 @@ CEditBoxUI::~CEditBoxUI(void)
 //-----------------------------------------------------------------------------
 bool CEditBoxUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-// 	if( !m_bEnabled || !m_bVisible )
-// 		return false;
+	if( !m_bEnabled || !m_bVisible )
+		return false;
 
 	bool bHandled = false;
 
@@ -181,8 +181,8 @@ bool CEditBoxUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 //-----------------------------------------------------------------------------
 bool CEditBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer )
 {
-// 	if( !m_bEnabled || !m_bVisible )
-// 		return false;
+	if( !m_bEnabled || !m_bVisible )
+		return false;
 
 	switch( uMsg )
 	{
@@ -249,8 +249,8 @@ bool CEditBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPA
 //-----------------------------------------------------------------------------
 bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-// 	if( !m_bEnabled || !m_bVisible )
-// 		return false;
+	if( !m_bEnabled || !m_bVisible )
+		return false;
 
 	switch( uMsg )
 	{
@@ -442,7 +442,7 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	for(UINT i = 0; i < m_elementsGFX.size(); ++i )
 	{
 		pTexture = assetManger.getTexturePtr(m_elementsGFX[i].iTexture);
-		renderRect(m_elementsGFX[i].rcTexture, m_rcRender[i], sprite, pTexture, d3d::WHITE, false, false, dialogPos);
+		renderRect(m_elementsGFX[i].rcTexture, m_rcRender[i], sprite, pTexture, d3d::WHITE, REGLUAR, dialogPos);
 		//renderRect(m_elementsGFX[i].rcTexture, m_rcRender[i], sprite, NULL, d3d::BLACK, false);
 	}
 
@@ -519,7 +519,7 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 // 			pd3dDevice->SetRenderState( D3DRS_ZENABLE, FALSE );
 
 		RECT rc;
-		renderRect(rc, rcSelection, sprite, NULL, m_SelBkColor, false, true, dialogPos);
+		renderRect(rc, rcSelection, sprite, NULL, m_SelBkColor, TOP, dialogPos);
 
 // 		m_pDialog->DrawRect( &rcSelection, m_SelBkColor );
 // 		if( pd3dDevice )
@@ -589,7 +589,7 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 		//SetRect(&rcCaret, 133, 84, 135, 98);
 		//OffsetRect(&rcCaret, 0, 40);
 		//SetRect(&rcCaret, 0, 0, 50, 50);
-		renderRect(rc, rcCaret, sprite, NULL, m_CaretColor, false, true, dialogPos);
+		renderRect(rc, rcCaret, sprite, NULL, m_CaretColor, TOP, dialogPos);
 	}
 }
 
@@ -870,9 +870,8 @@ void CEditBoxUI::PasteFromClipboard()
 //-----------------------------------------------------------------------------
 bool CEditBoxUI::CanHaveFocus()
 {
-	return true;
-	//TODO: enable those flags
-	//return ( m_bVisible && m_bEnabled );
+	//return true;
+	return ( m_bVisible && m_bEnabled );
 }
 
 //-----------------------------------------------------------------------------

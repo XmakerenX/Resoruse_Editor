@@ -49,8 +49,8 @@ bool CSliderUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 //-----------------------------------------------------------------------------
 bool CSliderUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer )
 {
-// 	if( !m_bEnabled || !m_bVisible )
-// 		return false;
+	if( !m_bEnabled || !m_bVisible )
+		return false;
 
 	switch( uMsg )
 	{
@@ -177,13 +177,13 @@ void CSliderUI::Render( CAssetManager& assetManger )
 
 	if (m_bMouseOver)
 	{
-		renderRect(m_elementsGFX[TRACK].rcTexture, m_rcBoundingBox, sprite, pTexTrack, d3d::WHITE, true, false, dialogPos);
-		renderRect(m_elementsGFX[BUTTON].rcTexture, m_rcButton, sprite, pTexButton, d3d::WHITE, true, false,dialogPos);
+		renderRect(m_elementsGFX[TRACK].rcTexture, m_rcBoundingBox, sprite, pTexTrack, d3d::WHITE,HiGHLIGHT, dialogPos);
+		renderRect(m_elementsGFX[BUTTON].rcTexture, m_rcButton, sprite, pTexButton, d3d::WHITE, HiGHLIGHT,dialogPos);
 	}
 	else
 	{
-		renderRect(m_elementsGFX[TRACK].rcTexture, m_rcBoundingBox, sprite, pTexTrack, D3DCOLOR_ARGB( 255, 200, 200, 200 ), false, false, dialogPos);
-		renderRect(m_elementsGFX[BUTTON].rcTexture, m_rcButton, sprite, pTexButton, D3DCOLOR_ARGB( 255, 200, 200, 200 ), false, false, dialogPos);
+		renderRect(m_elementsGFX[TRACK].rcTexture, m_rcBoundingBox, sprite, pTexTrack, D3DCOLOR_ARGB( 255, 200, 200, 200 ), REGLUAR, dialogPos);
+		renderRect(m_elementsGFX[BUTTON].rcTexture, m_rcButton, sprite, pTexButton, D3DCOLOR_ARGB( 255, 200, 200, 200 ), REGLUAR, dialogPos);
 	}
 }
 
@@ -255,7 +255,6 @@ int CSliderUI::ValueFromPos( int x )
 //-----------------------------------------------------------------------------
 bool CSliderUI::CanHaveFocus()
 {
-	return  true;
-	//TODO: enable those flags
-	//return ( m_bVisible && m_bEnabled );
+	//return  true;
+	return ( m_bVisible && m_bEnabled );
 }

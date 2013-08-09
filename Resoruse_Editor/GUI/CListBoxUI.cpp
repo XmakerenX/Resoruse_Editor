@@ -54,8 +54,8 @@ bool CListBoxUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 //-----------------------------------------------------------------------------
 bool CListBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer  )
 {
-//	if( !m_bEnabled || !m_bVisible )
-//		return false;
+	if( !m_bEnabled || !m_bVisible )
+		return false;
 
 	// First acquire focus
 	if( WM_LBUTTONDOWN == uMsg )
@@ -291,7 +291,7 @@ void CListBoxUI::Render( CAssetManager& assetManger )
 	POINT dialogPos = m_pParentDialog->getLocation();
 
 	pTexture = assetManger.getTexturePtr(m_elementsGFX[0].iTexture);
-	renderRect(m_elementsGFX[0].rcTexture, m_rcBoundingBox, sprite, pTexture, D3DCOLOR_ARGB( 255, 255, 255, 255 ), false, false, dialogPos);
+	renderRect(m_elementsGFX[0].rcTexture, m_rcBoundingBox, sprite, pTexture, D3DCOLOR_ARGB( 255, 255, 255, 255 ), REGLUAR, dialogPos);
 	//m_pDialog->DrawSprite( pElement, &m_rcBoundingBox, DXUT_FAR_BUTTON_DEPTH );
 
 	// Render the text
@@ -343,7 +343,7 @@ void CListBoxUI::Render( CAssetManager& assetManger )
 			if( bSelectedStyle )
 			{
 				rcSel.top = rc.top; rcSel.bottom = rc.bottom;
-				renderRect(m_elementsGFX[1].rcTexture, rcSel, sprite, pTexture, D3DCOLOR_ARGB( 255, 255, 255, 255 ), false, false, dialogPos);
+				renderRect(m_elementsGFX[1].rcTexture, rcSel, sprite, pTexture, D3DCOLOR_ARGB( 255, 255, 255, 255 ), REGLUAR, dialogPos);
 				//m_pDialog->DrawSprite( pSelElement, &rcSel, DXUT_NEAR_BUTTON_DEPTH );
 				//m_pDialog->DrawText( pItem->strText, pSelElement, &rc );
 				RenderText(pItem->strText, rc, font.pFont,  DT_LEFT | DT_VCENTER, assetManger.getSprite(), d3d::WHITE, dialogPos);
@@ -613,7 +613,6 @@ void CListBoxUI::SelectItem( int nNewIndex )
 //-----------------------------------------------------------------------------
 bool CListBoxUI::CanHaveFocus()
 {
-	return true;
-	//TODO: enable those flags
-	//return ( m_bVisible && m_bEnabled );
+	//return true;
+	return ( m_bVisible && m_bEnabled );
 }
