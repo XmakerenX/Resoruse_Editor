@@ -52,7 +52,7 @@ bool CListBoxUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 //-----------------------------------------------------------------------------
 // Name : HandleMouse
 //-----------------------------------------------------------------------------
-bool CListBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer  )
+bool CListBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer  )
 {
 	if( !m_bEnabled || !m_bVisible )
 		return false;
@@ -63,217 +63,278 @@ bool CListBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPA
 			m_pParentDialog->RequestFocus( this );
 
 	// Let the scroll bar handle it first.
-	if( m_ScrollBar.HandleMouse( hWnd, uMsg, pt, wParam, lParam, timer ) )
+	if( m_ScrollBar.HandleMouse( hWnd, uMsg, mousePoint, inputstate, timer ) )
 		return true;
 
 	switch( uMsg )
 	{
+
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONDBLCLK:
-		// Check for clicks in the text area
-		if( m_Items.size() > 0 && PtInRect( &m_rcSelection, pt ) )
 		{
-			// Compute the index of the clicked item
-
-			int nClicked;
-			if( m_nTextHeight )
-				nClicked = m_ScrollBar.GetTrackPos() + ( pt.y - m_rcText.top ) / m_nTextHeight;
-			else
-				nClicked = -1;
-
-			// Only proceed if the click falls on top of an item.
-
-			if( nClicked >= m_ScrollBar.GetTrackPos() &&
-				nClicked < ( int )m_Items.size() &&
-				nClicked < m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() )
-			{
-				SetCapture( hWnd );
-				m_bDrag = true;
-
-				// If this is a double click, fire off an event and exit
-				// since the first click would have taken care of the selection
-				// updating.
-				if( uMsg == WM_LBUTTONDBLCLK )
-				{
-					//m_pDialog->SendEvent( EVENT_LISTBOX_ITEM_DBLCLK, true, this );
-					return true;
-				}
-
-				m_nSelected = nClicked;
-				if( !( wParam & MK_SHIFT ) )
-					m_nSelStart = m_nSelected;
-
-				// If this is a multi-selection listbox, update per-item
-				// selection data.
-
-				if( m_dwStyle & MULTISELECTION )
-				{
-					// Determine behavior based on the state of Shift and Ctrl
-
-					ListBoxItemUI* pSelItem = m_Items[m_nSelected];
-					if( ( wParam & ( MK_SHIFT | MK_CONTROL ) ) == MK_CONTROL )
-					{
-						// Control click. Reverse the selection of this item.
-
-						pSelItem->bSelected = !pSelItem->bSelected;
-					}
-					else if( ( wParam & ( MK_SHIFT | MK_CONTROL ) ) == MK_SHIFT )
-					{
-						// Shift click. Set the selection for all items
-						// from last selected item to the current item.
-						// Clear everything else.
-
-						int nBegin = __min( m_nSelStart, m_nSelected );
-						int nEnd = __max( m_nSelStart, m_nSelected );
-
-						for( int i = 0; i < nBegin; ++i )
-						{
-							ListBoxItemUI* pItem = m_Items[i];
-							pItem->bSelected = false;
-						}
-
-						for( int i = nEnd + 1; i < ( int )m_Items.size(); ++i )
-						{
-							ListBoxItemUI* pItem = m_Items[i];
-							pItem->bSelected = false;
-						}
-
-						for( int i = nBegin; i <= nEnd; ++i )
-						{
-							ListBoxItemUI* pItem = m_Items[i];
-							pItem->bSelected = true;
-						}
-					}
-					else if( ( wParam & ( MK_SHIFT | MK_CONTROL ) ) == ( MK_SHIFT | MK_CONTROL ) )
-					{
-						// Control-Shift-click.
-
-						// The behavior is:
-						//   Set all items from m_nSelStart to m_nSelected to
-						//     the same state as m_nSelStart, not including m_nSelected.
-						//   Set m_nSelected to selected.
-
-						int nBegin = __min( m_nSelStart, m_nSelected );
-						int nEnd = __max( m_nSelStart, m_nSelected );
-
-						// The two ends do not need to be set here.
-
-						bool bLastSelected = m_Items[m_nSelStart]->bSelected;
-						for( int i = nBegin + 1; i < nEnd; ++i )
-						{
-							ListBoxItemUI* pItem = m_Items[ i ];
-							pItem->bSelected = bLastSelected;
-						}
-
-						pSelItem->bSelected = true;
-
-						// Restore m_nSelected to the previous value
-						// This matches the Windows behavior
-
-						m_nSelected = m_nSelStart;
-					}
-					else
-					{
-						// Simple click.  Clear all items and select the clicked
-						// item.
-
-
-						for( int i = 0; i < ( int )m_Items.size(); ++i )
-						{
-							ListBoxItemUI* pItem = m_Items[i];
-							pItem->bSelected = false;
-						}
-
-						pSelItem->bSelected = true;
-					}
-				}  // End of multi-selection case
-
-				//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
-			}
-
-			return true;
-		}
-		break;
+			if ( Pressed(hWnd, mousePoint, inputstate, timer))
+				return true;
+		}break;
 
 	case WM_LBUTTONUP:
 		{
-			ReleaseCapture();
-			m_bDrag = false;
-
-			if( m_nSelected != -1 )
-			{
-				// Set all items between m_nSelStart and m_nSelected to
-				// the same state as m_nSelStart
-				int nEnd = __max( m_nSelStart, m_nSelected );
-
-				for( int n = __min( m_nSelStart, m_nSelected ) + 1; n < nEnd; ++n )
-					m_Items[n]->bSelected = m_Items[m_nSelStart]->bSelected;
-				m_Items[m_nSelected]->bSelected = m_Items[m_nSelStart]->bSelected;
-
-				// If m_nSelStart and m_nSelected are not the same,
-				// the user has dragged the mouse to make a selection.
-				// Notify the application of this.
-				if( m_nSelStart != m_nSelected );
-					//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
-
-				//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION_END, true, this );
-			}
-			return false;
-		}
+			if ( Released(hWnd, mousePoint))
+				return true;
+		}break;
 
 	case WM_MOUSEMOVE:
-		if( m_bDrag )
 		{
-			// Compute the index of the item below cursor
-
-			int nItem;
-			if( m_nTextHeight )
-				nItem = m_ScrollBar.GetTrackPos() + ( pt.y - m_rcText.top ) / m_nTextHeight;
-			else
-				nItem = -1;
-
-			// Only proceed if the cursor is on top of an item.
-
-			if( nItem >= ( int )m_ScrollBar.GetTrackPos() &&
-				nItem < ( int )m_Items.size() &&
-				nItem < m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() )
-			{
-				m_nSelected = nItem;
-				//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
-			}
-			else if( nItem < ( int )m_ScrollBar.GetTrackPos() )
-			{
-				// User drags the mouse above window top
-				m_ScrollBar.Scroll( -1 );
-				m_nSelected = m_ScrollBar.GetTrackPos();
-				//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
-			}
-			else if( nItem >= m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() )
-			{
-				// User drags the mouse below window bottom
-				m_ScrollBar.Scroll( 1 );
-				m_nSelected = __min( ( int )m_Items.size(), m_ScrollBar.GetTrackPos() +
-					m_ScrollBar.GetPageSize() ) - 1;
-				//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
-			}
-		}
-		break;
+			if (Dragged(mousePoint))
+				return true;
+		}break;
 
 	case WM_MOUSEWHEEL:
 		{
-			if (m_bMouseOver)
-			{	
-				UINT uLines;
-				SystemParametersInfo( SPI_GETWHEELSCROLLLINES, 0, &uLines, 0 );
-				int nScrollAmount = int( ( short )HIWORD( wParam ) ) / WHEEL_DELTA * uLines;
-				m_ScrollBar.Scroll( -nScrollAmount );
+			//TODO: add here way to calc or pas the value for scrolled!
+			if ( Scrolled( inputstate.nScrollAmount ))
+				return true;
+		}break;
+	}
+
+	return false;
+}
+//-----------------------------------------------------------------------------
+// Name : Pressed
+//-----------------------------------------------------------------------------
+bool CListBoxUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer)
+{
+	// Check for clicks in the text area
+	if( m_Items.size() > 0 && PtInRect( &m_rcSelection, pt ) )
+	{
+		// Compute the index of the clicked item
+
+		int nClicked;
+		if( m_nTextHeight )
+			nClicked = m_ScrollBar.GetTrackPos() + ( pt.y - m_rcText.top ) / m_nTextHeight;
+		else
+			nClicked = -1;
+
+		// Only proceed if the click falls on top of an item.
+
+		if( nClicked >= m_ScrollBar.GetTrackPos() &&
+			nClicked < ( int )m_Items.size() &&
+			nClicked < m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() )
+		{
+			SetCapture( hWnd );
+			m_bDrag = true;
+
+			// If this is a double click, fire off an event and exit
+			// since the first click would have taken care of the selection
+			// updating.
+			//if( uMsg == WM_LBUTTONDBLCLK )
+			if ( inputState.bDoubleClick )
+			{
+				//m_pDialog->SendEvent( EVENT_LISTBOX_ITEM_DBLCLK, true, this );
 				return true;
 			}
+
+			m_nSelected = nClicked;
+			if( !( inputState.bShift ) )
+				m_nSelStart = m_nSelected;
+
+			// If this is a multi-selection listbox, update per-item
+			// selection data.
+
+			if( m_dwStyle & MULTISELECTION )
+			{
+				// Determine behavior based on the state of Shift and Ctrl
+
+				ListBoxItemUI* pSelItem = m_Items[m_nSelected];
+				if( inputState.bCtrl && !inputState.bShift )
+				{
+					// Control click. Reverse the selection of this item.
+
+					pSelItem->bSelected = !pSelItem->bSelected;
+				}
+				else if( !inputState.bCtrl && inputState.bShift)
+				{
+					// Shift click. Set the selection for all items
+					// from last selected item to the current item.
+					// Clear everything else.
+
+					int nBegin = __min( m_nSelStart, m_nSelected );
+					int nEnd = __max( m_nSelStart, m_nSelected );
+
+					for( int i = 0; i < nBegin; ++i )
+					{
+						ListBoxItemUI* pItem = m_Items[i];
+						pItem->bSelected = false;
+					}
+
+					for( int i = nEnd + 1; i < ( int )m_Items.size(); ++i )
+					{
+						ListBoxItemUI* pItem = m_Items[i];
+						pItem->bSelected = false;
+					}
+
+					for( int i = nBegin; i <= nEnd; ++i )
+					{
+						ListBoxItemUI* pItem = m_Items[i];
+						pItem->bSelected = true;
+					}
+				}
+				else if( inputState.bCtrl && inputState.bShift )
+				{
+					// Control-Shift-click.
+
+					// The behavior is:
+					//   Set all items from m_nSelStart to m_nSelected to
+					//     the same state as m_nSelStart, not including m_nSelected.
+					//   Set m_nSelected to selected.
+
+					int nBegin = __min( m_nSelStart, m_nSelected );
+					int nEnd = __max( m_nSelStart, m_nSelected );
+
+					// The two ends do not need to be set here.
+
+					bool bLastSelected = m_Items[m_nSelStart]->bSelected;
+					for( int i = nBegin + 1; i < nEnd; ++i )
+					{
+						ListBoxItemUI* pItem = m_Items[ i ];
+						pItem->bSelected = bLastSelected;
+					}
+
+					pSelItem->bSelected = true;
+
+					// Restore m_nSelected to the previous value
+					// This matches the Windows behavior
+
+					m_nSelected = m_nSelStart;
+				}
+				else
+				{
+					// Simple click.  Clear all items and select the clicked
+					// item.
+
+
+					for( int i = 0; i < ( int )m_Items.size(); ++i )
+					{
+						ListBoxItemUI* pItem = m_Items[i];
+						pItem->bSelected = false;
+					}
+
+					pSelItem->bSelected = true;
+				}
+			}  // End of multi-selection case
+
+			//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
+		}
+
+		return true;
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Released
+//-----------------------------------------------------------------------------
+bool CListBoxUI::Released( HWND hWnd, POINT pt)
+{
+	ReleaseCapture();
+	m_bDrag = false;
+
+	if( m_nSelected != -1 )
+	{
+		// Set all items between m_nSelStart and m_nSelected to
+		// the same state as m_nSelStart
+		int nEnd = __max( m_nSelStart, m_nSelected );
+
+		for( int n = __min( m_nSelStart, m_nSelected ) + 1; n < nEnd; ++n )
+			m_Items[n]->bSelected = m_Items[m_nSelStart]->bSelected;
+		m_Items[m_nSelected]->bSelected = m_Items[m_nSelStart]->bSelected;
+
+		// If m_nSelStart and m_nSelected are not the same,
+		// the user has dragged the mouse to make a selection.
+		// Notify the application of this.
+		if( m_nSelStart != m_nSelected );
+		//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
+
+		//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION_END, true, this );
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Dragged
+//-----------------------------------------------------------------------------
+bool CListBoxUI::Dragged(POINT pt)
+{
+	if( m_bDrag )
+	{
+		// Compute the index of the item below cursor
+
+		int nItem;
+		if( m_nTextHeight )
+			nItem = m_ScrollBar.GetTrackPos() + ( pt.y - m_rcText.top ) / m_nTextHeight;
+		else
+			nItem = -1;
+
+		// Only proceed if the cursor is on top of an item.
+
+		if( nItem >= ( int )m_ScrollBar.GetTrackPos() &&
+			nItem < ( int )m_Items.size() &&
+			nItem < m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() )
+		{
+			m_nSelected = nItem;
+			//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
+		}
+		else if( nItem < ( int )m_ScrollBar.GetTrackPos() )
+		{
+			// User drags the mouse above window top
+			m_ScrollBar.Scroll( -1 );
+			m_nSelected = m_ScrollBar.GetTrackPos();
+			//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
+		}
+		else if( nItem >= m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() )
+		{
+			// User drags the mouse below window bottom
+			m_ScrollBar.Scroll( 1 );
+			m_nSelected = __min( ( int )m_Items.size(), m_ScrollBar.GetTrackPos() +
+				m_ScrollBar.GetPageSize() ) - 1;
+			//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
 		}
 	}
 
 	return false;
 }
+
+//-----------------------------------------------------------------------------
+// Name : Scrolled
+//-----------------------------------------------------------------------------
+bool CListBoxUI::Scrolled( int nScrollAmount)
+{
+	if (m_bMouseOver)
+	{	
+		UINT uLines;
+		SystemParametersInfo( SPI_GETWHEELSCROLLLINES, 0, &uLines, 0 );
+		//int nScrollAmount = int( ( short )HIWORD( wParam ) ) / WHEEL_DELTA * uLines;
+		m_ScrollBar.Scroll( -nScrollAmount );
+		return true;
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : ConnectToItemDBLCK
+//-----------------------------------------------------------------------------
+void CListBoxUI::ConnectToItemDBLCK(const signal_listbox::slot_type& subscriber)
+{
+	m_itemDBLCLKSig.connect(subscriber);
+}
+
+//-----------------------------------------------------------------------------
+// Name : ConnectToListboxSel
+//-----------------------------------------------------------------------------
+void CListBoxUI::ConnectToListboxSel(const signal_listbox::slot_type& subscriber)
+{
+	m_listboxSelSig.connect(subscriber);
+}
+
 
 //-----------------------------------------------------------------------------
 // Name : Render
@@ -282,8 +343,8 @@ void CListBoxUI::Render( CAssetManager& assetManger )
 {
 	LPDIRECT3DTEXTURE9 pTexture;
 
-	//if( m_bVisible == false )
-	//	return;
+	if( m_bVisible == false )
+		return;
 
 	CMySprite* sprite = assetManger.getMySprite();
 	FONT_ITEM font = assetManger.getFontItem(m_elementsFonts[0].fontIndex);

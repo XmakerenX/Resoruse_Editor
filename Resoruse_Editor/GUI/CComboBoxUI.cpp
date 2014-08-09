@@ -54,94 +54,25 @@ void CComboBoxUI::OnHotkey()
 // Name : HandleMouse() 
 // Desc : Handles mouse input for the Combo box
 //-----------------------------------------------------------------------------
-bool CComboBoxUI::HandleMouse(HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer )
+bool CComboBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer )
 {
 	// Let the scroll bar handle it first.
-	if( m_ScrollBar.HandleMouse( hWnd,uMsg, pt, wParam, lParam, timer ) )
+	if( m_ScrollBar.HandleMouse( hWnd,uMsg, mousePoint, inputstate, timer) )
 		return true;
 
 	switch(uMsg)
 	{
 	case WM_MOUSEMOVE:
 		{
-			if( m_bOpened && PtInRect( &m_rcDropdown, pt ) )
-			{
-				// Determine which item has been selected
-				for( UINT i = 0; i < m_Items.size(); i++ )
-				{
-					ComboBoxItem* pItem = m_Items[i];
-					if( pItem->bVisible && PtInRect( &pItem->rcActive, pt ) )
-					{
-						m_iFocused = i;
-					}
-				}
+			if ( Highlight(mousePoint) )
 				return true;
-			}
 		}break;
 
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONDBLCLK:
 		{
-			if( ContainsPoint( pt ) )
-			{
-				// Pressed while inside the control
-				m_bPressed = true;
-				SetCapture( hWnd);
-
-				if( !m_bHasFocus )
-					m_pParentDialog->RequestFocus( this );
-
-				// Toggle dropdown
-				if( m_bHasFocus )
-				{
-					m_bOpened = !m_bOpened;
-
-					if( !m_bOpened )
-					{
-// 						if( !m_pParentDialog->m_bKeyboardInput )
-// 							m_pDialog->ClearFocus();
-					}
-				}
-
+			if ( Pressed(hWnd, mousePoint, inputstate, timer) )
 				return true;
-			}
-
-			// Perhaps this click is within the dropdown
-			if( m_bOpened && PtInRect( &m_rcDropdown, pt ) )
-			{
-				// Determine which item has been selected
-				for( UINT i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++ )
-				{
-					ComboBoxItem* pItem = m_Items[i];
-					if( pItem->bVisible && PtInRect( &pItem->rcActive, pt ) )
-					{
-						m_iFocused = m_iSelected = i;
-						m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, m_ID, hWnd );
-						m_bOpened = false;
-						m_bMouseOver = false;
-
-// 						if( !m_pDialog->m_bKeyboardInput )
-// 							m_pDialog->ClearFocus();
-
-						break;
-					}
-				}
-
-				return true;
-			}
-
-			// Mouse click not on main control or in dropdown, fire an event if needed
-			if( m_bOpened )
-			{
-				m_iFocused = m_iSelected;
-
-				m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, m_ID, hWnd);
-				m_bOpened = false;
-			}
-
-			// Make sure the control is no longer in a pressed state
-			m_bPressed = false;
-
 			// Release focus if appropriate
 // 			if( !m_pParentDialog->m_bKeyboardInput )
 // 			{
@@ -152,54 +83,15 @@ bool CComboBoxUI::HandleMouse(HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPA
 
 	case WM_LBUTTONUP:
 		{
-			if( m_bPressed && ContainsPoint( pt ) )
-			{
-				// Button click
-				m_bPressed = false;
-				ReleaseCapture();
+			if ( Released(hWnd, mousePoint) )
 				return true;
-			}
-
 		}break;
 
 	case WM_MOUSEWHEEL:
 		{
-			int zDelta = ( short )HIWORD( wParam ) / WHEEL_DELTA;
-			if( m_bOpened )
-			{
-				UINT uLines;
-				SystemParametersInfo( SPI_GETWHEELSCROLLLINES, 0, &uLines, 0 );
-				m_ScrollBar.Scroll( -zDelta * uLines );
-			}
-			else
-			{
-				if (m_bMouseOver)
-				{
-					if( zDelta > 0 )
-					{
-						if( m_iFocused > 0 )
-						{
-							m_iFocused--;
-							m_iSelected = m_iFocused;
-
-							//if( !m_bOpened )
-							//m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, this );
-						}
-					}
-					else
-					{
-						if( m_iFocused + 1 < ( int )GetNumItems() )
-						{
-							m_iFocused++;
-							m_iSelected = m_iFocused;
-
-							//if( !m_bOpened )
-							//m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, this );
-						}
-					}
-				}
-			}
-			return true;
+			//TODO: pass zdelta or pass the number needed to calc it!
+			if ( Scrolled( inputstate.nScrollAmount) )
+				return true;
 		}
 	}
 
@@ -207,118 +99,287 @@ bool CComboBoxUI::HandleMouse(HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPA
 }
 
 //-----------------------------------------------------------------------------
+// Name : Pressed() 
+//-----------------------------------------------------------------------------
+bool CComboBoxUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer)
+{
+	if( ContainsPoint( pt ) )
+	{
+		// Pressed while inside the control
+		m_bPressed = true;
+		SetCapture( hWnd);
+
+		if( !m_bHasFocus )
+			m_pParentDialog->RequestFocus( this );
+
+		// Toggle dropdown
+		if( m_bHasFocus )
+		{
+			m_bOpened = !m_bOpened;
+
+			if( !m_bOpened )
+			{
+				//TODO: check what this suppose to do ?
+				// 						if( !m_pParentDialog->m_bKeyboardInput )
+				// 							m_pDialog->ClearFocus();
+			}
+		}
+
+		return true;
+	}
+
+	// Perhaps this click is within the dropdown
+	if( m_bOpened && PtInRect( &m_rcDropdown, pt ) )
+	{
+		// Determine which item has been selected
+		for( UINT i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++ )
+		{
+			ComboBoxItem* pItem = m_Items[i];
+			if( pItem->bVisible && PtInRect( &pItem->rcActive, pt ) )
+			{
+				m_iFocused = m_iSelected = i;
+				m_selectionChangedSig( this);
+				//m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, m_ID, hWnd );
+				m_bOpened = false;
+				m_bMouseOver = false;
+
+				// 						if( !m_pDialog->m_bKeyboardInput )
+				// 							m_pDialog->ClearFocus();
+
+				break;
+			}
+		}
+
+		return true;
+	}
+
+	// Mouse click not on main control or in dropdown, fire an event if needed
+	if( m_bOpened )
+	{
+		m_iFocused = m_iSelected;
+		m_selectionChangedSig( this );
+		//m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, m_ID, hWnd);
+		m_bOpened = false;
+	}
+
+	// Make sure the control is no longer in a pressed state
+	m_bPressed = false;
+
+	// Release focus if appropriate
+	// 			if( !m_pParentDialog->m_bKeyboardInput )
+	// 			{
+	// 				m_pParentDialog->ClearFocus();
+	// 			}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Released() 
+//-----------------------------------------------------------------------------
+bool CComboBoxUI::Released( HWND hWnd, POINT pt)
+{
+	if( m_bPressed && ContainsPoint( pt ) )
+	{
+		// Button click
+		m_bPressed = false;
+		ReleaseCapture();
+		return true;
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Scrolled() 
+//-----------------------------------------------------------------------------
+bool CComboBoxUI::Scrolled( int nScrollAmount)
+{
+	//int zDelta = ( short )HIWORD( wParam ) / WHEEL_DELTA;
+	//TODO: make sure nScrollAmount 
+	UINT uLines;
+	if( m_bOpened )
+	{
+		m_ScrollBar.Scroll( -nScrollAmount /** uLines*/ );
+	}
+	else
+	{
+		if (m_bMouseOver)
+		{
+			SystemParametersInfo( SPI_GETWHEELSCROLLLINES, 0, &uLines, 0 );
+			if( (nScrollAmount / uLines) > 0 )
+			{
+				if( m_iFocused > 0 )
+				{
+					m_iFocused--;
+					m_iSelected = m_iFocused;
+
+					if( !m_bOpened )
+						m_selectionChangedSig( this );
+						//m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, this );
+				}
+			}
+			else
+			{
+				if( m_iFocused + 1 < ( int )GetNumItems() )
+				{
+					m_iFocused++;
+					m_iSelected = m_iFocused;
+
+					if( !m_bOpened )
+						m_selectionChangedSig( this );
+						//m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, this );
+				}
+			}
+		}
+	}
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Highlight() 
+//-----------------------------------------------------------------------------
+bool CComboBoxUI::Highlight(POINT mousePoint)
+{
+	if( m_bOpened && PtInRect( &m_rcDropdown, mousePoint ) )
+	{
+		// Determine which item has been selected
+		for( UINT i = 0; i < m_Items.size(); i++ )
+		{
+			ComboBoxItem* pItem = m_Items[i];
+			if( pItem->bVisible && PtInRect( &pItem->rcActive, mousePoint ) )
+			{
+				m_iFocused = i;
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : ConnectToSelectChg() 
+//-----------------------------------------------------------------------------
+void CComboBoxUI::ConnectToSelectChg( const signal_comboBox::slot_type& subscriber)
+{
+	m_selectionChangedSig.connect(subscriber);
+}
+
+
+//-----------------------------------------------------------------------------
 // Name : Render() 
 //-----------------------------------------------------------------------------
 void    CComboBoxUI::Render( CAssetManager& assetManger)
 {
-	LPDIRECT3DTEXTURE9 pTexture;
-
-	// check that there is actual fonts 
-	//int test = m_elementsFonts.size();
-	if (m_elementsFonts.size() == 0)
-		return;	// if the function returns here initDefalutElements wasn't called or Elements were not defined
-
-	// acquire the sprite and font to use for rendering
-	FONT_ITEM font = assetManger.getFontItem(m_elementsFonts[0].fontIndex);
-	CMySprite* sprite = assetManger.getMySprite();
-
-	POINT dialogPos = m_pParentDialog->getLocation();
-	LONG  dialogCaptionHeihgt =  m_pParentDialog->getCaptionHeight();
-	dialogPos.y += dialogCaptionHeihgt;
-
-	//if Combobox is open render the scrollbar
-	if (m_bOpened)
+	if (m_bVisible)
 	{
-		m_ScrollBar.Render(assetManger);
+		LPDIRECT3DTEXTURE9 pTexture;
 
-		// acquire a pointer for the dropdown texture
-		pTexture = assetManger.getTexturePtr(m_elementsGFX[DROPDOWN].iTexture);
-		renderRect(m_elementsGFX[DROPDOWN].rcTexture, m_rcDropdown, sprite, pTexture, d3d::WHITE, TOP, dialogPos);
+		// check that there is actual fonts 
+		//int test = m_elementsFonts.size();
+		if (m_elementsFonts.size() == 0)
+			return;	// if the function returns here initDefalutElements wasn't called or Elements were not defined
 
-	}
+		// acquire the sprite and font to use for rendering
+		FONT_ITEM font = assetManger.getFontItem(m_elementsFonts[0].fontIndex);
+		CMySprite* sprite = assetManger.getMySprite();
 
-	int curY = m_rcDropdownText.top;
-	int nRemainingHeight =  m_rcDropdownText.bottom - m_rcDropdownText.top;
+		POINT dialogPos = m_pParentDialog->getLocation();
+		LONG  dialogCaptionHeihgt =  m_pParentDialog->getCaptionHeight();
+		dialogPos.y += dialogCaptionHeihgt;
 
-	// render all item within the dropdown box;
-	for (UINT i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
-	{
-		ComboBoxItem* pItem = m_Items[i];
-
-		// Make sure there's room left in the dropdown
-		nRemainingHeight -= font.height;
-		if( nRemainingHeight < 0 )
+		//if Combobox is open render the scrollbar
+		if (m_bOpened)
 		{
-			pItem->bVisible = false;
-			continue;
+			m_ScrollBar.Render(assetManger);
+
+			// acquire a pointer for the dropdown texture
+			pTexture = assetManger.getTexturePtr(m_elementsGFX[DROPDOWN].iTexture);
+			renderRect(m_elementsGFX[DROPDOWN].rcTexture, m_rcDropdown, sprite, pTexture, d3d::WHITE, TOP, dialogPos);
+
 		}
 
-		SetRect( &pItem->rcActive, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY + font.height );
-		curY += font.height;
+		int curY = m_rcDropdownText.top;
+		int nRemainingHeight =  m_rcDropdownText.bottom - m_rcDropdownText.top;
 
-		pItem->bVisible = true;
-
-		if( m_bOpened )
+		// render all item within the dropdown box;
+		for (UINT i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
 		{
-			if( ( int )i == m_iFocused )
+			ComboBoxItem* pItem = m_Items[i];
+
+			// Make sure there's room left in the dropdown
+			nRemainingHeight -= font.height;
+			if( nRemainingHeight < 0 )
 			{
-				RECT rc;
-
-				//acquire a pointer to the texture we need to render the button
-				LPDIRECT3DTEXTURE9 pTexture = assetManger.getTexturePtr((m_elementsGFX[SELECTION].iTexture) );
-
-				SetRect( &rc, m_rcDropdown.left, pItem->rcActive.top - 2, m_rcDropdown.right, pItem->rcActive.bottom + 2 );
-				renderRect(m_elementsGFX[SELECTION].rcTexture,rc , sprite, pTexture, d3d::WHITE, TOP, dialogPos);
-				RenderText(pItem->strText, rc, font.pFont, DT_LEFT | DT_VCENTER,assetManger.getTopSprite(), d3d::WHITE, dialogPos);
-				//m_pDialog->DrawSprite( pSelectionElement, &rc, DXUT_NEAR_BUTTON_DEPTH );
-				//m_pDialog->DrawText( pItem->strText, pSelectionElement, &pItem->rcActive );
+				pItem->bVisible = false;
+				continue;
 			}
-			else
+
+			SetRect( &pItem->rcActive, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY + font.height );
+			curY += font.height;
+
+			pItem->bVisible = true;
+
+			if( m_bOpened )
 			{
-				RenderText(pItem->strText, pItem->rcActive, font.pFont,  DT_LEFT | DT_VCENTER, assetManger.getTopSprite(), d3d::BLACK, dialogPos);
+				if( ( int )i == m_iFocused )
+				{
+					RECT rc;
+
+					//acquire a pointer to the texture we need to render the button
+					LPDIRECT3DTEXTURE9 pTexture = assetManger.getTexturePtr((m_elementsGFX[SELECTION].iTexture) );
+
+					SetRect( &rc, m_rcDropdown.left, pItem->rcActive.top - 2, m_rcDropdown.right, pItem->rcActive.bottom + 2 );
+					renderRect(m_elementsGFX[SELECTION].rcTexture,rc , sprite, pTexture, d3d::WHITE, TOP, dialogPos);
+					RenderText(pItem->strText, rc, font.pFont, DT_CENTER | DT_VCENTER,assetManger.getTopSprite(), d3d::WHITE, dialogPos);
+					//m_pDialog->DrawSprite( pSelectionElement, &rc, DXUT_NEAR_BUTTON_DEPTH );
+					//m_pDialog->DrawText( pItem->strText, pSelectionElement, &pItem->rcActive );
+				}
+				else
+				{
+					RenderText(pItem->strText, pItem->rcActive, font.pFont,  DT_CENTER | DT_VCENTER, assetManger.getTopSprite(), d3d::BLACK, dialogPos);
+				}
 			}
 		}
-	}
-	// end of render dropDownButton
+		// end of render dropDownButton
 
-	pTexture = assetManger.getTexturePtr(m_elementsGFX[BUTTON].iTexture);
-	LPDIRECT3DTEXTURE9 pTexture2 = assetManger.getTexturePtr(m_elementsGFX[MAIN].iTexture);
+		pTexture = assetManger.getTexturePtr(m_elementsGFX[BUTTON].iTexture);
+		LPDIRECT3DTEXTURE9 pTexture2 = assetManger.getTexturePtr(m_elementsGFX[MAIN].iTexture);
 
-	//if the button is not pressed or doesn't have the cursor on it render it normally
-	if (!m_bMouseOver && !m_bOpened)
-	{
-		renderRect(m_elementsGFX[BUTTON].rcTexture, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 200, 200, 200 ), REGLUAR, dialogPos );
-		renderRect(m_elementsGFX[MAIN].rcTexture, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 200, 200, 200 ), REGLUAR, dialogPos );
-	}
-	else
-	{
-		// if the button is pressed and the cursor is on it darken it to showed it is pressed
-		if (m_bMouseOver && m_bPressed)
+		//if the button is not pressed or doesn't have the cursor on it render it normally
+		if (!m_bMouseOver && !m_bOpened)
 		{
-			renderRect(m_elementsGFX[BUTTON].rcTexMouseOver, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 150, 150, 150 ), REGLUAR, dialogPos );
-			renderRect(m_elementsGFX[MAIN].rcTexMouseOver, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 150, 150, 150 ), REGLUAR, dialogPos );
+			renderRect(m_elementsGFX[BUTTON].rcTexture, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 200, 200, 200 ), REGLUAR, dialogPos );
+			renderRect(m_elementsGFX[MAIN].rcTexture, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 200, 200, 200 ), REGLUAR, dialogPos );
 		}
 		else
-			// if the button has the cursor on it high light 
-			if (m_bMouseOver || m_bOpened)
-			{
-				//drawButtonRect(m_controlGfx.rcTexMouseOver, rcWindow, sprite, pTexture, D3DCOLOR_ARGB( 200, 250, 250, 250 ));
-				renderRect(m_elementsGFX[BUTTON].rcTexMouseOver, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 255, 255, 255 ), HiGHLIGHT, dialogPos);
-				renderRect(m_elementsGFX[MAIN].rcTexMouseOver, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 255, 255, 255 ), HiGHLIGHT, dialogPos);
-			}
-	}
-
-	if( m_iSelected >= 0 && m_iSelected < ( int )m_Items.size() )
-	{                                      
-		ComboBoxItem* pItem = m_Items[m_iSelected];
-		if( pItem != NULL )
 		{
-			if (!m_bMouseOver && !m_bOpened)
-				RenderText(pItem->strText, m_rcText, font.pFont,  DT_CENTER | DT_VCENTER, assetManger.getSprite(), d3d::WHITE, dialogPos);
+			// if the button is pressed and the cursor is on it darken it to showed it is pressed
+			if (m_bMouseOver && m_bPressed)
+			{
+				renderRect(m_elementsGFX[BUTTON].rcTexMouseOver, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 150, 150, 150 ), REGLUAR, dialogPos );
+				renderRect(m_elementsGFX[MAIN].rcTexMouseOver, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 150, 150, 150 ), REGLUAR, dialogPos );
+			}
 			else
-				RenderText(pItem->strText, m_rcText, font.pFont,  DT_CENTER | DT_VCENTER, assetManger.getSprite(), d3d::BLACK, dialogPos);
-			//m_pDialog->DrawText( pItem->strText, pElement, &m_rcText );
+				// if the button has the cursor on it high light 
+				if (m_bMouseOver || m_bOpened)
+				{
+					//drawButtonRect(m_controlGfx.rcTexMouseOver, rcWindow, sprite, pTexture, D3DCOLOR_ARGB( 200, 250, 250, 250 ));
+					renderRect(m_elementsGFX[BUTTON].rcTexMouseOver, m_rcButton, sprite, pTexture, D3DCOLOR_ARGB( 255, 255, 255, 255 ), HiGHLIGHT, dialogPos);
+					renderRect(m_elementsGFX[MAIN].rcTexMouseOver, m_rcText, sprite, pTexture2, D3DCOLOR_ARGB( 255, 255, 255, 255 ), HiGHLIGHT, dialogPos);
+				}
+		}
 
+		if( m_iSelected >= 0 && m_iSelected < ( int )m_Items.size() )
+		{                                      
+			ComboBoxItem* pItem = m_Items[m_iSelected];
+			if( pItem != NULL )
+			{
+				if (!m_bMouseOver && !m_bOpened)
+					RenderText(pItem->strText, m_rcText, font.pFont,  DT_CENTER | DT_VCENTER, assetManger.getSprite(), d3d::WHITE, dialogPos);
+				else
+					RenderText(pItem->strText, m_rcText, font.pFont,  DT_CENTER | DT_VCENTER, assetManger.getSprite(), d3d::BLACK, dialogPos);
+				//m_pDialog->DrawText( pItem->strText, pElement, &m_rcText );
+
+			}
 		}
 	}
 }

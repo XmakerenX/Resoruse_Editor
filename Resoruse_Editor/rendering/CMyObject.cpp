@@ -105,7 +105,7 @@ void CMyObject::drawSubset(IDirect3DDevice9* pd3dDevice, ULONG AttributeID, ID3D
 {
 	ULONG * pAtrributeMap;
 	ULONG nAttributeCount;
-	int wtf;
+	//int wtf;
 
 	if (m_useCustomAttribMap)//check if to use custom attributes for this object or the default ones used in mesh creation 
 	{

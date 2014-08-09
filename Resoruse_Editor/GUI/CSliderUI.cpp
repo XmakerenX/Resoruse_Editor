@@ -47,7 +47,7 @@ bool CSliderUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 //-----------------------------------------------------------------------------
 // Name : HandleMouse() 
 //-----------------------------------------------------------------------------
-bool CSliderUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer )
+bool CSliderUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer )
 {
 	if( !m_bEnabled || !m_bVisible )
 		return false;
@@ -57,87 +57,131 @@ bool CSliderUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPAR
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONDBLCLK:
 		{
-			if( PtInRect( &m_rcButton, pt ) )
-			{
-				// Pressed while inside the control
-				m_bPressed = true;
-				SetCapture( hWnd );
-
-				m_nDragX = pt.x;
-				//m_nDragY = pt.y;
-				m_nDragOffset = m_nButtonX - m_nDragX;
-
-				//m_nDragValue = m_nValue;
-
-				if( !m_bHasFocus )
-					m_pParentDialog->RequestFocus( this );
-
+			if ( Pressed(hWnd, mousePoint, inputstate, timer))
 				return true;
-			}
-
-			if( PtInRect( &m_rcBoundingBox, pt ) )
-			{
-				m_nDragX = pt.x;
-				m_nDragOffset = 0;
-				m_bPressed = true;
-
-				if( !m_bHasFocus )
-					m_pParentDialog->RequestFocus( this );
-
-				if( pt.x > m_nButtonX + m_x )
-				{
-					SetValueInternal( m_nValue + 1, true );
-					return true;
-				}
-
-				if( pt.x < m_nButtonX + m_x )
-				{
-					SetValueInternal( m_nValue - 1, true );
-					return true;
-				}
-			}
-
-			break;
-		}
+		}break;
 
 	case WM_LBUTTONUP:
 		{
-			if( m_bPressed )
-			{
-				m_bPressed = false;
-				ReleaseCapture();
-				//m_pDialog->SendEvent( EVENT_SLIDER_VALUE_CHANGED, true, this );
-
+			if ( Released(hWnd, mousePoint))
 				return true;
-			}
-
-			break;
-		}
+		}break;
 
 	case WM_MOUSEMOVE:
 		{
-			if( m_bPressed )
-			{
-				SetValueInternal( ValueFromPos( m_x + pt.x + m_nDragOffset ), true );
+			if ( Dragged(mousePoint))
 				return true;
-			}
-
-			break;
-		}
+		}break;
 
 	case WM_MOUSEWHEEL:
 		{
-			if (m_bMouseOver)
-			{
-				int nScrollAmount = int( ( short )HIWORD( wParam ) ) / WHEEL_DELTA;
-				SetValueInternal( m_nValue - nScrollAmount, true );
+			if ( Scrolled( inputstate.nScrollAmount ) )
 				return true;
-			}
-		}
+		}break;
 	};
 
 	return false;
 }
+
+//-----------------------------------------------------------------------------
+// Name : Pressed() 
+//-----------------------------------------------------------------------------
+bool CSliderUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer)
+{
+	if( PtInRect( &m_rcButton, pt ) )
+	{
+		// Pressed while inside the control
+		m_bPressed = true;
+		SetCapture( hWnd );
+
+		m_nDragX = pt.x;
+		//m_nDragY = pt.y;
+		m_nDragOffset = m_nButtonX - m_nDragX;
+
+		//m_nDragValue = m_nValue;
+
+		if( !m_bHasFocus )
+			m_pParentDialog->RequestFocus( this );
+
+		return true;
+	}
+
+	if( PtInRect( &m_rcBoundingBox, pt ) )
+	{
+		m_nDragX = pt.x;
+		m_nDragOffset = 0;
+		m_bPressed = true;
+
+		if( !m_bHasFocus )
+			m_pParentDialog->RequestFocus( this );
+
+		if( pt.x > m_nButtonX + m_x )
+		{
+			SetValueInternal( m_nValue + 1, true );
+			return true;
+		}
+
+		if( pt.x < m_nButtonX + m_x )
+		{
+			SetValueInternal( m_nValue - 1, true );
+			return true;
+		}
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Released() 
+//-----------------------------------------------------------------------------
+bool CSliderUI::Released( HWND hWnd, POINT pt)
+{
+	if( m_bPressed )
+	{
+		m_bPressed = false;
+		ReleaseCapture();
+
+		m_sliderChangedSig(this);
+		//m_pDialog->SendEvent( EVENT_SLIDER_VALUE_CHANGED, true, this );
+
+		return true;
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Dragged() 
+//-----------------------------------------------------------------------------
+bool CSliderUI::Dragged( POINT pt)
+{
+	if( m_bPressed )
+	{
+		SetValueInternal( ValueFromPos( m_x + pt.x + m_nDragOffset ), true );
+		return true;
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Scrolled() 
+//-----------------------------------------------------------------------------
+ bool CSliderUI::Scrolled( int nScrollAmount)
+{
+	if (m_bMouseOver)
+	{
+		//int nScrollAmount = int( ( short )HIWORD( wParam ) ) / WHEEL_DELTA;
+		SetValueInternal( m_nValue - nScrollAmount, true );
+		return true;
+	}
+	return false;
+}
+
+ //-----------------------------------------------------------------------------
+ // Name : connectToSliderChg() 
+ //-----------------------------------------------------------------------------
+ void CSliderUI::connectToSliderChg( const signal_slider::slot_type& subscriber)
+ {
+	 m_sliderChangedSig.connect(subscriber);
+ }
 
 //-----------------------------------------------------------------------------
 // Name : UpdateRects() 
@@ -159,6 +203,9 @@ void CSliderUI::UpdateRects()
 //-----------------------------------------------------------------------------
 void CSliderUI::Render( CAssetManager& assetManger )
 {
+	if (!m_bVisible)
+		return;
+
 	HRESULT hr;
 	LPDIRECT3DTEXTURE9 pTexTrack, pTexButton;
 
@@ -238,6 +285,7 @@ void CSliderUI::SetValueInternal( int nValue, bool bFromInput )
 	m_nValue = nValue;
 	UpdateRects();
 
+	m_sliderChangedSig(this);
 	//m_pDialog->SendEvent( EVENT_SLIDER_VALUE_CHANGED, bFromInput, this );
 }
 

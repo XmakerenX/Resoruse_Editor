@@ -9,6 +9,8 @@
 #include <sstream>
 #include <limits>
 #include <math.h>
+#include <boost/signals2/signal.hpp>
+#include <boost/bind.hpp>
 
 //common libs for the project
 #include "main.h"
@@ -66,6 +68,23 @@ class CMyObject;
 #define IDC_SLIDERMAXTEXT		 115
 #define IDC_RADIOGROUPTEXT       116
 #define IDC_RADIOBUTTONGROUP     117
+#define IDC_SLIDERSTATIC		 118
+#define IDC_SLIDERMINEDITBOX	 119
+#define IDC_SLIDERMAXEDITBOX	 120
+#define IDC_LISTBOXITEMS		 121
+#define IDC_LISTBOXSTATIC		 122
+#define IDCLISTOXEDITBOX	     123
+#define IDC_LISTBOXITEMSADD      124
+#define IDC_LISTBOXITEMSREMOVE   125
+#define IDC_COMBOXITEMS			 126
+#define IDC_COMBOBOXITEMSADD	 127
+#define IDC_COMBOBOXITEMSREMOVE	 128
+#define IDC_DIALOGSTATIC		 129
+#define IDC_DIALOGWIDTH			 130
+#define IDC_DIALOGHEIGHT		 131
+#define IDC_DIALOGSETSIZE		 132
+
+
 
 #define IDC_GENCONTROLID         200
 // #define IDC_LISTBOX     6
@@ -92,11 +111,18 @@ public:
 	//-------------------------------------------------------------------------
 	// Public Functions for This Class
 	//-------------------------------------------------------------------------
-	bool         InitInstance(HINSTANCE hInstance, LPCTSTR lpCmdLine, int iCmdShow );
-	LRESULT		 WinProc	 (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-	void         OnGUIEvent	 (HWND hWnd, UINT nEvent, int nControlID, void* pUserContext );
-	int          BeginGame	 ( );
-	bool         ShutDown	 ( );
+	bool         InitInstance				(HINSTANCE hInstance, LPCTSTR lpCmdLine, int iCmdShow );
+	LRESULT		 WinProc					(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+	void         OnGUIEvent					(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext );
+	void         CreateControlClicked		(CButtonUI* createControl);
+	void		 AddListBoxItemClicked		(CButtonUI* pAddListBoxItemButton);
+	void		 RemoveListBoxItemClikced	(CButtonUI* pRemoveListBoxItemButton);
+	void         AddComboBoxItemClicked		(CButtonUI* pAddComboBoxItemButton);
+	void		 RemoveComboBoxItemClicked  (CButtonUI* pRemoveComboBoxItemButton);
+	void		 SetGenDialogSize			(CButtonUI* pDialogSetButton);
+	void         ComboboxSelChg				(CComboBoxUI* pCombobox);
+	int          BeginGame					( );
+	bool         ShutDown					( );
 
 private:
 
@@ -277,6 +303,8 @@ private:
 	ID3DXEffect			*	 m_outlineEffect;
 
 	ID3DXEffect			*	 m_highLightEffect;
+
+	boost::signals2::signal<void ()> m_keyboardSig;
 
 // 	CDialog3D				 m_GuiDialog;
 // 	CDialog3D				 m_GuiSelectPawn;

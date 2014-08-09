@@ -159,6 +159,10 @@ HRESULT CDialogUI::init(UINT width, UINT height, int nCaptionHeight, LPCTSTR cap
 	return S_OK;
 }
 
+//-----------------------------------------------------------------------------
+// Name : initDefControlElements ()
+// Desc : initialize defualt textures and fonts used by GUI
+//-----------------------------------------------------------------------------
 HRESULT CDialogUI::initDefControlElements(CAssetManager& assetManger)
 {
 	std::vector<ELEMENT_GFX>  elementGFXvec;
@@ -593,6 +597,17 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 {
 	bool bHandled = false;
 	
+	INPUT_STATE curInputState;
+
+	curInputState.bDoubleClick = uMsg == WM_LBUTTONDBLCLK;
+	curInputState.bCtrl = (wParam & MK_CONTROL) == MK_CONTROL;
+	curInputState.bShift = (wParam & MK_SHIFT) == MK_SHIFT;
+
+	UINT uLines;
+	SystemParametersInfo( SPI_GETWHEELSCROLLLINES, 0, &uLines, 0 );
+	curInputState.nScrollAmount = int( ( short )HIWORD( wParam ) ) / WHEEL_DELTA * uLines;
+
+
 	// If a control is in focus, it belongs to this dialog, and it's enabled, then give
 	// it the first chance at handling the message.
 	if( s_pControlFocus &&
@@ -665,13 +680,13 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 			if( s_pControlFocus && s_pControlFocus->getParentDialog() == this &&
 				s_pControlFocus->getEnabled() )
 			{
-				if( s_pControlFocus->HandleMouse( hWnd, uMsg, mousePoint, wParam, lParam, timer ) )
+				if( s_pControlFocus->HandleMouse( hWnd, uMsg, mousePoint, curInputState, timer ) )
 					return true;
 			}
 
 			for (UINT i = 0; i < m_Controls.size(); i++)
 			{
-				if (m_Controls[i]->HandleMouse(hWnd,uMsg,mousePoint, wParam, lParam,timer))
+				if (m_Controls[i]->HandleMouse(hWnd,uMsg,mousePoint, curInputState, timer))
 				{
 					bHandled = true;
 					break;
@@ -829,7 +844,8 @@ CControlUI* CDialogUI::getControlAtPoint(POINT pt)
 	{
 		if (m_Controls[i]->ContainsPoint(pt)) //TODO: add checks for if the control is enable and not hidden
 		{
-			return m_Controls[i];
+			if (m_Controls[i]->getVisible() && m_Controls[i]->getEnabled())
+				return m_Controls[i];
 		}
 	}
 

@@ -110,12 +110,14 @@ bool CEditBoxUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				if( m_nCaret != m_nSelStart )
 				{
 					DeleteSelectionText();
+					m_editboxChangedSig(this);
 					//m_pDialog->SendEvent( EVENT_EDITBOX_CHANGE, true, this );
 				}
 				else
 				{
 					// Deleting one character
 					m_Buffer.erase(m_nCaret,1);
+					m_editboxChangedSig(this);
 					//if( m_Buffer.RemoveChar( m_nCaret ) )
 					//	m_pDialog->SendEvent( EVENT_EDITBOX_CHANGE, true, this );
 				}
@@ -179,7 +181,7 @@ bool CEditBoxUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 //-----------------------------------------------------------------------------
 // Name : HandleMouse() 
 //-----------------------------------------------------------------------------
-bool CEditBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer )
+bool CEditBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer )
 {
 	if( !m_bEnabled || !m_bVisible )
 		return false;
@@ -189,59 +191,101 @@ bool CEditBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPA
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONDBLCLK:
 		{
-			if( !m_bHasFocus )
-				m_pParentDialog->RequestFocus( this );
-
-			if( !ContainsPoint( pt ) )
-				return false;
-
-			m_bMouseDrag = true;
-			SetCapture( hWnd );
-			// Determine the character corresponding to the coordinates.
-			int nCP, nTrail, nX1st;
-			nCP = (pt.x - m_rcText.left) / m_elementsFonts[0].nFontWidth;
-			// Cap at the NULL character.
-			if(nCP >= 0 && nCP < m_Buffer.size() )
-				PlaceCaret( nCP );
-			else
-				PlaceCaret( 0 );
-			m_nSelStart = m_nCaret;
-			ResetCaretBlink();
-			
-			return true;
-		}
+			if ( Pressed(hWnd, mousePoint, inputstate, timer) )
+				return true;
+		}break;
 
 	case WM_LBUTTONUP:
-		ReleaseCapture();
-		m_bMouseDrag = false;
-		break;
+		{
+			if ( Released(hWnd, mousePoint) )
+				return true;
+		}break;
 
 	case WM_MOUSEMOVE:
-		if( m_bMouseDrag )
 		{
-			// Determine the character corresponding to the coordinates.
-			int nCP, nTrail, nX1st;
-			nCP = (pt.x - m_rcText.left) / m_elementsFonts[0].nFontWidth;
-
-			// Cap at the NULL character.
-			if(nCP >= 0 && nCP < m_Buffer.size() )
-				PlaceCaret( nCP );
-			else
-			{
-				if (nCP < 0 || m_Buffer.size() == 0)
-					nCP = 0;
-
-				if (nCP > m_Buffer.size())
-					nCP = m_Buffer.size() -1;
-
-				PlaceCaret( nCP );
-			}
-
-		}
-		break;
+			if ( Dragged(mousePoint) )
+				return true;
+		}break;
 	}
 
 	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Pressed() 
+//-----------------------------------------------------------------------------
+bool CEditBoxUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer)
+{
+	if( !m_bHasFocus )
+		m_pParentDialog->RequestFocus( this );
+
+	if( !ContainsPoint( pt ) )
+		return false;
+
+	m_bMouseDrag = true;
+	SetCapture( hWnd );
+	// Determine the character corresponding to the coordinates.
+	int nCP, nTrail, nX1st;
+	nCP = (pt.x - m_rcText.left) / m_elementsFonts[0].nFontWidth;
+	// Cap at the NULL character.
+	if(nCP >= 0 && nCP < m_Buffer.size() )
+		PlaceCaret( nCP );
+	else
+		PlaceCaret( 0 );
+	m_nSelStart = m_nCaret;
+	ResetCaretBlink();
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Released() 
+//-----------------------------------------------------------------------------
+bool CEditBoxUI::Released( HWND hWnd, POINT pt)
+{
+	ReleaseCapture();
+	m_bMouseDrag = false;
+
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Dragged() 
+//-----------------------------------------------------------------------------
+bool CEditBoxUI::Dragged( POINT pt)
+{
+	if( m_bMouseDrag )
+	{
+		// Determine the character corresponding to the coordinates.
+		int nCP, nTrail, nX1st;
+		nCP = (pt.x - m_rcText.left) / m_elementsFonts[0].nFontWidth;
+
+		// Cap at the NULL character.
+		if(nCP >= 0 && nCP < m_Buffer.size() )
+			PlaceCaret( nCP );
+		else
+		{
+			if (nCP < 0 || m_Buffer.size() == 0)
+				nCP = 0;
+
+			if (nCP > m_Buffer.size())
+				nCP = m_Buffer.size() -1;
+
+			PlaceCaret( nCP );
+		}
+		return true;
+
+	}
+	return false;
+	//TODO: check return value
+}
+
+//-----------------------------------------------------------------------------
+// Name : connectToEditboxChg() 
+//-----------------------------------------------------------------------------
+void CEditBoxUI::connectToEditboxChg(const signal_editbox::slot_type& subscriber)
+{
+	m_editboxChangedSig.connect(subscriber);
 }
 
 //-----------------------------------------------------------------------------
@@ -274,6 +318,7 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 					if( m_nCaret != m_nSelStart )
 					{
 						DeleteSelectionText();
+						m_editboxChangedSig(this);
 						//m_pDialog->SendEvent( EVENT_EDITBOX_CHANGE, true, this );
 					}
 					else if( m_nCaret > 0 )
@@ -282,6 +327,7 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 						PlaceCaret( m_nCaret - 1 );
 						m_nSelStart = m_nCaret;
 						m_Buffer.erase(m_nCaret,1);
+						m_editboxChangedSig(this);
 						//m_Buffer.RemoveChar( m_nCaret );
 						//m_pDialog->SendEvent( EVENT_EDITBOX_CHANGE, true, this );
 					}
@@ -298,6 +344,7 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 					if( ( char )wParam == 24 )
 					{
 						DeleteSelectionText();
+						m_editboxChangedSig(this);
 						//m_pDialog->SendEvent( EVENT_EDITBOX_CHANGE, true, this );
 					}
 
@@ -308,6 +355,7 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 			case 22:
 				{
 					PasteFromClipboard();
+					m_editboxChangedSig(this);
 					//m_pDialog->SendEvent( EVENT_EDITBOX_CHANGE, true, this );
 					break;
 				}
@@ -380,6 +428,7 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 						//}
 					}
 					ResetCaretBlink();
+					m_editboxChangedSig(this);
 					//m_pDialog->SendEvent( EVENT_EDITBOX_CHANGE, true, this );
 				}
 			}
@@ -421,8 +470,8 @@ void CEditBoxUI::UpdateRects()
 //-----------------------------------------------------------------------------
 void CEditBoxUI::Render( CAssetManager& assetManger )
 {
-	//if( m_bVisible == false )
-	//	return;
+	if( m_bVisible == false )
+		return;
 
 	HRESULT hr;
 	LPDIRECT3DTEXTURE9 pTexture;

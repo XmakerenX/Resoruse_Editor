@@ -394,6 +394,7 @@ HRESULT CMySprite::createQuad(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT 
 		}break;
 
 	}
+	return S_FALSE;
 }
 
 //-----------------------------------------------------------------------------
@@ -471,20 +472,22 @@ void CMySprite::addQuad(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPo
 	{
 		pTexture->GetLevelDesc(0, &textureInfo);
 
-		textureWidth  = srcRect.right - srcRect.left;
-		textureHeight = srcRect.bottom - srcRect.top;
+		//conversion might lose data ...
+		textureWidth  = static_cast<float>( srcRect.right - srcRect.left );
+		textureHeight = static_cast<float>( srcRect.bottom - srcRect.top );
 
-		fScaleU = float(srcRect.right  - srcRect.left)  / textureInfo.Width;
-		fScaleV = float(srcRect.bottom - srcRect.top) / textureInfo.Height;
+		fScaleU = static_cast<float>(srcRect.right  - srcRect.left)  / textureInfo.Width;
+		fScaleV = static_cast<float>(srcRect.bottom - srcRect.top) / textureInfo.Height;
 
-		startU = float(srcRect.left) / float(textureInfo.Width);
-		startV = float(srcRect.top) / float(textureInfo.Height);
+		startU = static_cast<float>(srcRect.left) / static_cast<float>(textureInfo.Width);
+		startV = static_cast<float>(srcRect.top) / static_cast<float>(textureInfo.Height);
 	}
 	else
 	{
 		// there is no texture so zero everything that is related to the texture
-		textureWidth = srcRect.right - srcRect.left;
-		textureHeight = srcRect.bottom - srcRect.top;
+		// conversion might lose data
+		textureWidth =  static_cast<float>( srcRect.right - srcRect.left );
+		textureHeight = static_cast<float>( srcRect.bottom - srcRect.top );
 		fScaleU = 0;
 		fScaleV = 0;
 		startU = 0;
@@ -492,8 +495,8 @@ void CMySprite::addQuad(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPo
 	}
 
 	// creates the four vertices of our quad 
-	pVertices[vertexCount].x		= quadPos.x;
-	pVertices[vertexCount].y		= quadPos.y;
+	pVertices[vertexCount].x		= static_cast<float>( quadPos.x );
+	pVertices[vertexCount].y		= static_cast<float>( quadPos.y );
 	pVertices[vertexCount].z		= 0;
 	pVertices[vertexCount].rhw		= 1;
 	pVertices[vertexCount].diffuse  = tintColor;
@@ -501,8 +504,8 @@ void CMySprite::addQuad(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPo
 	pVertices[vertexCount++].tv		= startV;
 
 
-	pVertices[vertexCount].x		= quadPos.x + textureWidth * m_fScaleX;
-	pVertices[vertexCount].y		= quadPos.y;
+	pVertices[vertexCount].x		= static_cast<float> ( quadPos.x + textureWidth * m_fScaleX );
+	pVertices[vertexCount].y		= static_cast<float> ( quadPos.y );
 	pVertices[vertexCount].z		= 0;
 	pVertices[vertexCount].rhw		= 1;
 	pVertices[vertexCount].diffuse	= tintColor;
@@ -510,16 +513,16 @@ void CMySprite::addQuad(LPDIRECT3DTEXTURE9 pTexture, RECT& srcRect, POINT quadPo
 	pVertices[vertexCount++].tv		= startV;
 
 
-	pVertices[vertexCount].x		= quadPos.x;
-	pVertices[vertexCount].y		= quadPos.y + textureHeight * m_fscaleY;
+	pVertices[vertexCount].x		= static_cast<float> ( quadPos.x );
+	pVertices[vertexCount].y		= static_cast<float> ( quadPos.y + textureHeight * m_fscaleY );
 	pVertices[vertexCount].z		= 0;
 	pVertices[vertexCount].rhw		= 1;
 	pVertices[vertexCount].diffuse	= tintColor;
 	pVertices[vertexCount].tu		= startU;
 	pVertices[vertexCount++].tv		= startV + 1 * fScaleV;
 
-	pVertices[vertexCount].x		= quadPos.x + textureWidth * m_fScaleX;
-	pVertices[vertexCount].y		= quadPos.y + textureHeight * m_fscaleY;
+	pVertices[vertexCount].x		= static_cast<float> ( quadPos.x + textureWidth * m_fScaleX );
+	pVertices[vertexCount].y		= static_cast<float> ( quadPos.y + textureHeight * m_fscaleY );
 	pVertices[vertexCount].z		= 0;
 	pVertices[vertexCount].rhw		= 1;
 	pVertices[vertexCount].diffuse	= tintColor;
@@ -640,7 +643,7 @@ void CMySprite::onLostDevice()
 //-----------------------------------------------------------------------------
 HRESULT CMySprite::onResetDevice()
 {
-	HRESULT hRet;
+	HRESULT hRet = S_FALSE;
 
 	// Creates a vertex buffer to store the sprite vertices 
 	hRet = m_pDevice->CreateVertexBuffer(sizeof(CSpriteVertex) * 4 * MAX_QUADS,D3DUSAGE_WRITEONLY, SVertex_FVF, D3DPOOL_MANAGED, &m_vBuffer, NULL);
@@ -649,6 +652,8 @@ HRESULT CMySprite::onResetDevice()
 	// Creates a indices buffer to store the sprite indices
 	hRet = m_pDevice->CreateIndexBuffer(sizeof(USHORT) * 6 * MAX_QUADS, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16, D3DPOOL_MANAGED, &m_iBuffer, NULL);
 	if ( FAILED(hRet) ) return hRet;
+
+	return hRet;
 	
 }
 //-----------------------------------------------------------------------------

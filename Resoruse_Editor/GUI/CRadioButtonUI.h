@@ -12,7 +12,10 @@ public:
 	//virtual void	Render				( CAssetManager& assetManger);
 
 	virtual bool    HandleKeyboard		( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-	virtual bool    HandleMouse			( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer );
+	virtual bool    HandleMouse			( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer );
+
+	virtual bool	Pressed				( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer);
+	virtual bool	Released			( HWND hWnd, POINT pt);
 
 	UINT getButtonGroup();
 	void setChecked(bool bChecked);

@@ -17,8 +17,14 @@ public:
 	// functions that handle user Input to control
 	//-------------------------------------------------------------------------
 	virtual bool    HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-	virtual bool    HandleMouse	  ( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer);
-	//TODO: add support for controls to have access to other messages than keyboard and mouse inputs..
+	virtual bool    HandleMouse	  ( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer);
+	
+	virtual bool    Pressed		  ( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer);
+	virtual bool	Released	  ( HWND hWnd, POINT pt);
+	virtual bool    Dragged		  ( POINT pt);
+
+	// TODO: add support for controls to have access to other messages than keyboard and mouse inputs..
+	// with new slots and signal system could be no need for MsgProc...
 	//virtual bool    MsgProc		  ( UINT uMsg, WPARAM wParam, LPARAM lParam );
 
 	virtual void    Render( CAssetManager& assetManger); 
@@ -65,6 +71,7 @@ protected:
 	int m_nPageSize;	 // How many items are displayable in one page
 	int m_nStart;		 // First item index
 	int m_nEnd;			 // The index after the last item
+	int m_thumbOffsetY;
 	POINT m_LastMouse;	 // Last mouse position
 	ARROWSTATE m_Arrow;  // State of the arrows
 	double m_dArrowTS;   // Timestamp of last arrow event.

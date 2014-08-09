@@ -8,6 +8,7 @@
 class CEditBoxUI : public CControlUI
 {
 public:
+	typedef boost::signals2::signal<void (CEditBoxUI*)>  signal_editbox;
 	//-------------------------------------------------------------------------
 	// Constructors & Destructors for This Class.
 	//-------------------------------------------------------------------------
@@ -17,9 +18,16 @@ public:
 	//-------------------------------------------------------------------------
 	// Functions that handle user input logic
 	//-------------------------------------------------------------------------
-	virtual bool    HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam  );
-	virtual bool    HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer );
-	virtual bool    MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam );
+	virtual bool    HandleKeyboard		( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam  );
+	virtual bool    HandleMouse			( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer );
+
+	virtual bool    Pressed				( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer);
+	virtual bool    Released			( HWND hWnd, POINT pt);
+	virtual bool    Dragged				( POINT pt);
+
+	void		    connectToEditboxChg	( const signal_editbox::slot_type& subscriber);
+
+	virtual bool    MsgProc				( UINT uMsg, WPARAM wParam, LPARAM lParam );
 
 	//-------------------------------------------------------------------------
 	// Functions that handle Rendering Logic
@@ -71,6 +79,8 @@ protected:
 	D3DCOLOR m_SelTextColor; // Selected text color
 	D3DCOLOR m_SelBkColor;   // Selected background color
 	D3DCOLOR m_CaretColor;   // Caret color
+
+	boost::signals2::signal<void (CEditBoxUI*)> m_editboxChangedSig;
 
 	// Mouse-specific
 	bool m_bMouseDrag;       // True to indicate drag in progress

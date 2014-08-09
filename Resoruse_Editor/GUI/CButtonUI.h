@@ -11,6 +11,8 @@
 class CButtonUI : public CStaticUI
 {
 public:
+	typedef boost::signals2::signal<void (CButtonUI*)>  signal_clicked;
+
 	//CButtonUI					(void);
 	CButtonUI					(int ID, LPCTSTR strText, int x, int y, UINT width, UINT height, UINT nHotkey);
 	virtual ~CButtonUI			(void);
@@ -18,12 +20,17 @@ public:
 	virtual void	Render				( CAssetManager& assetManger);
 
 	virtual bool    HandleKeyboard		( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-	virtual bool    HandleMouse			( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer );
+	virtual bool    HandleMouse			( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer );
 
-	virtual bool    CanHaveFocus();
+	virtual bool	Pressed				( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer);
+	virtual bool    Released			( HWND hWnd, POINT pt);
+
+	virtual bool    CanHaveFocus		();
 
 
-	void	setHotKey			( UINT nHotKey);
+	void	setHotKey					( UINT nHotKey);
+
+	void    connectToClick				( const signal_clicked::slot_type& subscriber);
 
 	//void	drawButtonRect		(RECT& rcTexture, RECT& rcWindow, LPD3DXSPRITE sprite, LPDIRECT3DTEXTURE9 pTexture, D3DCOLOR color);
 	//void	drawButtonRect		(RECT& rcTexture, RECT& rcWindow, CMySprite* sprite, LPDIRECT3DTEXTURE9 pTexture, D3DCOLOR color, bool bHighLight);
@@ -32,6 +39,10 @@ protected:
 	UINT	    m_nHotkey;
 
 	bool	    m_bPressed;
+
+	boost::signals2::signal<void (CButtonUI*)> m_clickedSig;
+
+
 
 private:
 	enum ELEMENTS{BUTTON, MOUSEOVER};

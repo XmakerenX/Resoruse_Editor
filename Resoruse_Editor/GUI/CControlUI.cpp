@@ -58,7 +58,39 @@ bool CControlUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 // Note : returns false by default for the basic control class which means
 //        the control does nothing with the mouse input
 //-----------------------------------------------------------------------------
-bool CControlUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer )
+bool CControlUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer )
+{
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Pressed() 
+//-----------------------------------------------------------------------------
+bool CControlUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer )
+{
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Released() 
+//-----------------------------------------------------------------------------
+bool CControlUI::Released( HWND hWnd, POINT pt)
+{
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Dragged() 
+//-----------------------------------------------------------------------------
+bool CControlUI::Dragged( POINT pt)
+{
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Scrolled() 
+//-----------------------------------------------------------------------------
+bool CControlUI::Scrolled( int nScrollAmount)
 {
 	return false;
 }
@@ -263,9 +295,9 @@ void CControlUI::setEnabled(bool bEnabled)
 //-----------------------------------------------------------------------------
 // Name : setVisible 
 //-----------------------------------------------------------------------------
-void CControlUI::setVisible(bool m_bVisible)
+void CControlUI::setVisible(bool bVisible)
 {
-	m_bVisible = m_bVisible;
+	m_bVisible = bVisible;
 }
 
 //-----------------------------------------------------------------------------

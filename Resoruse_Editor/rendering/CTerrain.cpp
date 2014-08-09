@@ -106,7 +106,7 @@ HRESULT CTerrain::createTerrain( LPDIRECT3DDEVICE9 pDevice, CAssetManager& asset
 
 	//creating the attribute data 
 	MESH_ATTRIB_DATA* pAttribData;
-	ULONG AttribID[2];
+	//ULONG AttribID[2]; not used anymore??
 	//creating a pure white material
 	OBJMATERIAL Material;
 	ZeroMemory( &Material, sizeof(OBJMATERIAL));
@@ -143,13 +143,13 @@ HRESULT CTerrain::createTerrain( LPDIRECT3DDEVICE9 pDevice, CAssetManager& asset
 
 	//the max number of indices in the terrain is numCellsHigh * numCellsWide * how many indices per cell which in our case for now is 6 ...
 	USHORT* pIndices = new USHORT[6];
-	for (int z=0 ; z<numCellsHigh ; z++)
+	for (UINT z = 0; z < numCellsHigh; z++)
 	{
 // 		delete []pIndices;
 // 		pIndices = NULL;
 // 		pIndices = new USHORT[6];
 
-		for (int x=0 ; x<numCellsWide ; x++)
+		for (UINT x = 0; x < numCellsWide; x++)
 		{
 			ULONG attribID;
 			// first triangle

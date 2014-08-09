@@ -19,6 +19,8 @@ struct ListBoxItemUI
 class CListBoxUI : public CControlUI
 {
 public:
+
+	typedef boost::signals2::signal<void (CListBoxUI*)>  signal_listbox;
 	//-------------------------------------------------------------------------
 	// Constructors & Destructors for This Class.
 	//-------------------------------------------------------------------------
@@ -30,21 +32,29 @@ public:
 	//-------------------------------------------------------------------------
 	// functions that handle user Input
 	//-------------------------------------------------------------------------
-	virtual bool    HandleKeyboard(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam  );
-	virtual bool    HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer );
+	virtual bool    HandleKeyboard		( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam  );
+	virtual bool    HandleMouse			( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer );
 
-	virtual void    Render( CAssetManager& assetManger );
-	virtual void    UpdateRects();
+	virtual bool	Pressed				( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer);
+	virtual bool    Released			( HWND hWnd, POINT pt);
+	virtual bool    Dragged				( POINT pt);
+	virtual bool    Scrolled			( int nScrollAmount);
 
-	virtual bool    CanHaveFocus();
+	void		    ConnectToItemDBLCK	( const signal_listbox::slot_type& subscriber);
+	void            ConnectToListboxSel ( const signal_listbox::slot_type& subscriber);
 
-	DWORD           GetStyle() const;
-	void            SetStyle( DWORD dwStyle );
-	int             GetSize() const;
+	virtual void    Render				( CAssetManager& assetManger );
+	virtual void    UpdateRects			();
 
-	int             GetScrollBarWidth() const;
-	void            SetScrollBarWidth( int nWidth );
-	void            SetBorder( int nBorder, int nMargin );
+	virtual bool    CanHaveFocus		();
+
+	DWORD           GetStyle			() const;
+	void            SetStyle			( DWORD dwStyle );
+	int             GetSize				() const;
+
+	int             GetScrollBarWidth	() const;
+	void            SetScrollBarWidth	( int nWidth );
+	void            SetBorder			( int nBorder, int nMargin );
 
 	//-------------------------------------------------------------------------
 	// functions that ListBox actions
@@ -81,6 +91,9 @@ protected:
 	bool m_bDrag;       // Whether the user is dragging the mouse to select
 
 	std::vector<ListBoxItemUI*> m_Items;
+
+	boost::signals2::signal<void (CListBoxUI*)> m_itemDBLCLKSig;
+	boost::signals2::signal<void (CListBoxUI*)> m_listboxSelSig;
 };
 
 #endif  //_CLISTBOXUI_H

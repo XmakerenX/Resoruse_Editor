@@ -85,39 +85,42 @@ const char* CStaticUI::getText() const
 //-----------------------------------------------------------------------------
 void CStaticUI::Render( CAssetManager& assetManger)
 {
-	RECT rcWindow;
-	// if there is no text in the static no reason to render it
-	if (m_strText[0] == '\0')
-		return;
-
-	LPD3DXSPRITE pSprite = assetManger.getSprite();
-
-	if (!pSprite)
-		return;
-
-	LPD3DXFONT pFont;
-	if (m_elementsFonts.size() > 0)
-		pFont = assetManger.getFontPtr(m_elementsFonts[0].fontIndex);
-	else
-		return;
-
-	if (pFont)
+	if (m_bVisible)
 	{
-		//RECT rcWindow;
-		POINT dialogPos = m_pParentDialog->getLocation();
-		LONG  dialogCaptionHeihgt =  m_pParentDialog->getCaptionHeight();
-		dialogPos.y += dialogCaptionHeihgt;
+		RECT rcWindow;
+		// if there is no text in the static no reason to render it
+		if (m_strText[0] == '\0')
+			return;
 
-		SetRect(&rcWindow, 0, 0, m_width, m_height);
-		OffsetRect(&rcWindow, m_x + dialogPos.x, m_y + dialogPos.y);
+		LPD3DXSPRITE pSprite = assetManger.getSprite();
 
-		//Sets the sprite scale to 1 since the buttons and other controls can change the scale
-		D3DXMATRIXA16 matTransform;
-		D3DXMatrixScaling( &matTransform, 1.0f, 1.0f, 1.0f );
+		if (!pSprite)
+			return;
 
-		pSprite->SetTransform( &matTransform );
+		LPD3DXFONT pFont;
+		if (m_elementsFonts.size() > 0)
+			pFont = assetManger.getFontPtr(m_elementsFonts[0].fontIndex);
+		else
+			return;
 
-		pFont->DrawTextA(pSprite, m_strText, -1, &rcWindow,/* DT_NOCLIP |*/ DT_CENTER | DT_VCENTER ,m_textColor);
-		//temp = pFont->DrawTextA(pSprite, m_strText, -1, &rcWindow, DT_NOCLIP , m_textColor);
+		if (pFont)
+		{
+			//RECT rcWindow;
+			POINT dialogPos = m_pParentDialog->getLocation();
+			LONG  dialogCaptionHeihgt =  m_pParentDialog->getCaptionHeight();
+			dialogPos.y += dialogCaptionHeihgt;
+
+			SetRect(&rcWindow, 0, 0, m_width, m_height);
+			OffsetRect(&rcWindow, m_x + dialogPos.x, m_y + dialogPos.y);
+
+			//Sets the sprite scale to 1 since the buttons and other controls can change the scale
+			D3DXMATRIXA16 matTransform;
+			D3DXMatrixScaling( &matTransform, 1.0f, 1.0f, 1.0f );
+
+			pSprite->SetTransform( &matTransform );
+
+			pFont->DrawTextA(pSprite, m_strText, -1, &rcWindow,/* DT_NOCLIP |*/ DT_CENTER | DT_VCENTER ,m_textColor);
+			//temp = pFont->DrawTextA(pSprite, m_strText, -1, &rcWindow, DT_NOCLIP , m_textColor);
+		}
 	}
 }

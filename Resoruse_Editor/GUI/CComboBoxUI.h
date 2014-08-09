@@ -19,6 +19,8 @@ struct ComboBoxItem
 class CComboBoxUI : public CButtonUI
 {
 public:
+	typedef boost::signals2::signal<void (CComboBoxUI*)>  signal_comboBox;
+
 	//-------------------------------------------------------------------------
 	// Constructors & Destructors for This Class.
 	//-------------------------------------------------------------------------
@@ -30,9 +32,16 @@ public:
 	//-------------------------------------------------------------------------
 	//functions that handle user Input to this control
 	//-------------------------------------------------------------------------
-	virtual bool    HandleKeyboard		(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-	virtual bool    HandleMouse			(HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer );
+	virtual bool    HandleKeyboard		( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+	virtual bool    HandleMouse			( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer );
 	virtual void    OnHotkey();
+
+	virtual bool	Pressed				( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer);
+	virtual bool	Released			( HWND hWnd, POINT pt);
+	virtual bool    Scrolled			( int nScrollAmount);
+	bool			Highlight			( POINT mousePoint);
+
+	void			ConnectToSelectChg  ( const signal_comboBox::slot_type& subscriber);
 
 	//-------------------------------------------------------------------------
 	//functions that handle control Rendering
@@ -95,6 +104,8 @@ private:
 	// the elements used to render the Combobox 
 	// used to access m_elementsGFX vector and no other use
 	enum ELEMENTS {MAIN, BUTTON, DROPDOWN, SELECTION }; 
+
+	boost::signals2::signal<void (CComboBoxUI*)> m_selectionChangedSig;
 };
 
 #endif  //_CCOMBOBOXUI_H

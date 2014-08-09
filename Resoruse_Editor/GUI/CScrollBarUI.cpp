@@ -52,109 +52,139 @@ bool CScrollBarUI::HandleKeyboard(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 // Name : HandleMouse() 
 // Desc : handles mouse input
 //-----------------------------------------------------------------------------
-bool CScrollBarUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer)
+bool CScrollBarUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer)
 {
 	static int ThumbOffsetY;
 
-	m_LastMouse = pt;
+	m_LastMouse = mousePoint;
 
 	switch( uMsg )
 	{
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONDBLCLK:
 		{
-			// Check for click on up button
-			if( PtInRect( &m_rcElements[UPBUTTON], pt ) )
-			{
-				SetCapture( hWnd);
-				if( m_nPosition > m_nStart )
-					--m_nPosition;
-
-				UpdateThumbRect();
-				m_Arrow = CLICKED_UP;
-				//TODO: understand what the hell the time stamp here does
-				m_dArrowTS = timer->getCurrentTime();
+			if ( Pressed(hWnd, mousePoint, inputstate ,timer))
 				return true;
-			}
-
-			// Check for click on down button
-
-			if( PtInRect( &m_rcElements[DOWNBUTTON], pt ) )
-			{
-				SetCapture( hWnd);
-				if( m_nPosition + m_nPageSize <= m_nEnd )
-					++m_nPosition;
-
-				UpdateThumbRect();
-				m_Arrow = CLICKED_DOWN;
-				m_dArrowTS = timer->getCurrentTime();
-				return true;
-			}
-
-			// Check for click on thumb
-			if( PtInRect( &m_rcElements[THUMB], pt ) )
-			{
-				SetCapture( hWnd);
-				m_bDrag = true;
-				ThumbOffsetY = pt.y - m_rcElements[THUMB].top;
-				return true;
-			}
-
-			// Check for click on track
-			if( m_rcElements[THUMB].left <= pt.x && m_rcElements[THUMB].right > pt.x )
-			{
-				SetCapture( hWnd );
-				if( m_rcElements[THUMB].top > pt.y && m_rcElements[TRACK].top <= pt.y )
-				{
-					Scroll( -( m_nPageSize - 1 ) );
-					return true;
-				}
-				else if( m_rcElements[THUMB].bottom <= pt.y && m_rcElements[TRACK].bottom > pt.y )
-				{
-					Scroll( m_nPageSize - 1 );
-					return true;
-				}
-			}
-
 		}break;
 
 	case WM_LBUTTONUP:
 		{
-			m_bDrag = false;
-			ReleaseCapture();
-			UpdateThumbRect();
-			m_Arrow = CLEAR;
+			if ( Released(hWnd, mousePoint))
+				return true;
 		}break;
 
 	case WM_MOUSEMOVE:
 		{
-			if( m_bDrag )
-			{
-				m_rcElements[THUMB].bottom += pt.y - ThumbOffsetY - m_rcElements[THUMB].top;
-				m_rcElements[THUMB].top = pt.y - ThumbOffsetY;
-
-				if( m_rcElements[THUMB].top < m_rcElements[TRACK].top )
-					OffsetRect( &m_rcElements[THUMB], 0, m_rcElements[TRACK].top - m_rcElements[THUMB].top );
-
-				else if( m_rcElements[THUMB].bottom > m_rcElements[TRACK].bottom )
-					OffsetRect( &m_rcElements[THUMB], 0, m_rcElements[TRACK].bottom - m_rcElements[THUMB].bottom );
-
-				// Compute first item index based on thumb position
-				int rcTrackHeight = m_rcElements[TRACK].bottom - m_rcElements[TRACK].top;
-				int rcThumbHeight = m_rcElements[THUMB].bottom - m_rcElements[THUMB].top;
-
-				int nMaxFirstItem = m_nEnd - m_nStart - m_nPageSize + 1;  // Largest possible index for first item
-				int nMaxThumb = rcTrackHeight - rcThumbHeight ;  // Largest possible thumb position from the top
-
-				m_nPosition = m_nStart + ( m_rcElements[THUMB].top - m_rcElements[TRACK].top + 
-					nMaxThumb / ( nMaxFirstItem * 2 ) ) * // Shift by half a row to avoid last row covered by only one pixel
-					nMaxFirstItem / nMaxThumb;
-
+			if ( Dragged(mousePoint))
 				return true;
-			}
 		}break;
 	}
 
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Pressed() 
+//-----------------------------------------------------------------------------
+bool CScrollBarUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer)
+{
+	// Check for click on up button
+	if( PtInRect( &m_rcElements[UPBUTTON], pt ) )
+	{
+		SetCapture( hWnd);
+		if( m_nPosition > m_nStart )
+			--m_nPosition;
+
+		UpdateThumbRect();
+		m_Arrow = CLICKED_UP;
+		//TODO: understand what the hell the time stamp here does
+		m_dArrowTS = timer->getCurrentTime();
+		return true;
+	}
+
+	// Check for click on down button
+
+	if( PtInRect( &m_rcElements[DOWNBUTTON], pt ) )
+	{
+		SetCapture( hWnd);
+		if( m_nPosition + m_nPageSize <= m_nEnd )
+			++m_nPosition;
+
+		UpdateThumbRect();
+		m_Arrow = CLICKED_DOWN;
+		m_dArrowTS = timer->getCurrentTime();
+		return true;
+	}
+
+	// Check for click on thumb
+	if( PtInRect( &m_rcElements[THUMB], pt ) )
+	{
+		SetCapture( hWnd);
+		m_bDrag = true;
+		m_thumbOffsetY = pt.y - m_rcElements[THUMB].top;
+		return true;
+	}
+
+	// Check for click on track
+	if( m_rcElements[THUMB].left <= pt.x && m_rcElements[THUMB].right > pt.x )
+	{
+		SetCapture( hWnd );
+		if( m_rcElements[THUMB].top > pt.y && m_rcElements[TRACK].top <= pt.y )
+		{
+			Scroll( -( m_nPageSize - 1 ) );
+			return true;
+		}
+		else if( m_rcElements[THUMB].bottom <= pt.y && m_rcElements[TRACK].bottom > pt.y )
+		{
+			Scroll( m_nPageSize - 1 );
+			return true;
+		}
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Released() 
+//-----------------------------------------------------------------------------
+bool CScrollBarUI::Released( HWND hWnd, POINT pt)
+{
+	m_bDrag = false;
+	ReleaseCapture();
+	UpdateThumbRect();
+	m_Arrow = CLEAR;
+	
+	return false;// ??
+}
+
+//-----------------------------------------------------------------------------
+// Name : Dragged() 
+//-----------------------------------------------------------------------------
+bool CScrollBarUI::Dragged( POINT pt)
+{
+	if( m_bDrag )
+	{
+		m_rcElements[THUMB].bottom += pt.y - m_thumbOffsetY - m_rcElements[THUMB].top;
+		m_rcElements[THUMB].top = pt.y - m_thumbOffsetY;
+
+		if( m_rcElements[THUMB].top < m_rcElements[TRACK].top )
+			OffsetRect( &m_rcElements[THUMB], 0, m_rcElements[TRACK].top - m_rcElements[THUMB].top );
+
+		else if( m_rcElements[THUMB].bottom > m_rcElements[TRACK].bottom )
+			OffsetRect( &m_rcElements[THUMB], 0, m_rcElements[TRACK].bottom - m_rcElements[THUMB].bottom );
+
+		// Compute first item index based on thumb position
+		int rcTrackHeight = m_rcElements[TRACK].bottom - m_rcElements[TRACK].top;
+		int rcThumbHeight = m_rcElements[THUMB].bottom - m_rcElements[THUMB].top;
+
+		int nMaxFirstItem = m_nEnd - m_nStart - m_nPageSize + 1;  // Largest possible index for first item
+		int nMaxThumb = rcTrackHeight - rcThumbHeight ;  // Largest possible thumb position from the top
+
+		m_nPosition = m_nStart + ( m_rcElements[THUMB].top - m_rcElements[TRACK].top + 
+			nMaxThumb / ( nMaxFirstItem * 2 ) ) * // Shift by half a row to avoid last row covered by only one pixel
+			nMaxFirstItem / nMaxThumb;
+
+		return true;
+	}
 	return false;
 }
 
@@ -164,87 +194,90 @@ bool CScrollBarUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, L
 //-----------------------------------------------------------------------------
 void CScrollBarUI::Render( CAssetManager& assetManger)
 {
-	CTimer* timer = assetManger.getTimer();
-	if (!timer)
-		return;
-
-	// checks if one of the arrows buttons is being held or was clicked
-	if( m_Arrow != CLEAR )
+	if (m_bVisible)
 	{
-		
-		//TODO: find some miracle way to bring to this function the time....
-		double dCurrTime = timer->getCurrentTime();
-
-		// check if the cursor on one of the arrow buttons if it is scrolls according to the defined delay and repeat times
-		if( PtInRect( &m_rcElements[UPBUTTON], m_LastMouse ) )
-		{
-			switch( m_Arrow )
-			{
-			case CLICKED_UP:
-				if( SCROLLBAR_ARROWCLICK_DELAY < dCurrTime - m_dArrowTS )
-				{
-					Scroll( -1 );
-					m_Arrow = HELD_UP;
-					m_dArrowTS = dCurrTime;
-				}
-				break;
-			case HELD_UP:
-				if( SCROLLBAR_ARROWCLICK_REPEAT < dCurrTime - m_dArrowTS )
-				{
-					Scroll( -1 );
-					m_dArrowTS = dCurrTime;
-				}
-				break;
-			}
-		}
-		else if( PtInRect( &m_rcElements[DOWNBUTTON], m_LastMouse ) )
-		{
-			switch( m_Arrow )
-			{
-			case CLICKED_DOWN:
-				if( SCROLLBAR_ARROWCLICK_DELAY < dCurrTime - m_dArrowTS )
-				{
-					Scroll( 1 );
-					m_Arrow = HELD_DOWN;
-					m_dArrowTS = dCurrTime;
-				}
-				break;
-			case HELD_DOWN:
-				if( SCROLLBAR_ARROWCLICK_REPEAT < dCurrTime - m_dArrowTS )
-				{
-					Scroll( 1 );
-					m_dArrowTS = dCurrTime;
-				}
-				break;
-			}
-		}
-	} // ends check if arrow buttons were held or 
-
-	// prepare to render all the elements of the scrollbar and gets a pointer to the sprite
-	HRESULT hr;
-	LPDIRECT3DTEXTURE9 pTexture;
-
-	CMySprite* sprite = assetManger.getMySprite();
-
-	if (!sprite)
-		return;
-
-	if (m_elementsGFX.size() < 4)
-		return;
-
-	// render all the scrollbar elements
-	for (UINT i = 0; i < 4; i++)
-	{
-		//no texture was given abort rendering
-		if (m_elementsGFX[i].iTexture == -1)
+		CTimer* timer = assetManger.getTimer();
+		if (!timer)
 			return;
 
-		//acquire a pointer to the texture we need to render the button
-		pTexture = assetManger.getTexturePtr((m_elementsGFX[i].iTexture) );
-		
-		POINT dialogPos = m_pParentDialog->getLocation();
+		// checks if one of the arrows buttons is being held or was clicked
+		if( m_Arrow != CLEAR )
+		{
 
-		renderRect(m_elementsGFX[i].rcTexture, m_rcElements[i], sprite, pTexture, d3d::WHITE, TOP, dialogPos);
+			//TODO: find some miracle way to bring to this function the time....
+			double dCurrTime = timer->getCurrentTime();
+
+			// check if the cursor on one of the arrow buttons if it is scrolls according to the defined delay and repeat times
+			if( PtInRect( &m_rcElements[UPBUTTON], m_LastMouse ) )
+			{
+				switch( m_Arrow )
+				{
+				case CLICKED_UP:
+					if( SCROLLBAR_ARROWCLICK_DELAY < dCurrTime - m_dArrowTS )
+					{
+						Scroll( -1 );
+						m_Arrow = HELD_UP;
+						m_dArrowTS = dCurrTime;
+					}
+					break;
+				case HELD_UP:
+					if( SCROLLBAR_ARROWCLICK_REPEAT < dCurrTime - m_dArrowTS )
+					{
+						Scroll( -1 );
+						m_dArrowTS = dCurrTime;
+					}
+					break;
+				}
+			}
+			else if( PtInRect( &m_rcElements[DOWNBUTTON], m_LastMouse ) )
+			{
+				switch( m_Arrow )
+				{
+				case CLICKED_DOWN:
+					if( SCROLLBAR_ARROWCLICK_DELAY < dCurrTime - m_dArrowTS )
+					{
+						Scroll( 1 );
+						m_Arrow = HELD_DOWN;
+						m_dArrowTS = dCurrTime;
+					}
+					break;
+				case HELD_DOWN:
+					if( SCROLLBAR_ARROWCLICK_REPEAT < dCurrTime - m_dArrowTS )
+					{
+						Scroll( 1 );
+						m_dArrowTS = dCurrTime;
+					}
+					break;
+				}
+			}
+		} // ends check if arrow buttons were held or 
+
+		// prepare to render all the elements of the scrollbar and gets a pointer to the sprite
+		HRESULT hr;
+		LPDIRECT3DTEXTURE9 pTexture;
+
+		CMySprite* sprite = assetManger.getMySprite();
+
+		if (!sprite)
+			return;
+
+		if (m_elementsGFX.size() < 4)
+			return;
+
+		// render all the scrollbar elements
+		for (UINT i = 0; i < 4; i++)
+		{
+			//no texture was given abort rendering
+			if (m_elementsGFX[i].iTexture == -1)
+				return;
+
+			//acquire a pointer to the texture we need to render the button
+			pTexture = assetManger.getTexturePtr((m_elementsGFX[i].iTexture) );
+
+			POINT dialogPos = m_pParentDialog->getLocation();
+
+			renderRect(m_elementsGFX[i].rcTexture, m_rcElements[i], sprite, pTexture, d3d::WHITE, TOP, dialogPos);
+		}
 	}
 }
 

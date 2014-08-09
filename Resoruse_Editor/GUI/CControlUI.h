@@ -2,12 +2,15 @@
 #define  _CCONTROLUI_H
 
 #include <Windows.h>
+#include <boost/signals2/signal.hpp>
+#include <boost/bind/bind.hpp>
 #include "../CTimer.h"
 #include "../CAssetManager.h"
 
 //-----------------------------------------------------------------------------
 // Typedefs, Structures and Enumerators
 //-----------------------------------------------------------------------------
+
 #define EVENT_BUTTON_CLICKED                0x0101
 #define EVENT_COMBOBOX_SELECTION_CHANGED    0x0201
 #define EVENT_RADIOBUTTON_CHANGED           0x0301
@@ -22,6 +25,30 @@
 // a single selection list box.
 #define EVENT_LISTBOX_SELECTION             0x0702
 #define EVENT_LISTBOX_SELECTION_END         0x0703
+
+struct INPUT_STATE
+{
+	INPUT_STATE::INPUT_STATE()
+	{
+		bDoubleClick = false;
+		bShift = false;
+		bCtrl = false;
+		nScrollAmount = -1;
+	}
+
+	INPUT_STATE::INPUT_STATE(bool newDoubleClick, bool newShift, bool newCtrl, int newScrollAmount)
+	{
+		bDoubleClick = newDoubleClick;
+		bShift = newShift;
+		bCtrl = newCtrl;
+		nScrollAmount = newScrollAmount;
+	}
+
+	bool bDoubleClick;
+	bool bShift;
+	bool bCtrl;
+	int  nScrollAmount;
+};
 
 struct ELEMENT_FONT
 {
@@ -103,8 +130,13 @@ public:
 	//-------------------------------------------------------------------------
 	// functions that handle user input
 	//-------------------------------------------------------------------------
-	virtual bool    HandleKeyboard		(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-	virtual bool    HandleMouse			(HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer );
+	virtual bool    HandleKeyboard		( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+	virtual bool	HandleMouse			( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer );
+
+	virtual bool	Pressed				( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer);
+	virtual bool    Released			( HWND hWnd, POINT pt);
+	virtual bool    Scrolled			( int nScrollAmount);
+	virtual bool    Dragged				( POINT pt);
 
 	//-------------------------------------------------------------------------
 	// Windows message handler

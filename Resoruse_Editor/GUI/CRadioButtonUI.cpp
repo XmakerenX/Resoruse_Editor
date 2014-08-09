@@ -29,51 +29,71 @@ bool CRadioButtonUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 //-----------------------------------------------------------------------------
 // Name : HandleMouse ()
 //-----------------------------------------------------------------------------
-bool CRadioButtonUI::HandleMouse( HWND hWnd, UINT uMsg, POINT pt, WPARAM wParam, LPARAM lParam, CTimer* timer )
+bool CRadioButtonUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer )
 {
 	switch(uMsg)
 	{
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONDBLCLK:
 		{
-			if ( ContainsPoint( pt ) )
-			{
-				m_bPressed = true;
-
-				SetCapture(hWnd);
-
-				if( !m_bHasFocus )
-					m_pParentDialog->RequestFocus( this );
-
+			if ( Pressed(hWnd, mousePoint, inputstate, timer))
 				return true;
-
-			}
 		}break;
 
 	case WM_LBUTTONUP:
 		{
-			if (m_bPressed)
-			{
-				m_bPressed = false;
-
-				ReleaseCapture();
-
-				if (ContainsPoint(pt))
-				{
-					m_pParentDialog->ClearRadioButtonGruop(m_nButtonGroup);
-					m_bChecked = !m_bChecked;
-					m_pParentDialog->SendEvent(3, false, m_ID, hWnd);
-					//m_pParentDialog->SendEvent(hWnd, 3, true, m_ID);
-				}
-
+			if ( Released(hWnd, mousePoint))
 				return true;
-			}
 		}break;
 	}
 
 	return false;
 }
 
+//-----------------------------------------------------------------------------
+// Name : Pressed ()
+//-----------------------------------------------------------------------------
+bool CRadioButtonUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer)
+{
+	if ( ContainsPoint( pt ) )
+	{
+		m_bPressed = true;
+
+		SetCapture(hWnd);
+
+		if( !m_bHasFocus )
+			m_pParentDialog->RequestFocus( this );
+
+		return true;
+
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : Released ()
+//-----------------------------------------------------------------------------
+bool CRadioButtonUI::Released( HWND hWnd, POINT pt)
+{
+	if (m_bPressed)
+	{
+		m_bPressed = false;
+
+		ReleaseCapture();
+
+		if (ContainsPoint(pt))
+		{
+			m_pParentDialog->ClearRadioButtonGruop(m_nButtonGroup);
+			m_bChecked = !m_bChecked;
+			m_clickedSig(this);
+			//m_pParentDialog->SendEvent(3, false, m_ID, hWnd);
+			//m_pParentDialog->SendEvent(hWnd, 3, true, m_ID);
+		}
+
+		return true;
+	}
+	return false;
+}
 //-----------------------------------------------------------------------------
 // Name : getButtonGroup ()
 //-----------------------------------------------------------------------------

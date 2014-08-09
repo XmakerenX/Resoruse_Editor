@@ -177,16 +177,16 @@ void CCamSpaceCraft::RotateAroundPoint(D3DXVECTOR3& point,float XDistance,float 
 	m_vecPos += m_vecUp    * YDistance;
 
 	if (m_vecPos.z < rotLimits.minZ)
-		m_vecPos.z = rotLimits.minZ;
+		m_vecPos.z = static_cast<float>(rotLimits.minZ );
 
 	if (m_vecPos.z > rotLimits.maxZ)
-		m_vecPos.z = rotLimits.maxZ;
+		m_vecPos.z = static_cast<float>(rotLimits.maxZ);
 
 	if (m_vecPos.x < rotLimits.minX)
-		m_vecPos.x = rotLimits.minX;
+		m_vecPos.x = static_cast<float>(rotLimits.minX);
 
 	if (m_vecPos.x > rotLimits.maxX)
-		m_vecPos.x = rotLimits.maxX;
+		m_vecPos.x = static_cast<float>(rotLimits.maxX);
 
 	 D3DXMatrixLookAtLH( &Matrix, &m_vecPos, &point, &vecUp );
 
