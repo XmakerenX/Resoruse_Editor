@@ -1,0 +1,100 @@
+main stuff to do:
+* write save and load function for the dialog 
+* decide what need to be saved and if to add custom control textures?? 
+* write function that will load the new Chess pieces 
+
+UI :
+* delete the sendEvent function in all the classes.  
+
+
+CButtonUI:
+* Released() TODO: something here about keyboard input from dialog... ????
+
+CCheckboxUI:
+* HandleKeyboard() //TODO: implement the HandleKeyboard and check why keyboard messages seems to not work...
+
+CComboBoxUI:
+* HandleMouse() case WM_MOUSEWHELL //TODO: pass zdelta or pass the number needed to calc it! --make sure it was done!
+* Pressed() //TODO: check what this suppose to do ?
+	    //if( !m_pParentDialog->m_bKeyboardInput )
+	    //	m_pDialog->ClearFocus();
+* Scrolled() //TODO: make sure nScrollAmount --again should be fixed just to check if it was done
+* AddItem() TODO: sort the objects by something else than pData or change it from void* to some kind of ENUM
+	    need to decide what data types pData can be and work againts them.
+* AddItem() //TODO: add something that will catch the exception thrown by push_back in case of lack of memory 
+		    check if I need to catch exceptions in other places of the code.	
+* GetItemData() //TODO: add some way to pop up errors Messages maybe my own generic pop up window ??
+
+CControlUI:
+* Render //TODO: need to decide how time between frames will be given to the render function, right now being given by
+                assetmanger , think if this the best way to do it.
+
+CDialogUI:
+* OnMouseMove() //TODO: use setLocation instead of manually adding the values , should be 5 secs to do.
+* getControlAtPoint() //TODO: add checks for if the control is enable and not hidden ,check if I didn't forget something
+* Dialog.h //TODO: delete the  vars that aren't needed for the drag operation
+	
+CEditBoxUI:
+//TODO: make scrolling and choosing a char work accurate     -------> should be better now but do some test to check
+//TDOO: make m_nFirstVisible more accurate                   -------> how accurate it is
+//TODO: find a better and faster way to tell the text width  ------->
+* MsgProc() 	// Make sure that while editing, the keyup and keydown messages associated with 
+		// WM_CHAR messages don't go to any non-focused controls or cameras
+		// TODO: Fix the problem that this case flashes the delete button messages.. ???
+		// possible solution is to just put the delete thingy here instead in Handlekeyboard
+
+* FloatParseArray() //TODO: replace this crap with something that is logical and elegant , should be obsolete by now
+* ResetCaretB|link() //TODO: try to use the timer here instead of this ugly thing, see why didn't I just pass to it the timer
+
+CListBoxUI:
+* Scrolled() //TODO: add here way to calc or pas the value for scrolled!, should be fixed ??
+* AddItem() //TODO: add a check that will catch the exception in a case push_back fails! 
+* InssertItem() //TODO: add something that will catch the exception
+* RemoveItemByData //TODO: decide if I really need this function as I don't really use data here...., but might be usefull
+  		  	   in the futrue !?
+CScrollBarUI:
+* Pressed() //TODO: understand what the hell the time stamp here does
+* Render() //TODO: find some miracle way to bring to this function the time.... , happened already remove comment!
+CScrollBarUI.h 	// TODO: add support for controls to have access to other messages than keyboard and mouse inputs..
+		// with new slots and signal system could be no need for MsgProc... , change happened events still needed..
+CStaticUI:
+* Render() // TODO : use the RenderText function instead of the code in the render function, should be simple ...
+
+Game Engine:
+
+CAssetManger:
+* getTexture() //TODO: order the path thingy so it will work 
+* addFont() //TODO: add something that will initialize the static values
+CAssetManager.h //TODO: think of maybe using some string to represent the Font instead of a couple of vars
+		//NOTE: having this vars seems to be quite useful for determining the font properties so string idea 
+		is bah , so keeping it or not?
+
+CMyMesh:
+* LoadMeshFromX() //TODO: add option to store the attribute data in the scene itself for faster rendering ??
+* Draw() //TODO: rewrite the function to suit the new way of doing stuff or delete , better to rewrite it ...
+* change class name to for a better suited name
+* write function that will load the new Chess pieces 
+
+CMyObject:
+* CMyObject: //TODO: add support for rotations not only around the x axis , wasn't it done already?
+* change class name to for a better suited name
+
+CMySprite():
+* CreateQuad() TODO: write description for this func and name it better and better vars names
+* AddQuad() TODO: write description for this func and name it better
+* Init() // TODO: check if I need to add more usage flags
+* setIfToRefresh // TODO : If no use will be found to m_bRefresh DELETE this functions , the fuck is that thing?
+* change class name to for a better suited name
+
+window class and main 
+
+CGameWin:
+* CGameWin() //TODO: make something later that will check for device caps !!!!!!!!! must be done
+* CreateDisplay() //TODO: make Adjust Window Rect work ! somehow ....., what the point of this ..?
+* CreateDevice(() //TODO add more checking for future use!!! see first comment.
+* resetDevice() .windowed = true //TODO: set this to variable not static value
+* FrameAdvance() //TODO: add something that checks if the device was lost , there is something like that in the start.. so?
+* BuildObjects() // TODO: check if m_hWnd is set to valid value! where is m_hwnd? 
+
+main:
+* WINMain() //TODO: create an actual developer console some day ...

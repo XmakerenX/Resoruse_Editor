@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------------
 // Name : CGameWin (constructor)
 //-----------------------------------------------------------------------------
-CGameWin::CGameWin() :Width(1024),Height(768)//640 480
+CGameWin::CGameWin() :Width(1024),Height(742)//640 480
 {
 	m_gameRunning = true;
 
@@ -603,7 +603,7 @@ void CGameWin::resetDevice()
 	d3dpp.MultiSampleQuality         = 0;
 	d3dpp.SwapEffect                 = D3DSWAPEFFECT_DISCARD; 
 	d3dpp.hDeviceWindow              = m_hWnd;
-	d3dpp.Windowed                   = true;
+	d3dpp.Windowed                   = true; //TODO: set this to variable not static value
 	d3dpp.EnableAutoDepthStencil     = true; 
 	d3dpp.AutoDepthStencilFormat     = D3DFMT_D24S8;
 	d3dpp.Flags                      = 0;
@@ -1151,11 +1151,11 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	CEditBoxUI* pDialogHeight = nullptr;
 	CButtonUI* pDialogSet = nullptr;
 
-	m_EditDialog.addStatic(IDC_DIALOGSTATIC,"Dialog Size", 125, 600, 50, 60, &pDialogStatic);
-	m_EditDialog.addEditbox(IDC_DIALOGWIDTH, "", 125, 650, 50, 34, m_timer, &pDialogWidth);
-	m_EditDialog.addEditbox(IDC_DIALOGHEIGHT, "", 275, 650, 50, 34, m_timer, &pDialogHeight );
+	m_EditDialog.addStatic(IDC_DIALOGSTATIC,"Dialog Size", 125, 480, 200, 60, &pDialogStatic);
+	m_EditDialog.addEditbox(IDC_DIALOGWIDTH, "", 125, 530, 50, 34, m_timer, &pDialogWidth);
+	m_EditDialog.addEditbox(IDC_DIALOGHEIGHT, "", 275, 530, 50, 34, m_timer, &pDialogHeight );
 
-	m_EditDialog.addButton(IDC_DIALOGSETSIZE, "Set Size", 150, 689, 150, 25, 0,&pDialogSet);
+	m_EditDialog.addButton(IDC_DIALOGSETSIZE, "Set Size", 150, 569, 150, 25, 0,&pDialogSet);
 
 	pDialogSet->connectToClick( boost::bind(&CGameWin::SetGenDialogSize, this, _1) );
 
