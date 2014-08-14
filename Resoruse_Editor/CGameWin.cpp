@@ -1039,7 +1039,7 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	//-----------------------------------------------------------------------------
 	// Dialog initialization
 	//-----------------------------------------------------------------------------
-	m_EditDialog.init(500,700,18, "Edit Dialog","", d3d::GREEN, m_hWnd, m_assetManger);
+	m_EditDialog.init(500,735,18, "Edit Dialog","", d3d::GREEN, m_hWnd, m_assetManger);
 	m_EditDialog.setLocation(550,0);
 
 	m_EditDialog.addStatic(IDC_CONTROLTYPESTATIC, "Control Type", 125, 0, 200, 24);
@@ -1146,6 +1146,9 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	pCreateControlButton->connectToClick( boost::bind(&CGameWin::CreateControlClicked, this, _1) );
 	//m_EditDialog.
 
+	//-----------------------------------------------------------------------------
+	// Dialog resize menu creation
+	//-----------------------------------------------------------------------------
 	CStaticUI* pDialogStatic = nullptr;
 	CEditBoxUI* pDialogWidth = nullptr;
 	CEditBoxUI* pDialogHeight = nullptr;
@@ -1154,10 +1157,22 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	m_EditDialog.addStatic(IDC_DIALOGSTATIC,"Dialog Size", 125, 480, 200, 60, &pDialogStatic);
 	m_EditDialog.addEditbox(IDC_DIALOGWIDTH, "", 125, 530, 50, 34, m_timer, &pDialogWidth);
 	m_EditDialog.addEditbox(IDC_DIALOGHEIGHT, "", 275, 530, 50, 34, m_timer, &pDialogHeight );
-
 	m_EditDialog.addButton(IDC_DIALOGSETSIZE, "Set Size", 150, 569, 150, 25, 0,&pDialogSet);
 
 	pDialogSet->connectToClick( boost::bind(&CGameWin::SetGenDialogSize, this, _1) );
+
+	//-----------------------------------------------------------------------------
+	// Dialog resize menu creation
+	//-----------------------------------------------------------------------------
+	CStaticUI* pFileNameStatic = nullptr;
+	CEditBoxUI* pFileNameEditBox = nullptr;
+	CButtonUI* pLoadFileButton = nullptr;
+	CButtonUI* pSaveFilButton = nullptr;
+
+	m_EditDialog.addStatic(IDC_FILENAMESTATIC,"FIle Name", 125, 579, 200, 60, &pFileNameStatic);
+	m_EditDialog.addEditbox(IDC_FILENAMEEDITBOX, "", 125, 624, 200, 34, m_timer, &pFileNameEditBox);
+	m_EditDialog.addButton(IDC_LOADFILEBUTTON, "Load",125, 663, 70, 34, 0, &pLoadFileButton);
+	m_EditDialog.addButton(IDC_SAVEFILEBUTTON, "Save", 255, 663,70, 34, 0, &pSaveFilButton);
 
 	//-----------------------------------------------------------------------------
 	// Dialog initialization of the generated Dialog
@@ -1625,12 +1640,14 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 {
 	POINT cursorPoint;
 	LPCTSTR pControlText;
+	LPCTSTR pControlIDText;
 
 	ULONG selectedItem = (ULONG)m_EditDialog.getComboBox(IDC_COMBOX)->GetSelectedData();
 	UINT  controlWidth =  atoi( m_EditDialog.getEditBox(IDC_WIDTHEDITBOX)->GetText() );
 	UINT  controlHeight = atoi( m_EditDialog.getEditBox(IDC_HEIGHTEDITBOX)->GetText() );
 
 	pControlText = m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->GetText();
+	pControlIDText m_EditDialog.getEditBox(IDC_CONTROLTEXT)->GetText();
 
 	GetCursorPos( &cursorPoint );
 	ScreenToClient( m_hWnd, &cursorPoint );
@@ -1639,28 +1656,28 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 	{
 	case CControlUI::BUTTON:
 		{
-			m_GenDialog.addButton(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+			m_GenDialog.addButton(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, pControlIDText, cursorPoint.x,
 				cursorPoint.y, controlWidth, controlWidth, 0);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::CHECKBOX:
 		{
-			m_GenDialog.addCheckBox(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+			m_GenDialog.addCheckBox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlIDText, cursorPoint.x, cursorPoint.y,
 				controlWidth, controlHeight, 0);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::RADIOBUTTON:
 		{
-			m_GenDialog.addRadioButton(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x,
+			m_GenDialog.addRadioButton(IDC_GENCONTROLID + m_GenControlNum + 1, pControlIDText, cursorPoint.x,
 				cursorPoint.y, controlWidth, controlHeight, 0, 0);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::COMBOBOX:
 		{
-			m_GenDialog.addComboBox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+			m_GenDialog.addComboBox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, pControlIDText, cursorPoint.x,
 				cursorPoint.y, controlWidth, controlHeight, 0);
 
 			UINT comboboxSize = m_EditDialog.getComboBox(IDC_COMBOXITEMS)->GetNumItems();
@@ -1677,21 +1694,21 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 
 	case CControlUI::STATIC:
 		{
-			m_GenDialog.addStatic(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+			m_GenDialog.addStatic(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, pControlIDText, cursorPoint.x,
 				cursorPoint.y, controlWidth, controlHeight);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::EDITBOX:
 		{
-			m_GenDialog.addEditbox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+			m_GenDialog.addEditbox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, pControlIDText, cursorPoint.x,
 				cursorPoint.y, controlWidth, controlHeight, m_timer);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::LISTBOX:
 		{
-			m_GenDialog.addListBox(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+			m_GenDialog.addListBox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlIDText, cursorPoint.x, cursorPoint.y,
 				controlWidth, controlHeight);
 			
 			UINT listboxSize = m_EditDialog.getListBox(IDC_LISTBOXITEMS)->GetSize();
@@ -1711,7 +1728,7 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 			int minValue = atoi ( m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->GetText() );
 			int maxValue = atoi ( m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->GetText() );
 
-			m_GenDialog.addSlider(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+			m_GenDialog.addSlider(IDC_GENCONTROLID + m_GenControlNum + 1, pControlIDText, cursorPoint.x, cursorPoint.y,
 				controlWidth, controlHeight, minValue, maxValue, (maxValue - minValue) / 2);
 			m_controlInCreation = true;
 		}break;
