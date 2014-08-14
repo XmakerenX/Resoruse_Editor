@@ -250,6 +250,30 @@ void CButtonUI::connectToClick(const signal_clicked::slot_type& subscriber)
 	m_clickedSig.connect(subscriber);
 }
 
+bool CButtonUI::SaveToFile(std::ostream SaveFile)
+{
+	SaveFile << m_ID   << " Control ID"     << "\n";
+	SaveFile << m_type << " Control Type"   << "\n";
+
+	SaveFile << m_strText << " Control Text" <<"\n";
+
+	SaveFile << m_x       << " Control X" << "\n";
+	SaveFile << m_y	      << " Control Y" << "\n";
+	SaveFile << m_width   << " Control Width"  <<  "\n";
+	SaveFile << m_height  << " Control Height" << "\n";
+
+//TODO: add the abilty to save custom buttons
+// 	if  ( isControlDefualt() )
+// 	{
+// 		outputFile << "1" << " Control Default" << "\n";
+// 	}
+// 	else
+// 	{
+// 		outputFile << "0" << " Control Default" << "\n";
+// 	}
+	SaveFile << m_nHotkey << " Button HotKey" << "\n";
+}
+
 //-----------------------------------------------------------------------------
 // Name : CanHaveFocus ()
 //-----------------------------------------------------------------------------

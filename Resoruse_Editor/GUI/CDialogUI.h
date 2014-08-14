@@ -3,6 +3,7 @@
 
 #include <Windows.h>
 #include <vector>
+#include <string>
 #include <d3dx9.h>
 #include "../rendering/d3d.h"
 #include "../CAssetManager.h"
@@ -18,6 +19,18 @@
 
 // the callback function that used to send back GUI events to the main program
 typedef VOID ( CALLBACK*PCALLBACKGUIEVENT )(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext );
+
+struct DEF_INFO
+{
+	DEF_INFO::DEF_INFO(std::string newControlIDText, UINT newControlID)
+	{
+		controlIDText = newControlIDText;
+		controlID = newControlID;
+	}
+
+	std::string controlIDText;
+	UINT controlID;
+};
 
 //struct that holds the default elements for a control type
 struct CONTROL_GFX
@@ -61,34 +74,41 @@ public:
 	//-------------------------------------------------------------------------
 	// Functions that handle the Dialog Controls
 	//-------------------------------------------------------------------------
-	bool	initControl(CControlUI* pControl);
+	bool			 initControl	 (CControlUI* pControl);
 
-	bool	addStatic		 (int ID, LPCTSTR strText, int x, int y, int width, int height, CStaticUI** ppStaticCreated = NULL);
-	bool	addButton		 (int ID, LPCTSTR strText, int x, int y, int width, int height, UINT nHotkey, CButtonUI** ppButtonCreated = NULL);
-	bool    addCheckBox		 (int ID, int x, int y, int width, int height, UINT nHotkey, CCheckboxUI** ppCheckBoxCreated = NULL);
-	bool	addRadioButton	 (int ID, int x, int y, int width, int height, UINT nHotkey, UINT nButtonGroup, CRadioButtonUI** ppRadioButtonCreated = NULL);
-	bool    addComboBox      (int ID, LPCTSTR strText, int x, int y, int width, int height, UINT nHotkey, CComboBoxUI** ppComboxCreated = NULL);
-	bool    addListBox		 (int ID, int x, int y, int width, int height, DWORD style = 0, CListBoxUI** ppListBoxCreated = NULL);
-	bool    addSlider		 (int ID, int x, int y, int width, int height, int min, int max, int nValue, CSliderUI** ppSliderCreated = NULL);
-	bool    addEditbox		 (int ID, LPCTSTR strText, int x, int y, int width, int height, CTimer* timer, CEditBoxUI** ppEditBoxCreated = NULL );
+	bool			 addStatic				( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, CStaticUI** ppStaticCreated = NULL);
+	bool			 addButton				( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CButtonUI** ppButtonCreated = NULL);
+	bool			 addCheckBox			( int ID, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CCheckboxUI** ppCheckBoxCreated = NULL);
+	bool			 addRadioButton			( int ID, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, UINT nButtonGroup, CRadioButtonUI** ppRadioButtonCreated = NULL);
+	bool			 addComboBox			( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CComboBoxUI** ppComboxCreated = NULL);
+	bool		     addListBox				( int ID, LPCTSTR strID, int x, int y, int width, int height, DWORD style = 0, CListBoxUI** ppListBoxCreated = NULL);
+	bool		     addSlider				( int ID, LPCTSTR strID, int x, int y, int width, int height, int min, int max, int nValue, CSliderUI** ppSliderCreated = NULL);
+	bool			 addEditbox				( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, CTimer* timer, CEditBoxUI** ppEditBoxCreated = NULL );
 
-	CControlUI     * getControl		( int ID );
-	CControlUI     * getControl		( int ID, UINT nControlType );
-	CStaticUI      * getStatic		( int ID );
-	CButtonUI      * getButton		( int ID );
-	CCheckboxUI    * getCheckBox	( int ID );
-	CRadioButtonUI * getRadioButton ( int ID );
-	CComboBoxUI	   * getComboBox	( int ID );
-	CSliderUI	   * getSlider		( int ID );
-	CEditBoxUI	   * getEditBox		( int ID );
-	CListBoxUI	   * getListBox		( int ID );
+	CControlUI     * getControl				( int ID );
+	CControlUI     * getControl			    ( int ID, UINT nControlType );
+	CStaticUI      * getStatic			    ( int ID );
+	CButtonUI      * getButton		        ( int ID );
+	CCheckboxUI    * getCheckBox			( int ID );
+	CRadioButtonUI * getRadioButton			( int ID );
+	CComboBoxUI	   * getComboBox			( int ID );
+	CSliderUI	   * getSlider				( int ID );
+	CEditBoxUI	   * getEditBox				( int ID );
+	CListBoxUI	   * getListBox			    ( int ID );
 
-	void    ClearRadioButtonGruop(UINT nButtonGroup);
+	void		     ClearRadioButtonGruop	( UINT nButtonGroup);
 
-	CControlUI* getControlAtPoint(POINT pt);
+	CControlUI	   * getControlAtPoint		( POINT pt);
 
-	void	RequestFocus( CControlUI* pControl );
+	void			 RequestFocus			( CControlUI* pControl );
+
 	static void WINAPI  ClearFocus();
+
+	//-------------------------------------------------------------------------
+	// Save/Load Functions
+	//-------------------------------------------------------------------------
+	bool				SaveDilaogToFile	(LPCTSTR FileName);
+	bool			    LoadDialogFromFile	(LPCTSTR FileName);
 
 	//-------------------------------------------------------------------------
 	// get and set Functions 
@@ -130,6 +150,8 @@ private:
 
 	//CButtonUI m_button;
 	std::vector<CControlUI*> m_Controls;
+
+	std::vector<DEF_INFO> m_defInfo;
 
 	static CControlUI* s_pControlFocus; // The control which has focus
 	CControlUI* m_pMouseOverControl;

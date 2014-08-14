@@ -1,6 +1,7 @@
 #ifndef  _CCONTROLUI_H
 #define  _CCONTROLUI_H
 
+#include <fstream>
 #include <Windows.h>
 #include <boost/signals2/signal.hpp>
 #include <boost/bind/bind.hpp>
@@ -176,6 +177,7 @@ public:
 	bool    getVisible			();
 	CDialogUI* getParentDialog  ();
 	
+	virtual bool	SaveToFile			(std::ostream SaveFile) = 0;
 
 	virtual void UpdateRects();
 protected:

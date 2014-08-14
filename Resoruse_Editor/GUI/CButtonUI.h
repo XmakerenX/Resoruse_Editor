@@ -31,6 +31,8 @@ public:
 	void	setHotKey					( UINT nHotKey);
 
 	void    connectToClick				( const signal_clicked::slot_type& subscriber);
+	
+	virtual bool SaveToFile				(std::ostream SaveFile);
 
 	//void	drawButtonRect		(RECT& rcTexture, RECT& rcWindow, LPD3DXSPRITE sprite, LPDIRECT3DTEXTURE9 pTexture, D3DCOLOR color);
 	//void	drawButtonRect		(RECT& rcTexture, RECT& rcWindow, CMySprite* sprite, LPDIRECT3DTEXTURE9 pTexture, D3DCOLOR color, bool bHighLight);
