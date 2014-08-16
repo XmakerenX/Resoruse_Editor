@@ -124,6 +124,9 @@ public:
 	enum CONTROLS{STATIC, BUTTON, CHECKBOX, RADIOBUTTON, COMBOBOX, EDITBOX, LISTBOX, SCROLLBAR, SLIDER};
 
 	CControlUI(void);
+	CControlUI(CDialogUI* pParentDialog, int ID, int x, int y, UINT width, UINT height);
+	CControlUI(std::istream& inputFile);
+
 	virtual ~CControlUI(void);
 
 	virtual bool onInit();
@@ -177,7 +180,7 @@ public:
 	bool    getVisible			();
 	CDialogUI* getParentDialog  ();
 	
-	virtual bool	SaveToFile			(std::ostream SaveFile) = 0;
+	virtual bool	SaveToFile  (std::ostream& SaveFile);
 
 	virtual void UpdateRects();
 protected:

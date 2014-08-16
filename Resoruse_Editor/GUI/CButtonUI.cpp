@@ -17,30 +17,29 @@
 //-----------------------------------------------------------------------------
 // Name : CButtonUI (constructor)
 //-----------------------------------------------------------------------------
-CButtonUI::CButtonUI(int ID, LPCTSTR strText, int x, int y, UINT width, UINT height, UINT nHotkey)
-	:CStaticUI(ID, strText, x, y, width, height)
+CButtonUI::CButtonUI(CDialogUI* pParentDialog, int ID, LPCTSTR strText, int x, int y, UINT width, UINT height, UINT nHotkey)
+	:CStaticUI(pParentDialog, ID, strText, x, y, width, height)
 {
 	m_type = CControlUI::BUTTON;
-	//m_ID = ID;
-
-	//strcpy_s(m_strText,MAX_PATH, strText);
-
-	//m_x = x;
-	//m_y = y;
-
-	//m_width = width;
-	//m_height = height;
 
 	m_nHotkey = nHotkey;
-
 	m_bPressed = false;
-
-	//m_fontIndex = fontIndex;
-
-	//m_controlGfx.iTexture = -1;
-
 	m_textColor = D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f );
 }
+
+//-----------------------------------------------------------------------------
+// Name : CButtonUI (constructor from InputFile)
+//-----------------------------------------------------------------------------
+CButtonUI::CButtonUI(std::istream& inputFile)
+	:CStaticUI(inputFile)
+{
+	UINT nHotkey;
+
+	inputFile >> nHotkey;
+	setHotKey(nHotkey);
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+}
+
 //-----------------------------------------------------------------------------
 // Name : CButtonUI (detractor)
 //-----------------------------------------------------------------------------
@@ -250,17 +249,14 @@ void CButtonUI::connectToClick(const signal_clicked::slot_type& subscriber)
 	m_clickedSig.connect(subscriber);
 }
 
-bool CButtonUI::SaveToFile(std::ostream SaveFile)
+//-----------------------------------------------------------------------------
+// Name : SaveToFile ()
+//-----------------------------------------------------------------------------
+bool CButtonUI::SaveToFile(std::ostream& SaveFile)
 {
-	SaveFile << m_ID   << " Control ID"     << "\n";
-	SaveFile << m_type << " Control Type"   << "\n";
+	CStaticUI::SaveToFile(SaveFile);
 
-	SaveFile << m_strText << " Control Text" <<"\n";
-
-	SaveFile << m_x       << " Control X" << "\n";
-	SaveFile << m_y	      << " Control Y" << "\n";
-	SaveFile << m_width   << " Control Width"  <<  "\n";
-	SaveFile << m_height  << " Control Height" << "\n";
+	SaveFile << m_nHotkey << " Button HotKey" << "\n";
 
 //TODO: add the abilty to save custom buttons
 // 	if  ( isControlDefualt() )
@@ -271,7 +267,7 @@ bool CButtonUI::SaveToFile(std::ostream SaveFile)
 // 	{
 // 		outputFile << "0" << " Control Default" << "\n";
 // 	}
-	SaveFile << m_nHotkey << " Button HotKey" << "\n";
+
 }
 
 //-----------------------------------------------------------------------------

@@ -189,6 +189,19 @@ bool CScrollBarUI::Dragged( POINT pt)
 }
 
 //-----------------------------------------------------------------------------
+// Name : SaveToFile() 
+// NOTE : seems to be no need to save the Scrollbar as it is automatically generated
+//-----------------------------------------------------------------------------
+// bool CScrollBarUI::SaveToFile(std::ostream& SaveFile)
+// {
+// 	CControlUI::SaveToFile(SaveFile);
+// 
+// 	SaveFile << 
+// 
+// 	return true;
+// }
+
+//-----------------------------------------------------------------------------
 // Name : Render() 
 // Desc : renders the scroll bar to the screen
 //-----------------------------------------------------------------------------

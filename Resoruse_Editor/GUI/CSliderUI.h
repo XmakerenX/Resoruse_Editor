@@ -11,8 +11,9 @@ public:
 	//-------------------------------------------------------------------------
 	// Constructors & Destructors for This Class.
 	//-------------------------------------------------------------------------
-	CSliderUI( int ID, int x, int y, int width, int height, int min, int max, int nValue );
-	virtual ~CSliderUI(void);
+	CSliderUI				(CDialogUI* pParentDialog, int ID, int x, int y, int width, int height, int min, int max, int nValue );
+	CSliderUI				(std::istream& inputFile);
+	virtual ~CSliderUI		(void);
 
 	virtual BOOL    ContainsPoint( POINT pt );
 
@@ -32,8 +33,10 @@ public:
 	//-------------------------------------------------------------------------
 	// functions that handle Rendering
 	//-------------------------------------------------------------------------
-	virtual void    UpdateRects();
+	virtual void    UpdateRects	();
 	virtual bool    CanHaveFocus();
+
+	virtual bool	SaveToFile	(std::ostream& SaveFile);
 
 	virtual void    Render( CAssetManager& assetManger );
 

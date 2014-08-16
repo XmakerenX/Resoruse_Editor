@@ -4,8 +4,8 @@
 //-----------------------------------------------------------------------------
 // Name : CComboBoxUI(constructor) 
 //-----------------------------------------------------------------------------
-CComboBoxUI::CComboBoxUI(int ID, LPCTSTR strText, int x, int y, UINT width, UINT height, UINT nHotkey)
-	:CButtonUI(ID, strText, x, y, width, height, nHotkey)
+CComboBoxUI::CComboBoxUI(CDialogUI* pParentDialog, int ID, LPCTSTR strText, int x, int y, UINT width, UINT height, UINT nHotkey)
+	:CButtonUI(pParentDialog, ID, strText, x, y, width, height, nHotkey)
 {
 	m_type = CControlUI::COMBOBOX;
 
@@ -15,6 +15,39 @@ CComboBoxUI::CComboBoxUI(int ID, LPCTSTR strText, int x, int y, UINT width, UINT
 	m_bOpened = false;
 	m_iSelected = -1;
 	m_iFocused = -1;
+}
+
+//-----------------------------------------------------------------------------
+// Name : CComboBoxUI(constructor from InputFile)
+//-----------------------------------------------------------------------------
+CComboBoxUI::CComboBoxUI(std::istream& inputFile)
+	:CButtonUI(inputFile)
+{
+	UINT itemsSize = 0;;
+	m_type = CControlUI::COMBOBOX;
+
+	m_bOpened = false;
+	m_iSelected = -1;
+	m_iFocused = -1;
+
+	inputFile >> m_nDropHeight;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_nSBWidth;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_nFontHeight;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> itemsSize;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
+	for (UINT i = 0; i < itemsSize; i++)
+	{
+		std::string strText;
+
+		inputFile >> strText;
+		AddItem(strText.c_str(), nullptr);
+
+		inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -720,4 +753,25 @@ void CComboBoxUI::OnFocusOut()
 	CButtonUI::OnFocusOut();
 
 	m_bOpened = false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : SaveToFile() 
+//-----------------------------------------------------------------------------
+bool CComboBoxUI::SaveToFile(std::ostream& SaveFile)
+{
+	CButtonUI::SaveToFile(SaveFile);
+
+	SaveFile << m_nDropHeight << " ComboBox Drop Height" << "\n";
+	SaveFile << m_nSBWidth << " ComboBox SBWidth" << "\n";
+	SaveFile << m_nFontHeight << " ComboBox Font Height" << "\n";
+
+	SaveFile << m_Items.size() << " ComboBox Items Size" << "\n";
+
+	for (UINT i = 0; i < m_Items.size(); i++)
+	{
+		SaveFile << m_Items[i]->strText << " ComboBox Item "<< i <<" Text" << "\n";
+	}
+
+	return true;
 }

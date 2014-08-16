@@ -1,5 +1,6 @@
 #include "CDialogUI.h"
-#include <fstream>
+#include <iostream>
+#include <limits>
 
 CControlUI* CDialogUI::s_pControlFocus = NULL;
 
@@ -856,21 +857,42 @@ CControlUI* CDialogUI::getControlAtPoint(POINT pt)
 
 //-----------------------------------------------------------------------------
 // Name : addStatic
-// Desc : add a control of type static to the dialog
+// Desc : adds a control of type static to the dialog
 //-----------------------------------------------------------------------------
 bool CDialogUI::addStatic(int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, CStaticUI** ppStaticCreated/* = NULL*/)
 {
 	//initialized the static control
-	CStaticUI* pControl = new CStaticUI(ID, strText, x, y, width, height);
+	CStaticUI* pStatic = new CStaticUI(this ,ID, strText, x, y, width, height);
 
-	initControl(pControl);
+	initControl(pStatic);
 
 	//add it to the controls vector
-	m_Controls.push_back(pControl);
+	m_Controls.push_back(pStatic);
+	// add the control info the Definition Vector
 	m_defInfo.push_back( DEF_INFO(strID, ID) );
 
 	if (ppStaticCreated != NULL)
-		*ppStaticCreated = pControl;
+		*ppStaticCreated = pStatic;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : addStaticFromFile
+// Desc : loads form file  a control of type static to the dialog 
+//-----------------------------------------------------------------------------
+bool CDialogUI::addStaticFromFile(std::istream& InputFIle, CStaticUI** ppStaticCreated/* = NULL*/)
+{
+	//initialized the static control from file
+	CStaticUI* pStatic = new CStaticUI(InputFIle);
+
+	initControl(pStatic);
+
+	//add it to the controls vector
+	m_Controls.push_back(pStatic);
+
+	if (ppStaticCreated != NULL)
+		*ppStaticCreated = pStatic;
 
 	return true;
 }
@@ -882,7 +904,7 @@ bool CDialogUI::addStatic(int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, 
 bool CDialogUI::addButton(int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CButtonUI** ppButtonCreated/* = NULL*/)
 {
 	//initialized the button control
-	CButtonUI* pButton = new  CButtonUI(ID, strText, x, y, width, height, nHotkey);
+	CButtonUI* pButton = new  CButtonUI(this ,ID, strText, x, y, width, height, nHotkey);
 
 	initControl(pButton);
 
@@ -897,13 +919,33 @@ bool CDialogUI::addButton(int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, 
 }
 
 //-----------------------------------------------------------------------------
+// Name : addButtonFromFile
+// Desc : loads from file a control of type Button to the dialog 
+//-----------------------------------------------------------------------------
+bool CDialogUI::addButtonFromFile(std::istream& InputFIle, CButtonUI** ppButtonCreated /*= NULL*/)
+{
+	//initialized the button control from file
+	CButtonUI* pButton = new  CButtonUI(InputFIle);
+
+	initControl(pButton);
+
+	//add it to the controls vector
+	m_Controls.push_back(pButton);
+
+	if (ppButtonCreated != NULL)
+		*ppButtonCreated = pButton;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
 // Name : addCheckBox()
 // Desc : add a control of type checkBox to the dialog
 //-----------------------------------------------------------------------------
 bool CDialogUI::addCheckBox(int ID, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CCheckboxUI** ppCheckBoxCreated/* = NULL*/)
 {
 	//initialized the checkBox control
-	CCheckboxUI* pCheckBox = new CCheckboxUI(ID, x, y, width, height, nHotkey);
+	CCheckboxUI* pCheckBox = new CCheckboxUI(this, ID, x, y, width, height, nHotkey);
 
 	initControl(pCheckBox);
 
@@ -920,12 +962,30 @@ bool CDialogUI::addCheckBox(int ID, LPCTSTR strID, int x, int y, int width, int 
 }
 
 //-----------------------------------------------------------------------------
+// Name : addCheckBoxFromFile()
+// Desc : loads from file a control of type CheckBox to the dialog 
+//-----------------------------------------------------------------------------
+bool CDialogUI::addCheckBoxFromFile(std::istream& InputFIle, CCheckboxUI** ppCheckBoxCreated /* = NULL */)
+{
+	//initialized the checkBox control from file
+	CCheckboxUI* pCheckBox = new CCheckboxUI(InputFIle);
+
+	initControl(pCheckBox);
+
+	//add it to the controls vector
+	m_Controls.push_back(pCheckBox);
+
+	if (ppCheckBoxCreated != NULL)
+		*ppCheckBoxCreated = pCheckBox;
+}
+
+//-----------------------------------------------------------------------------
 // Name : addRadioButton()
 // Desc : add a control of type radio button to the dialog
 //-----------------------------------------------------------------------------
 bool CDialogUI::addRadioButton(int ID, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, UINT nButtonGroup, CRadioButtonUI** ppRadioButtonCreated/* = NULL*/)
 {
-	CRadioButtonUI* pRadioButton = new CRadioButtonUI(ID, x, y, width, height, nHotkey, nButtonGroup);
+	CRadioButtonUI* pRadioButton = new CRadioButtonUI(this, ID, x, y, width, height, nHotkey, nButtonGroup);
 
 	initControl(pRadioButton);
 
@@ -940,19 +1000,60 @@ bool CDialogUI::addRadioButton(int ID, LPCTSTR strID, int x, int y, int width, i
 }
 
 //-----------------------------------------------------------------------------
+// Name : addRadioButtonFromFile()
+// Desc : loads from file a control of type RadioButton to the dialog 
+//-----------------------------------------------------------------------------
+bool CDialogUI::addRadioButtonFromFile(std::istream& InputFIle, CRadioButtonUI** ppRadioButtonCreated /* = NULL */)
+{
+	CRadioButtonUI* pRadioButton = new CRadioButtonUI(InputFIle);
+
+	initControl(pRadioButton);
+
+	//add it to the controls vector
+	m_Controls.push_back(pRadioButton);
+
+	if (ppRadioButtonCreated != NULL)
+		*ppRadioButtonCreated = pRadioButton;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
 // Name : addComboBox()
 // Desc : add a control of type Combobox to the dialog
 //-----------------------------------------------------------------------------
 bool CDialogUI::addComboBox(int ID, LPCTSTR strID, LPCTSTR strText, int x, int y, int width, int height, UINT nHotkey, CComboBoxUI** ppComboxCreated/* = NULL*/)
 {
-	CComboBoxUI* pComboBox = new CComboBoxUI(ID, strText, x, y, width, height, nHotkey);
+	CComboBoxUI* pComboBox = new CComboBoxUI(this, ID, strText, x, y, width, height, nHotkey);
 
 	initControl(pComboBox);
 
 	pComboBox->UpdateRects();
 
+	//add it to the controls vector
 	m_Controls.push_back(pComboBox);
 	m_defInfo.push_back( DEF_INFO(strID, ID) );
+
+	if (ppComboxCreated != NULL)
+		*ppComboxCreated = pComboBox;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : addComboBoxFromFile()
+// Desc : loads from file a control of type ComboBox to the dialog 
+//-----------------------------------------------------------------------------
+bool CDialogUI::addComboBoxFromFile(std::istream& InputFIle, CComboBoxUI** ppComboxCreated /* = NULL */)
+{
+	CComboBoxUI* pComboBox = new CComboBoxUI(InputFIle);
+
+	initControl(pComboBox);
+
+	pComboBox->UpdateRects();
+
+	//add it to the controls vector
+	m_Controls.push_back(pComboBox);
 
 	if (ppComboxCreated != NULL)
 		*ppComboxCreated = pComboBox;
@@ -966,7 +1067,7 @@ bool CDialogUI::addComboBox(int ID, LPCTSTR strID, LPCTSTR strText, int x, int y
 //-----------------------------------------------------------------------------
 bool CDialogUI::addListBox(int ID, LPCTSTR strID, int x, int y, int width, int height, DWORD style/* = 0*/, CListBoxUI** ppListBoxCreated/* = NULL*/)
 {
-	CListBoxUI* pListBox = new CListBoxUI(ID, x, y, width, height, style);
+	CListBoxUI* pListBox = new CListBoxUI(this, ID, x, y, width, height, style);
 
 	initControl(pListBox);
 	// !!! list box needs to update it's Rects on init
@@ -984,12 +1085,33 @@ bool CDialogUI::addListBox(int ID, LPCTSTR strID, int x, int y, int width, int h
 }
 
 //-----------------------------------------------------------------------------
+// Name : addListBoxFromFile()
+// Desc : loads from file a control of type ListBox to the dialog 
+//-----------------------------------------------------------------------------
+bool CDialogUI::addListBoxFromFile(std::istream& InputFIle, CListBoxUI** ppListBoxCreated /* = NULL */)
+{
+	CListBoxUI* pListBox = new CListBoxUI(InputFIle);
+
+	initControl(pListBox);
+	// !!! list box needs to update it's Rects on init
+	pListBox->UpdateRects();
+
+	//add it to the controls vector
+	m_Controls.push_back(pListBox);
+
+	if (ppListBoxCreated != NULL)
+		*ppListBoxCreated = pListBox;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
 // Name : addSlider()
 // Desc : add a control of type Slider to the dialog
 //-----------------------------------------------------------------------------
 bool CDialogUI::addSlider( int ID, LPCTSTR strID, int x, int y, int width, int height, int min, int max, int nValue, CSliderUI** ppSliderCreated/* = NULL*/ )
 {
-	CSliderUI* pSlider = new CSliderUI(ID, x, y, width, height, min, max, nValue);
+	CSliderUI* pSlider = new CSliderUI(this, ID, x, y, width, height, min, max, nValue);
 
 	initControl(pSlider);
 	// !!! slider needs to update it's Rects on init
@@ -1006,12 +1128,33 @@ bool CDialogUI::addSlider( int ID, LPCTSTR strID, int x, int y, int width, int h
 }
 
 //-----------------------------------------------------------------------------
+// Name : addSliderFromFile()
+// Desc : loads from file a control of type Slider to the dialog 
+//-----------------------------------------------------------------------------
+bool CDialogUI::addSliderFromFile(std::istream& InputFIle, CSliderUI** ppSliderCreated /* = NULL */)
+{
+	CSliderUI* pSlider = new CSliderUI(InputFIle);
+
+	initControl(pSlider);
+	// !!! slider needs to update it's Rects on init
+	pSlider->UpdateRects();
+
+	//add it to the controls vector
+	m_Controls.push_back(pSlider);
+
+	if (ppSliderCreated != NULL)
+		*ppSliderCreated = pSlider;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
 // Name : addEditbox()
 // Desc : add a control of type EditBox to the dialog
 //-----------------------------------------------------------------------------
 bool CDialogUI::addEditbox( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, CTimer* timer, CEditBoxUI** ppEditBoxCreated/* = NULL*/)
 {
-	CEditBoxUI* pEditBox = new CEditBoxUI(ID, strText, x, y, width, height, timer);
+	CEditBoxUI* pEditBox = new CEditBoxUI(this, ID, strText, x, y, width, height, timer);
 
 	initControl(pEditBox);
 	// !!! EditBox needs to update it's Rects on init
@@ -1028,9 +1171,31 @@ bool CDialogUI::addEditbox( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y
 }
 
 //-----------------------------------------------------------------------------
+// Name : addEditBoxFromFile()
+// Desc : loads from file a control of type EditBox to the dialog 
+//-----------------------------------------------------------------------------
+bool CDialogUI::addEditBoxFromFile(std::istream& InputFIle, CTimer* timer, CEditBoxUI** ppEditBoxCreated /* = NULL */)
+{
+	CEditBoxUI* pEditBox = new CEditBoxUI(InputFIle,timer);
+
+	initControl(pEditBox);
+	// !!! EditBox needs to update it's Rects on init
+	pEditBox->UpdateRects();
+
+	//add it to the controls vector
+	m_Controls.push_back(pEditBox);
+
+	if (ppEditBoxCreated != NULL)
+		*ppEditBoxCreated = pEditBox;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
 // Name : initControl()
 // Desc : initialize a control by giving it the default control settings
 //-----------------------------------------------------------------------------
+//TODO: remove the setParent command form this function
 bool CDialogUI::initControl(CControlUI* pControl)
 {
 	if (pControl == NULL)
@@ -1163,7 +1328,101 @@ bool CDialogUI::SaveDilaogToFile(LPCTSTR FileName)
 
 	saveFile << "/////////////////////////////////////////////////////////////////////////////\n";
 
+	for (UINT i = 0; i < m_Controls.size(); i++)
+	{
+		m_Controls[i]->SaveToFile(saveFile);
+
+		saveFile << "/////////////////////////////////////////////////////////////////////////////\n";
+	}
+
 	saveFile.close();
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : LoadDialogFromFile 
+// Desc : loads the dialog and all of his controls from file
+//-----------------------------------------------------------------------------
+bool CDialogUI::LoadDialogFromFile(LPCTSTR FileName, CTimer* timer)
+{
+	std::ifstream inputFile;
+	UINT controlType;
+
+	// check if we have controls in the dialog
+	if (m_Controls.size() > 0)
+	{
+		//if we have do a clean up
+		for (UINT i = 0; i < m_Controls.size(); i++)
+		{
+			delete m_Controls[i];
+		}
+
+		m_Controls.clear();
+	}
+
+	inputFile.open(FileName, std::ifstream::in);
+
+	//load the Dialog parameters
+	inputFile >> m_width;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+ 	inputFile >> m_height;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
+	do
+	{
+		inputFile >> controlType;
+		inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
+		switch(controlType)
+		{
+		case CControlUI::STATIC:
+			{
+				addStaticFromFile(inputFile);
+			}break;
+
+		case CControlUI::BUTTON:
+			{
+				addButtonFromFile(inputFile);
+			}break;
+
+		case CControlUI::CHECKBOX:
+			{
+				addCheckBoxFromFile(inputFile);
+			}break;
+
+		case CControlUI::COMBOBOX:
+			{
+				addComboBoxFromFile(inputFile);
+			}break;
+
+		case CControlUI::EDITBOX:
+			{
+				addEditBoxFromFile(inputFile, timer);
+			}break;
+
+		case CControlUI::LISTBOX:
+			{
+				addListBoxFromFile(inputFile);
+			}break;
+
+		case CControlUI::RADIOBUTTON:
+			{
+				addRadioButtonFromFile(inputFile);
+			}break;
+
+		case CControlUI::SLIDER:
+			{
+				addSliderFromFile(inputFile);
+			}
+		}
+
+		inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	}while(!inputFile.eof());
+
+	inputFile.close();
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------

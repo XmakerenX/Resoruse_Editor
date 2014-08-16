@@ -24,7 +24,8 @@ public:
 	//-------------------------------------------------------------------------
 	// Constructors & Destructors for This Class.
 	//-------------------------------------------------------------------------
-	CComboBoxUI(int ID, LPCTSTR strText, int x, int y, UINT width, UINT height, UINT nHotkey);
+	CComboBoxUI(CDialogUI* pParentDialog, int ID, LPCTSTR strText, int x, int y, UINT width, UINT height, UINT nHotkey);
+	CComboBoxUI(std::istream& inputFile);
 	virtual         ~CComboBoxUI();
 
 	virtual bool onInit();
@@ -51,6 +52,8 @@ public:
 
 	virtual bool    CanHaveFocus();
 	virtual void    OnFocusOut();
+
+	virtual bool	SaveToFile(std::ostream& SaveFile);
 
 	//-------------------------------------------------------------------------
 	//functions that handle checkBox specific properties

@@ -4,21 +4,35 @@
 //-----------------------------------------------------------------------------
 // Name : CSliderUI(constructor) 
 //-----------------------------------------------------------------------------
-CSliderUI::CSliderUI( int ID, int x, int y, int width, int height, int min, int max, int nValue )
+CSliderUI::CSliderUI(CDialogUI* pParentDialog, int ID, int x, int y, int width, int height, int min, int max, int nValue )
+	:CControlUI(pParentDialog, ID, x, y, width ,height)
 {
 	m_type = CControlUI::SLIDER;
 
-	m_ID = ID;
-	m_x = x;
-	m_y = y;
-	m_width = width;
-	m_height = height;
 	m_nMin = min;
 	m_nMax = max;
 	m_nValue = nValue;
 
 	m_bPressed = false;
 
+}
+
+//-----------------------------------------------------------------------------
+// Name : CSliderUI(constructor from InputFile) 
+//-----------------------------------------------------------------------------
+CSliderUI::CSliderUI(std::istream& inputFile)
+	:CControlUI(inputFile)
+{
+	m_type = CControlUI::SLIDER;
+
+	inputFile >> m_nMin;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_nMax;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
+	m_nValue = (m_nMax - m_nMin) / 2;
+
+	m_bPressed = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -196,6 +210,19 @@ void CSliderUI::UpdateRects()
 
 	m_nButtonX = ( int )( ( m_nValue - m_nMin ) * ( float )( m_rcBoundingBox.right - m_rcBoundingBox.left ) / ( m_nMax - m_nMin ) );
 	OffsetRect( &m_rcButton, m_nButtonX, 0 );
+}
+
+//-----------------------------------------------------------------------------
+// Name : SaveToFile() 
+//-----------------------------------------------------------------------------
+bool CSliderUI::SaveToFile(std::ostream& SaveFile)
+{
+	CControlUI::SaveToFile(SaveFile);
+
+	SaveFile << m_nMin << " Slider Minimum Value" << "\n";
+	SaveFile << m_nMax << " Slider Maximum Value" << "\n";
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------

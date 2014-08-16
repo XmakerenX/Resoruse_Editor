@@ -13,23 +13,35 @@
 //-----------------------------------------------------------------------------
 // Name : CStaticUI (Constructor)
 //-----------------------------------------------------------------------------
-CStaticUI::CStaticUI(int ID, LPCTSTR strText, int x, int y, UINT width, UINT height)
+CStaticUI::CStaticUI(CDialogUI* pParentDialog, int ID, LPCTSTR strText, int x, int y, UINT width, UINT height)
+	:CControlUI(pParentDialog, ID, x, y, width, height)
 {
 	//sets the Control type
 	m_type = STATIC;
 
-	m_ID = ID;
-
 	setText(strText);
-
-	//sets Static location and size
-	m_x = x;
-	m_y = y;
-	m_width = width;
-	m_height = height;
 
 	//sets the color by Default to white
 	m_textColor = D3DCOLOR_ARGB(255, 255, 255, 255);
+}
+
+//-----------------------------------------------------------------------------
+// Name : CStaticUI (constructor from InputFile)
+//-----------------------------------------------------------------------------
+CStaticUI::CStaticUI(std::istream& inputFile)
+	:CControlUI(inputFile)
+{
+	m_type = STATIC;
+	char strText[MAX_PATH];
+
+	inputFile >> strText;
+	setText(strText);
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_textColor.r;
+	inputFile >> m_textColor.g;
+	inputFile >> m_textColor.b;
+	inputFile >> m_textColor.a;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 }
 
 //-----------------------------------------------------------------------------
@@ -123,4 +135,17 @@ void CStaticUI::Render( CAssetManager& assetManger)
 			//temp = pFont->DrawTextA(pSprite, m_strText, -1, &rcWindow, DT_NOCLIP , m_textColor);
 		}
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : SaveToFile ()
+//-----------------------------------------------------------------------------
+bool CStaticUI::SaveToFile( std::ostream& SaveFile )
+{
+	CControlUI::SaveToFile(SaveFile);
+	SaveFile << m_strText << " Control Text" << "\n";
+	SaveFile << m_textColor.r << " "<< m_textColor.g << " "<< m_textColor.b << " " << m_textColor.a << " Control Text Color"
+		<< "\n";
+
+	return true;
 }

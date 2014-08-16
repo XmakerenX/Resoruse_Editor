@@ -10,15 +10,11 @@ bool CEditBoxUI::s_bHideCaret;
 //-----------------------------------------------------------------------------
 // Name : CEditBoxUI(constructor) 
 //-----------------------------------------------------------------------------
-CEditBoxUI::CEditBoxUI(int ID, LPCTSTR strText, int x, int y, int width, int height, CTimer* timer)
+CEditBoxUI::CEditBoxUI(CDialogUI* pParentDialog, int ID, LPCTSTR strText, int x, int y, int width, int height, CTimer* timer)
+	:CControlUI(pParentDialog, ID, x, y, width, height)
 {
 	m_type = CControlUI::EDITBOX;
 
-	m_ID = ID;
-	m_x = x;
-	m_y = y;
-	m_width = width;
-	m_height = height;
 	m_Buffer = strText;
 
 	m_nBorder = 5;  // Default border width
@@ -26,7 +22,7 @@ CEditBoxUI::CEditBoxUI(int ID, LPCTSTR strText, int x, int y, int width, int hei
 
 	m_bCaretOn = true;
 	m_dfBlink = GetCaretBlinkTime() * 0.001f;
-	m_dfLastBlink = timer->getCurrentTime(); //DXUTGetGlobalTimer()->GetAbsoluteTime();
+	m_dfLastBlink = timer->getCurrentTime();
 	s_bHideCaret = false;
 	m_nFirstVisible = 0;
 	m_TextColor = D3DCOLOR_ARGB( 255, 16, 16, 16 );
@@ -37,6 +33,39 @@ CEditBoxUI::CEditBoxUI(int ID, LPCTSTR strText, int x, int y, int width, int hei
 	m_bInsertMode = true;
 
 	m_bMouseDrag = false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : CEditBoxUI(constructor from InputFile)
+//-----------------------------------------------------------------------------
+CEditBoxUI::CEditBoxUI(std::istream& inputFile, CTimer* timer)
+	:CControlUI(inputFile)
+{
+	m_type = CControlUI::EDITBOX;
+
+	m_dfBlink = GetCaretBlinkTime() * 0.001f;
+	m_dfLastBlink = timer->getCurrentTime();
+	s_bHideCaret = false;
+	m_nFirstVisible = 0;
+	m_nCaret = m_nSelStart = 0;
+	m_bInsertMode = true;
+
+	m_bMouseDrag = false;
+
+	inputFile >> m_nBorder;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_nSpacing;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_bCaretOn;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_TextColor;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_SelTextColor;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_SelBkColor;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_CaretColor;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 }
 
 //-----------------------------------------------------------------------------
@@ -941,4 +970,23 @@ void CEditBoxUI::OnFocusOut()
 	CControlUI::OnFocusOut();
 
 	m_nSelStart = m_nCaret;
+}
+
+//-----------------------------------------------------------------------------
+// Name : SaveToFile 
+//-----------------------------------------------------------------------------
+bool CEditBoxUI::SaveToFile(std::ostream& SaveFile)
+{
+	CControlUI::SaveToFile(SaveFile);
+
+	//TODO: make all the editbox options saveable
+	SaveFile << m_nBorder << " EditBox Border Number" << "\n";
+	SaveFile << m_nSpacing << " EditBox Spacing" << "\n";
+	SaveFile << m_bCaretOn << " is EditBox Caret On" << "\n";
+ 	SaveFile << m_TextColor << " EditBox Text Color" << "\n";
+ 	SaveFile << m_SelTextColor << " EditBox Selection Color" << "\n";
+ 	SaveFile << m_SelBkColor << " EditBox Background Color" << "\n";
+ 	SaveFile << m_CaretColor << " EditBox Caret Color" << "\n";
+
+	return true;
 }

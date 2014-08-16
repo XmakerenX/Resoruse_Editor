@@ -4,11 +4,23 @@
 //-----------------------------------------------------------------------------
 // Name : CCheckboxUI (Constructor)
 //-----------------------------------------------------------------------------
-CCheckboxUI::CCheckboxUI(int ID, int x, int y, UINT width, UINT height, UINT nHotkey)
-:CButtonUI(ID, "", x, y, width, height, nHotkey)
+CCheckboxUI::CCheckboxUI(CDialogUI* pParentDialog, int ID, int x, int y, UINT width, UINT height, UINT nHotkey)
+:CButtonUI(pParentDialog, ID, "", x, y, width, height, nHotkey)
 {
 	m_type = CHECKBOX;
 	m_bChecked = false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : CCheckboxUI (constructor from InputFile)
+//-----------------------------------------------------------------------------
+CCheckboxUI::CCheckboxUI(std::istream& inputFile)
+	:CButtonUI(inputFile)
+{
+	m_type = CHECKBOX;
+
+	inputFile >> m_bChecked;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 }
 
 //-----------------------------------------------------------------------------
@@ -148,4 +160,15 @@ bool CCheckboxUI::Released( HWND hWnd, POINT pt)
 		return true;
 	}
 	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : SaveToFile ()
+//-----------------------------------------------------------------------------
+bool CCheckboxUI::SaveToFile(std::ostream& SaveFile)
+{
+	CButtonUI::SaveToFile(SaveFile);
+	SaveFile << m_bChecked << " is CheckBox Checked" << "\n";
+
+	return true;
 }

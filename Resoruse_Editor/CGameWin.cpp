@@ -1042,10 +1042,10 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	m_EditDialog.init(500,735,18, "Edit Dialog","", d3d::GREEN, m_hWnd, m_assetManger);
 	m_EditDialog.setLocation(550,0);
 
-	m_EditDialog.addStatic(IDC_CONTROLTYPESTATIC, "Control Type", 125, 0, 200, 24);
+	m_EditDialog.addStatic(IDC_CONTROLTYPESTATIC, "Control Type", "IDC_CONTROLTYPESTATIC", 125, 0, 200, 24);
 
 	CComboBoxUI* pComboBox;
-	m_EditDialog.addComboBox(IDC_COMBOX, "", 125, 25, 200, 24, 0, &pComboBox);
+	m_EditDialog.addComboBox(IDC_COMBOX, "", "IDC_COMBOX", 125, 25, 200, 24, 0, &pComboBox);
 	pComboBox->AddItem("Static", (void*)CControlUI::STATIC );
 	pComboBox->AddItem("Button", (void*)CControlUI::BUTTON);
 	pComboBox->AddItem("CheckBox", (void*)CControlUI::CHECKBOX);
@@ -1057,7 +1057,8 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	
 	pComboBox->ConnectToSelectChg( boost::bind(&CGameWin::ComboboxSelChg, this, _1) );
 
-	m_EditDialog.addStatic(IDC_WIDTHSTATIC, "Width", 125, 50, 60, 24);
+	//TODO fix the add functions I have broken them...
+	m_EditDialog.addStatic(IDC_WIDTHSTATIC, "Width", "IDC_WIDTHSTATIC", 125, 50, 60, 24);
 	m_EditDialog.addStatic(IDC_HEIGHTSTATIC, "Height", 265, 50, 60, 24);
 
 	m_EditDialog.addEditbox(IDC_WIDTHEDITBOX, "", 125, 75, 70, 32, m_timer);

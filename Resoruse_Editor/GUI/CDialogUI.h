@@ -2,8 +2,12 @@
 #define  _CDIALOGUI_H
 
 #include <Windows.h>
+#undef min
+#undef max
+
 #include <vector>
 #include <string>
+#include <fstream>
 #include <d3dx9.h>
 #include "../rendering/d3d.h"
 #include "../CAssetManager.h"
@@ -77,13 +81,21 @@ public:
 	bool			 initControl	 (CControlUI* pControl);
 
 	bool			 addStatic				( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, CStaticUI** ppStaticCreated = NULL);
+	bool			 addStaticFromFile		( std::istream& InputFIle, CStaticUI** ppStaticCreated = NULL);
 	bool			 addButton				( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CButtonUI** ppButtonCreated = NULL);
+	bool			 addButtonFromFile		( std::istream& InputFIle, CButtonUI** ppButtonCreated = NULL);
 	bool			 addCheckBox			( int ID, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CCheckboxUI** ppCheckBoxCreated = NULL);
+	bool			 addCheckBoxFromFile    ( std::istream& InputFIle, CCheckboxUI** ppCheckBoxCreated = NULL);
 	bool			 addRadioButton			( int ID, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, UINT nButtonGroup, CRadioButtonUI** ppRadioButtonCreated = NULL);
+	bool			 addRadioButtonFromFile ( std::istream& InputFIle, CRadioButtonUI** ppRadioButtonCreated = NULL);
 	bool			 addComboBox			( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CComboBoxUI** ppComboxCreated = NULL);
+	bool			 addComboBoxFromFile    ( std::istream& InputFIle, CComboBoxUI** ppComboxCreated = NULL);
 	bool		     addListBox				( int ID, LPCTSTR strID, int x, int y, int width, int height, DWORD style = 0, CListBoxUI** ppListBoxCreated = NULL);
+	bool			 addListBoxFromFile     ( std::istream& InputFIle, CListBoxUI** ppListBoxCreated = NULL);
 	bool		     addSlider				( int ID, LPCTSTR strID, int x, int y, int width, int height, int min, int max, int nValue, CSliderUI** ppSliderCreated = NULL);
+	bool			 addSliderFromFile      ( std::istream& InputFIle, CSliderUI** ppSliderCreated = NULL);
 	bool			 addEditbox				( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, CTimer* timer, CEditBoxUI** ppEditBoxCreated = NULL );
+	bool			 addEditBoxFromFile     ( std::istream& InputFIle, CTimer* timer, CEditBoxUI** ppEditBoxCreated = NULL);
 
 	CControlUI     * getControl				( int ID );
 	CControlUI     * getControl			    ( int ID, UINT nControlType );
@@ -108,7 +120,7 @@ public:
 	// Save/Load Functions
 	//-------------------------------------------------------------------------
 	bool				SaveDilaogToFile	(LPCTSTR FileName);
-	bool			    LoadDialogFromFile	(LPCTSTR FileName);
+	bool			    LoadDialogFromFile	(LPCTSTR FileName, CTimer* timer);
 
 	//-------------------------------------------------------------------------
 	// get and set Functions 

@@ -7,7 +7,8 @@ class CCheckboxUI : public CButtonUI
 {
 public:
 	//CCheckboxUI(void);
-	CCheckboxUI					(int ID, int x, int y, UINT width, UINT height, UINT nHotkey);
+	CCheckboxUI					(CDialogUI* pParentDialog, int ID, int x, int y, UINT width, UINT height, UINT nHotkey);
+	CCheckboxUI				    (std::istream& inputFile);
 	virtual ~CCheckboxUI		(void);
 
 	virtual void	Render				( CAssetManager& assetManger);
@@ -17,6 +18,8 @@ public:
 
 	virtual bool    Pressed				( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer);
 	virtual bool    Released			( HWND hWnd, POINT pt);
+
+	virtual bool	SaveToFile			(std::ostream& SaveFile);
 
 protected:
 	bool m_bChecked;

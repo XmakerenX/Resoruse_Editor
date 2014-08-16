@@ -23,6 +23,8 @@ public:
 	virtual bool	Released	  ( HWND hWnd, POINT pt);
 	virtual bool    Dragged		  ( POINT pt);
 
+	//virtual bool	SaveToFile	  (std::ostream& SaveFile);
+
 	// TODO: add support for controls to have access to other messages than keyboard and mouse inputs..
 	// with new slots and signal system could be no need for MsgProc...
 	//virtual bool    MsgProc		  ( UINT uMsg, WPARAM wParam, LPARAM lParam );

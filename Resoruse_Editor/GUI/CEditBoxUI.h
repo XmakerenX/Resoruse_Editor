@@ -12,7 +12,8 @@ public:
 	//-------------------------------------------------------------------------
 	// Constructors & Destructors for This Class.
 	//-------------------------------------------------------------------------
-	CEditBoxUI(int ID, LPCTSTR strText, int x, int y, int width, int height, CTimer* timer);
+	CEditBoxUI(CDialogUI* pParentDialog, int ID, LPCTSTR strText, int x, int y, int width, int height, CTimer* timer);
+	CEditBoxUI(std::istream& inputFile, CTimer* timer);
 	virtual ~CEditBoxUI(void);
 
 	//-------------------------------------------------------------------------
@@ -35,6 +36,8 @@ public:
 	virtual bool    CanHaveFocus();
 	virtual void    OnFocusIn();
 	virtual void    OnFocusOut();
+
+	virtual bool	SaveToFile(std::ostream& SaveFile);
 
 	virtual void    UpdateRects();
 	virtual void    Render( CAssetManager& assetManger );

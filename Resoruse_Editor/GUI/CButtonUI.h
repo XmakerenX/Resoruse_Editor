@@ -14,7 +14,8 @@ public:
 	typedef boost::signals2::signal<void (CButtonUI*)>  signal_clicked;
 
 	//CButtonUI					(void);
-	CButtonUI					(int ID, LPCTSTR strText, int x, int y, UINT width, UINT height, UINT nHotkey);
+	CButtonUI					(CDialogUI* pParentDialog, int ID, LPCTSTR strText, int x, int y, UINT width, UINT height, UINT nHotkey);
+	CButtonUI					(std::istream& inputFile);
 	virtual ~CButtonUI			(void);
 
 	virtual void	Render				( CAssetManager& assetManger);
@@ -32,7 +33,7 @@ public:
 
 	void    connectToClick				( const signal_clicked::slot_type& subscriber);
 	
-	virtual bool SaveToFile				(std::ostream SaveFile);
+	virtual bool SaveToFile				(std::ostream& SaveFile);
 
 	//void	drawButtonRect		(RECT& rcTexture, RECT& rcWindow, LPD3DXSPRITE sprite, LPDIRECT3DTEXTURE9 pTexture, D3DCOLOR color);
 	//void	drawButtonRect		(RECT& rcTexture, RECT& rcWindow, CMySprite* sprite, LPDIRECT3DTEXTURE9 pTexture, D3DCOLOR color, bool bHighLight);

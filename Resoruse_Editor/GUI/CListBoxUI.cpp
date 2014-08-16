@@ -4,16 +4,9 @@
 //-----------------------------------------------------------------------------
 // Name : CListBoxUI (constructor)
 //-----------------------------------------------------------------------------
-CListBoxUI::CListBoxUI(int ID, int x, int y, int width, int height, DWORD dwStyle)
+CListBoxUI::CListBoxUI(CDialogUI* pParentDialog, int ID, int x, int y, int width, int height, DWORD dwStyle)
+	:CControlUI(pParentDialog, ID, x, y, width, height)
 {
-	m_ID = ID;
-
-	m_x = x;
-	m_y = y;
-	m_width = width;
-	m_height = height;
-	
-
 	m_type = CControlUI::LISTBOX;
 
 	m_dwStyle = dwStyle;
@@ -24,6 +17,45 @@ CListBoxUI::CListBoxUI(int ID, int x, int y, int width, int height, DWORD dwStyl
 	m_nBorder = 6;
 	m_nMargin = 5;
 	m_nTextHeight = 0;
+}
+
+//-----------------------------------------------------------------------------
+// Name : CListBoxUI (constructor from InputFile)
+//-----------------------------------------------------------------------------
+CListBoxUI::CListBoxUI(std::istream& inputFile)
+	:CControlUI(inputFile)
+{
+	UINT itemsSize = 0;
+	m_type = CControlUI::LISTBOX;
+
+	m_nSelected = -1;
+	m_nSelStart = 0;
+	m_bDrag = false;
+
+	inputFile >> m_nSBWidth;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_nBorder;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_nMargin;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_nTextHeight;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_dwStyle;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
+	inputFile >> itemsSize;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
+	for (UINT i = 0; i < itemsSize; i++)
+	{
+		std::string strText;
+		inputFile >> strText;
+
+		AddItem(strText.c_str(), nullptr);
+
+		inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	}
+
 }
 
 //-----------------------------------------------------------------------------
@@ -676,4 +708,25 @@ bool CListBoxUI::CanHaveFocus()
 {
 	//return true;
 	return ( m_bVisible && m_bEnabled );
+}
+
+//-----------------------------------------------------------------------------
+// Name : SaveToFile
+//-----------------------------------------------------------------------------
+bool CListBoxUI::SaveToFile(std::ostream& SaveFile)
+{
+	CControlUI::SaveToFile(SaveFile);
+
+	SaveFile << m_nSBWidth << " ListBox SBWidth" << "\n";
+	SaveFile << m_nBorder << " ListBox Border" << "\n";
+	SaveFile << m_nMargin << " ListBox Margin" << "\n";
+	SaveFile << m_nTextHeight << " ListBox Text Height" << "\n";
+	SaveFile << m_dwStyle << " ListBox Style" << "\n";
+
+	SaveFile << m_Items.size() << " ListBox Item size" << "\n";
+
+	for (UINT i = 0; i < m_Items.size(); i++)
+	{
+		SaveFile << m_Items[i]->strText << " ListBox Item " << i << " Text" << "\n";
+	}
 }

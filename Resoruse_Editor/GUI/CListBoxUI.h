@@ -24,8 +24,10 @@ public:
 	//-------------------------------------------------------------------------
 	// Constructors & Destructors for This Class.
 	//-------------------------------------------------------------------------
-	CListBoxUI(int ID, int x, int y, int width, int height, DWORD dwStyle);
-	virtual ~CListBoxUI(void);
+	CListBoxUI					(CDialogUI* pParentDialog, int ID, int x, int y, int width, int height, DWORD dwStyle);
+	CListBoxUI					(std::istream& inputFile);
+
+	virtual ~CListBoxUI			(void);
 
 	virtual bool onInit();
 
@@ -47,6 +49,8 @@ public:
 	virtual void    UpdateRects			();
 
 	virtual bool    CanHaveFocus		();
+
+	virtual bool	SaveToFile			(std::ostream& SaveFile);
 
 	DWORD           GetStyle			() const;
 	void            SetStyle			( DWORD dwStyle );

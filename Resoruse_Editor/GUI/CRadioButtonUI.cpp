@@ -4,13 +4,24 @@
 //-----------------------------------------------------------------------------
 // Name : CRadioButtonUI (Constructor)
 //-----------------------------------------------------------------------------
-CRadioButtonUI::CRadioButtonUI(int ID, int x, int y, UINT width, UINT height, UINT nHotkey, UINT nButtonGruop)
-	:CCheckboxUI(ID, x, y, width, height, nHotkey)
+CRadioButtonUI::CRadioButtonUI(CDialogUI* pParentDialog, int ID, int x, int y, UINT width, UINT height, UINT nHotkey, UINT nButtonGruop)
+	:CCheckboxUI(pParentDialog, ID, x, y, width, height, nHotkey)
 {
 	m_type = RADIOBUTTON;
 	m_nButtonGroup = nButtonGruop;
 }
 
+//-----------------------------------------------------------------------------
+// Name : CRadioButtonUI (constructor from InputFile)
+//-----------------------------------------------------------------------------
+CRadioButtonUI::CRadioButtonUI(std::istream& inputFile)
+	:CCheckboxUI(inputFile)
+{
+	m_type = RADIOBUTTON;
+
+	inputFile >> m_nButtonGroup;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+}
 //-----------------------------------------------------------------------------
 // Name : CRadioButtonUI (destructor)
 //-----------------------------------------------------------------------------
@@ -94,6 +105,19 @@ bool CRadioButtonUI::Released( HWND hWnd, POINT pt)
 	}
 	return false;
 }
+
+//-----------------------------------------------------------------------------
+// Name : SaveToFile ()
+//-----------------------------------------------------------------------------
+bool CRadioButtonUI::SaveToFile(std::ostream& SaveFile)
+{
+	CCheckboxUI::SaveToFile(SaveFile);
+
+	SaveFile << m_nButtonGroup << " RadioButton Button Group" << "\n";
+
+	return true;
+}
+
 //-----------------------------------------------------------------------------
 // Name : getButtonGroup ()
 //-----------------------------------------------------------------------------

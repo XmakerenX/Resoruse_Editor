@@ -2,7 +2,7 @@
 #include "CDialogUI.h"
 
 //-----------------------------------------------------------------------------
-// Name : CControlUI(constructor) 
+// Name : CControlUI(Default constructor) 
 //-----------------------------------------------------------------------------
 CControlUI::CControlUI(void)
 {
@@ -22,6 +22,46 @@ CControlUI::CControlUI(void)
 	m_bHasFocus  = false;
 	//m_bHasFocus  = false;
 
+}
+
+//-----------------------------------------------------------------------------
+// Name : CControlUI(constructor) 
+//-----------------------------------------------------------------------------
+CControlUI::CControlUI(CDialogUI* pParentDialog,int ID,int x, int y, UINT width, UINT height)
+{
+	m_ID = ID;
+
+	setParent(pParentDialog);
+	setLocation(x ,y);
+	setSize(width,height);
+
+	m_bEnabled = true;
+	m_bVisible   = true;
+	m_bMouseOver = false;
+	m_bHasFocus  = false;
+}
+
+//-----------------------------------------------------------------------------
+// Name : CControlUI(constructor from InputFile) 
+//-----------------------------------------------------------------------------
+CControlUI::CControlUI(std::istream& inputFile)
+{
+	inputFile >> m_ID;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
+	inputFile >> m_x;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_y;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_width;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_height;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
+	inputFile >> m_bVisible;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_bEnabled;	
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 }
 
 //-----------------------------------------------------------------------------
@@ -330,4 +370,23 @@ CDialogUI* CControlUI::getParentDialog()
 int CControlUI::getID()
 {
 	return m_ID;
+}
+
+//-----------------------------------------------------------------------------
+// Name : SaveToFile 
+//-----------------------------------------------------------------------------
+bool CControlUI::SaveToFile(std::ostream& SaveFile)
+{
+	SaveFile << m_type	  << " Control Type"   << "\n";
+	SaveFile << m_ID	  << " Control ID"     << "\n";
+
+	SaveFile << m_x       << " Control X"	   << "\n";
+	SaveFile << m_y	      << " Control Y"	   << "\n";
+	SaveFile << m_width   << " Control Width"  <<  "\n";
+	SaveFile << m_height  << " Control Height" << "\n";
+
+	SaveFile << m_bVisible << "is Control Visible" << "\n";
+	SaveFile << m_bEnabled << "is Control Enabled" << "\n";
+
+	return true;
 }
