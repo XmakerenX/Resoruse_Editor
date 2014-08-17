@@ -123,6 +123,8 @@ public:
 	void		 RemoveListBoxItemClikced	(CButtonUI* pRemoveListBoxItemButton);
 	void         AddComboBoxItemClicked		(CButtonUI* pAddComboBoxItemButton);
 	void		 RemoveComboBoxItemClicked  (CButtonUI* pRemoveComboBoxItemButton);
+	void		 SaveDialogButtonClicked	(CButtonUI* pSaveButton);
+	void		 LoadDialogButtonClicked	(CButtonUI* pLoadButton);
 	void		 SetGenDialogSize			(CButtonUI* pDialogSetButton);
 	void         ComboboxSelChg				(CComboBoxUI* pCombobox);
 	int          BeginGame					( );

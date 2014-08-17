@@ -80,21 +80,22 @@ public:
 	//-------------------------------------------------------------------------
 	bool			 initControl	 (CControlUI* pControl);
 
-	bool			 addStatic				( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, CStaticUI** ppStaticCreated = NULL);
+	bool			 addStatic				( int ID, LPCTSTR strText, int x, int y, int width, int height, CStaticUI** ppStaticCreated = NULL, LPCTSTR strID = "");
+	bool			 addButton				( int ID, LPCTSTR strText, int x, int y, int width, int height, UINT nHotkey, CButtonUI** ppButtonCreated = NULL, LPCTSTR strID = "");
+	bool			 addCheckBox			( int ID, int x, int y, int width, int height, UINT nHotkey, CCheckboxUI** ppCheckBoxCreated = NULL, LPCTSTR strID = "");
+	bool			 addRadioButton			( int ID, int x, int y, int width, int height, UINT nHotkey, UINT nButtonGroup, CRadioButtonUI** ppRadioButtonCreated = NULL, LPCTSTR strID = "");
+	bool			 addComboBox			( int ID, LPCTSTR strText, int x, int y, int width, int height, UINT nHotkey, CComboBoxUI** ppComboxCreated = NULL, LPCTSTR strID = "");
+	bool		     addListBox				( int ID, int x, int y, int width, int height, DWORD style = 0, CListBoxUI** ppListBoxCreated = NULL, LPCTSTR strID = "");
+	bool		     addSlider				( int ID, int x, int y, int width, int height, int min, int max, int nValue, CSliderUI** ppSliderCreated = NULL, LPCTSTR strID = "");
+	bool			 addEditbox				( int ID, LPCTSTR strText, int x, int y, int width, int height, CTimer* timer, CEditBoxUI** ppEditBoxCreated = NULL, LPCTSTR strID = "");
+
 	bool			 addStaticFromFile		( std::istream& InputFIle, CStaticUI** ppStaticCreated = NULL);
-	bool			 addButton				( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CButtonUI** ppButtonCreated = NULL);
 	bool			 addButtonFromFile		( std::istream& InputFIle, CButtonUI** ppButtonCreated = NULL);
-	bool			 addCheckBox			( int ID, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CCheckboxUI** ppCheckBoxCreated = NULL);
 	bool			 addCheckBoxFromFile    ( std::istream& InputFIle, CCheckboxUI** ppCheckBoxCreated = NULL);
-	bool			 addRadioButton			( int ID, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, UINT nButtonGroup, CRadioButtonUI** ppRadioButtonCreated = NULL);
 	bool			 addRadioButtonFromFile ( std::istream& InputFIle, CRadioButtonUI** ppRadioButtonCreated = NULL);
-	bool			 addComboBox			( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CComboBoxUI** ppComboxCreated = NULL);
 	bool			 addComboBoxFromFile    ( std::istream& InputFIle, CComboBoxUI** ppComboxCreated = NULL);
-	bool		     addListBox				( int ID, LPCTSTR strID, int x, int y, int width, int height, DWORD style = 0, CListBoxUI** ppListBoxCreated = NULL);
 	bool			 addListBoxFromFile     ( std::istream& InputFIle, CListBoxUI** ppListBoxCreated = NULL);
-	bool		     addSlider				( int ID, LPCTSTR strID, int x, int y, int width, int height, int min, int max, int nValue, CSliderUI** ppSliderCreated = NULL);
 	bool			 addSliderFromFile      ( std::istream& InputFIle, CSliderUI** ppSliderCreated = NULL);
-	bool			 addEditbox				( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, CTimer* timer, CEditBoxUI** ppEditBoxCreated = NULL );
 	bool			 addEditBoxFromFile     ( std::istream& InputFIle, CTimer* timer, CEditBoxUI** ppEditBoxCreated = NULL);
 
 	CControlUI     * getControl				( int ID );

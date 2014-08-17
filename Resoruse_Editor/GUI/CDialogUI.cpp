@@ -859,7 +859,7 @@ CControlUI* CDialogUI::getControlAtPoint(POINT pt)
 // Name : addStatic
 // Desc : adds a control of type static to the dialog
 //-----------------------------------------------------------------------------
-bool CDialogUI::addStatic(int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, CStaticUI** ppStaticCreated/* = NULL*/)
+bool CDialogUI::addStatic(int ID, LPCTSTR strText, int x, int y, int width, int height, CStaticUI** ppStaticCreated/* = NULL*/, LPCTSTR strID /*= ""*/)
 {
 	//initialized the static control
 	CStaticUI* pStatic = new CStaticUI(this ,ID, strText, x, y, width, height);
@@ -873,6 +873,159 @@ bool CDialogUI::addStatic(int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, 
 
 	if (ppStaticCreated != NULL)
 		*ppStaticCreated = pStatic;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : addButton
+// Desc : add a control of type button to the dialog
+//-----------------------------------------------------------------------------
+bool CDialogUI::addButton(int ID, LPCTSTR strText, int x, int y, int width, int height, UINT nHotkey, CButtonUI** ppButtonCreated/* = NULL*/, LPCTSTR strID /*= ""*/)
+{
+	//initialized the button control
+	CButtonUI* pButton = new  CButtonUI(this ,ID, strText, x, y, width, height, nHotkey);
+
+	initControl(pButton);
+
+	//add it to the controls vector
+	m_Controls.push_back(pButton);
+	m_defInfo.push_back( DEF_INFO(strID, ID) );
+
+	if (ppButtonCreated != NULL)
+		*ppButtonCreated = pButton;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : addCheckBox()
+// Desc : add a control of type checkBox to the dialog
+//-----------------------------------------------------------------------------
+bool CDialogUI::addCheckBox(int ID, int x, int y, int width, int height, UINT nHotkey, CCheckboxUI** ppCheckBoxCreated/* = NULL*/,  LPCTSTR strID /*= ""*/)
+{
+	//initialized the checkBox control
+	CCheckboxUI* pCheckBox = new CCheckboxUI(this, ID, x, y, width, height, nHotkey);
+
+	initControl(pCheckBox);
+
+	//add it to the controls vector
+	m_Controls.push_back(pCheckBox);
+	m_defInfo.push_back( DEF_INFO(strID, ID) );
+
+	if (ppCheckBoxCreated != NULL)
+		*ppCheckBoxCreated = pCheckBox;
+
+	return true;
+
+
+}
+
+//-----------------------------------------------------------------------------
+// Name : addRadioButton()
+// Desc : add a control of type radio button to the dialog
+//-----------------------------------------------------------------------------
+bool CDialogUI::addRadioButton(int ID, int x, int y, int width, int height, UINT nHotkey, UINT nButtonGroup, CRadioButtonUI** ppRadioButtonCreated/* = NULL*/ ,LPCTSTR strID /*= ""*/)
+{
+	CRadioButtonUI* pRadioButton = new CRadioButtonUI(this, ID, x, y, width, height, nHotkey, nButtonGroup);
+
+	initControl(pRadioButton);
+
+	//add it to the controls vector
+	m_Controls.push_back(pRadioButton);
+	m_defInfo.push_back( DEF_INFO(strID, ID) );
+
+	if (ppRadioButtonCreated != NULL)
+		*ppRadioButtonCreated = pRadioButton;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : addComboBox()
+// Desc : add a control of type Combobox to the dialog
+//-----------------------------------------------------------------------------
+bool CDialogUI::addComboBox(int ID, LPCTSTR strText, int x, int y, int width, int height, UINT nHotkey, CComboBoxUI** ppComboxCreated/* = NULL*/ , LPCTSTR strID /*= ""*/)
+{
+	CComboBoxUI* pComboBox = new CComboBoxUI(this, ID, strText, x, y, width, height, nHotkey);
+
+	initControl(pComboBox);
+
+	pComboBox->UpdateRects();
+
+	//add it to the controls vector
+	m_Controls.push_back(pComboBox);
+	m_defInfo.push_back( DEF_INFO(strID, ID) );
+
+	if (ppComboxCreated != NULL)
+		*ppComboxCreated = pComboBox;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : addListBox()
+// Desc : add a control of type ListBox to the dialog
+//-----------------------------------------------------------------------------
+bool CDialogUI::addListBox(int ID, int x, int y, int width, int height, DWORD style/* = 0*/, CListBoxUI** ppListBoxCreated/* = NULL*/, LPCTSTR strID /*= ""*/)
+{
+	CListBoxUI* pListBox = new CListBoxUI(this, ID, x, y, width, height, style);
+
+	initControl(pListBox);
+	// !!! list box needs to update it's Rects on init
+	pListBox->UpdateRects();
+
+	//add it to the controls vector
+	m_Controls.push_back(pListBox);
+	m_defInfo.push_back( DEF_INFO(strID, ID) );
+
+	if (ppListBoxCreated != NULL)
+		*ppListBoxCreated = pListBox;
+
+	return true;
+
+}
+
+//-----------------------------------------------------------------------------
+// Name : addSlider()
+// Desc : add a control of type Slider to the dialog
+//-----------------------------------------------------------------------------
+bool CDialogUI::addSlider( int ID, int x, int y, int width, int height, int min, int max, int nValue, CSliderUI** ppSliderCreated/* = NULL*/, LPCTSTR strID /*= ""*/ )
+{
+	CSliderUI* pSlider = new CSliderUI(this, ID, x, y, width, height, min, max, nValue);
+
+	initControl(pSlider);
+	// !!! slider needs to update it's Rects on init
+	pSlider->UpdateRects();
+
+	//add it to the controls vector
+	m_Controls.push_back(pSlider);
+	m_defInfo.push_back( DEF_INFO(strID, ID) );
+
+	if (ppSliderCreated != NULL)
+		*ppSliderCreated = pSlider;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : addEditbox()
+// Desc : add a control of type EditBox to the dialog
+//-----------------------------------------------------------------------------
+bool CDialogUI::addEditbox( int ID, LPCTSTR strText, int x, int y, int width, int height, CTimer* timer, CEditBoxUI** ppEditBoxCreated/* = NULL*/, LPCTSTR strID /*= ""*/)
+{
+	CEditBoxUI* pEditBox = new CEditBoxUI(this, ID, strText, x, y, width, height, timer);
+
+	initControl(pEditBox);
+	// !!! EditBox needs to update it's Rects on init
+	pEditBox->UpdateRects();
+
+	//add it to the controls vector
+	m_Controls.push_back(pEditBox);
+	m_defInfo.push_back( DEF_INFO(strID, ID) );
+
+	if (ppEditBoxCreated != NULL)
+		*ppEditBoxCreated = pEditBox;
 
 	return true;
 }
@@ -898,27 +1051,6 @@ bool CDialogUI::addStaticFromFile(std::istream& InputFIle, CStaticUI** ppStaticC
 }
 
 //-----------------------------------------------------------------------------
-// Name : addButton
-// Desc : add a control of type button to the dialog
-//-----------------------------------------------------------------------------
-bool CDialogUI::addButton(int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CButtonUI** ppButtonCreated/* = NULL*/)
-{
-	//initialized the button control
-	CButtonUI* pButton = new  CButtonUI(this ,ID, strText, x, y, width, height, nHotkey);
-
-	initControl(pButton);
-
-	//add it to the controls vector
-	m_Controls.push_back(pButton);
-	m_defInfo.push_back( DEF_INFO(strID, ID) );
-
-	if (ppButtonCreated != NULL)
-		*ppButtonCreated = pButton;
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
 // Name : addButtonFromFile
 // Desc : loads from file a control of type Button to the dialog 
 //-----------------------------------------------------------------------------
@@ -939,29 +1071,6 @@ bool CDialogUI::addButtonFromFile(std::istream& InputFIle, CButtonUI** ppButtonC
 }
 
 //-----------------------------------------------------------------------------
-// Name : addCheckBox()
-// Desc : add a control of type checkBox to the dialog
-//-----------------------------------------------------------------------------
-bool CDialogUI::addCheckBox(int ID, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, CCheckboxUI** ppCheckBoxCreated/* = NULL*/)
-{
-	//initialized the checkBox control
-	CCheckboxUI* pCheckBox = new CCheckboxUI(this, ID, x, y, width, height, nHotkey);
-
-	initControl(pCheckBox);
-
-	//add it to the controls vector
-	m_Controls.push_back(pCheckBox);
-	m_defInfo.push_back( DEF_INFO(strID, ID) );
-
-	if (ppCheckBoxCreated != NULL)
-		*ppCheckBoxCreated = pCheckBox;
-
-	return true;
-
-
-}
-
-//-----------------------------------------------------------------------------
 // Name : addCheckBoxFromFile()
 // Desc : loads from file a control of type CheckBox to the dialog 
 //-----------------------------------------------------------------------------
@@ -977,24 +1086,6 @@ bool CDialogUI::addCheckBoxFromFile(std::istream& InputFIle, CCheckboxUI** ppChe
 
 	if (ppCheckBoxCreated != NULL)
 		*ppCheckBoxCreated = pCheckBox;
-}
-
-//-----------------------------------------------------------------------------
-// Name : addRadioButton()
-// Desc : add a control of type radio button to the dialog
-//-----------------------------------------------------------------------------
-bool CDialogUI::addRadioButton(int ID, LPCTSTR strID, int x, int y, int width, int height, UINT nHotkey, UINT nButtonGroup, CRadioButtonUI** ppRadioButtonCreated/* = NULL*/)
-{
-	CRadioButtonUI* pRadioButton = new CRadioButtonUI(this, ID, x, y, width, height, nHotkey, nButtonGroup);
-
-	initControl(pRadioButton);
-
-	//add it to the controls vector
-	m_Controls.push_back(pRadioButton);
-	m_defInfo.push_back( DEF_INFO(strID, ID) );
-
-	if (ppRadioButtonCreated != NULL)
-		*ppRadioButtonCreated = pRadioButton;
 
 	return true;
 }
@@ -1014,28 +1105,6 @@ bool CDialogUI::addRadioButtonFromFile(std::istream& InputFIle, CRadioButtonUI**
 
 	if (ppRadioButtonCreated != NULL)
 		*ppRadioButtonCreated = pRadioButton;
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Name : addComboBox()
-// Desc : add a control of type Combobox to the dialog
-//-----------------------------------------------------------------------------
-bool CDialogUI::addComboBox(int ID, LPCTSTR strID, LPCTSTR strText, int x, int y, int width, int height, UINT nHotkey, CComboBoxUI** ppComboxCreated/* = NULL*/)
-{
-	CComboBoxUI* pComboBox = new CComboBoxUI(this, ID, strText, x, y, width, height, nHotkey);
-
-	initControl(pComboBox);
-
-	pComboBox->UpdateRects();
-
-	//add it to the controls vector
-	m_Controls.push_back(pComboBox);
-	m_defInfo.push_back( DEF_INFO(strID, ID) );
-
-	if (ppComboxCreated != NULL)
-		*ppComboxCreated = pComboBox;
 
 	return true;
 }
@@ -1062,29 +1131,6 @@ bool CDialogUI::addComboBoxFromFile(std::istream& InputFIle, CComboBoxUI** ppCom
 }
 
 //-----------------------------------------------------------------------------
-// Name : addListBox()
-// Desc : add a control of type ListBox to the dialog
-//-----------------------------------------------------------------------------
-bool CDialogUI::addListBox(int ID, LPCTSTR strID, int x, int y, int width, int height, DWORD style/* = 0*/, CListBoxUI** ppListBoxCreated/* = NULL*/)
-{
-	CListBoxUI* pListBox = new CListBoxUI(this, ID, x, y, width, height, style);
-
-	initControl(pListBox);
-	// !!! list box needs to update it's Rects on init
-	pListBox->UpdateRects();
-
-	//add it to the controls vector
-	m_Controls.push_back(pListBox);
-	m_defInfo.push_back( DEF_INFO(strID, ID) );
-
-	if (ppListBoxCreated != NULL)
-		*ppListBoxCreated = pListBox;
-
-	return true;
-
-}
-
-//-----------------------------------------------------------------------------
 // Name : addListBoxFromFile()
 // Desc : loads from file a control of type ListBox to the dialog 
 //-----------------------------------------------------------------------------
@@ -1106,28 +1152,6 @@ bool CDialogUI::addListBoxFromFile(std::istream& InputFIle, CListBoxUI** ppListB
 }
 
 //-----------------------------------------------------------------------------
-// Name : addSlider()
-// Desc : add a control of type Slider to the dialog
-//-----------------------------------------------------------------------------
-bool CDialogUI::addSlider( int ID, LPCTSTR strID, int x, int y, int width, int height, int min, int max, int nValue, CSliderUI** ppSliderCreated/* = NULL*/ )
-{
-	CSliderUI* pSlider = new CSliderUI(this, ID, x, y, width, height, min, max, nValue);
-
-	initControl(pSlider);
-	// !!! slider needs to update it's Rects on init
-	pSlider->UpdateRects();
-
-	//add it to the controls vector
-	m_Controls.push_back(pSlider);
-	m_defInfo.push_back( DEF_INFO(strID, ID) );
-
-	if (ppSliderCreated != NULL)
-		*ppSliderCreated = pSlider;
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
 // Name : addSliderFromFile()
 // Desc : loads from file a control of type Slider to the dialog 
 //-----------------------------------------------------------------------------
@@ -1144,28 +1168,6 @@ bool CDialogUI::addSliderFromFile(std::istream& InputFIle, CSliderUI** ppSliderC
 
 	if (ppSliderCreated != NULL)
 		*ppSliderCreated = pSlider;
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Name : addEditbox()
-// Desc : add a control of type EditBox to the dialog
-//-----------------------------------------------------------------------------
-bool CDialogUI::addEditbox( int ID, LPCTSTR strText, LPCTSTR strID, int x, int y, int width, int height, CTimer* timer, CEditBoxUI** ppEditBoxCreated/* = NULL*/)
-{
-	CEditBoxUI* pEditBox = new CEditBoxUI(this, ID, strText, x, y, width, height, timer);
-
-	initControl(pEditBox);
-	// !!! EditBox needs to update it's Rects on init
-	pEditBox->UpdateRects();
-
-	//add it to the controls vector
-	m_Controls.push_back(pEditBox);
-	m_defInfo.push_back( DEF_INFO(strID, ID) );
-
-	if (ppEditBoxCreated != NULL)
-		*ppEditBoxCreated = pEditBox;
 
 	return true;
 }
@@ -1323,8 +1325,8 @@ bool CDialogUI::SaveDilaogToFile(LPCTSTR FileName)
 
 	saveFile << m_width << " Dialog Width" << "\n";
 	saveFile << m_height << " Dialog Height" << "\n";
-	saveFile << m_nCaptionHeight << "Dialog Caption Height" << "\n";
-	saveFile << m_captionText << "Dialog Caption Text" << "\n";
+	saveFile << m_nCaptionHeight << " Dialog Caption Height" << "\n";
+	saveFile << m_captionText << " Dialog Caption Text" << "\n";
 
 	saveFile << "/////////////////////////////////////////////////////////////////////////////\n";
 
@@ -1346,6 +1348,7 @@ bool CDialogUI::SaveDilaogToFile(LPCTSTR FileName)
 bool CDialogUI::LoadDialogFromFile(LPCTSTR FileName, CTimer* timer)
 {
 	std::ifstream inputFile;
+	std::ifstream inputDefFile;
 	UINT controlType;
 
 	// check if we have controls in the dialog
@@ -1367,12 +1370,18 @@ bool CDialogUI::LoadDialogFromFile(LPCTSTR FileName, CTimer* timer)
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
  	inputFile >> m_height;
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_nCaptionHeight;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+	inputFile >> m_captionText;
+	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 
 	do
 	{
 		inputFile >> controlType;
 		inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+		if (inputFile.eof() )
+			break;
 
 		switch(controlType)
 		{

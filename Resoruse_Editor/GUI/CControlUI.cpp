@@ -385,8 +385,8 @@ bool CControlUI::SaveToFile(std::ostream& SaveFile)
 	SaveFile << m_width   << " Control Width"  <<  "\n";
 	SaveFile << m_height  << " Control Height" << "\n";
 
-	SaveFile << m_bVisible << "is Control Visible" << "\n";
-	SaveFile << m_bEnabled << "is Control Enabled" << "\n";
+	SaveFile << m_bVisible << " is Control Visible" << "\n";
+	SaveFile << m_bEnabled << " is Control Enabled" << "\n";
 
 	return true;
 }

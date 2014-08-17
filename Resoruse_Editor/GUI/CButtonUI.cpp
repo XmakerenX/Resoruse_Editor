@@ -267,7 +267,7 @@ bool CButtonUI::SaveToFile(std::ostream& SaveFile)
 // 	{
 // 		outputFile << "0" << " Control Default" << "\n";
 // 	}
-
+	return true;
 }
 
 //-----------------------------------------------------------------------------

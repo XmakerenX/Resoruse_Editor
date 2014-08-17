@@ -729,4 +729,6 @@ bool CListBoxUI::SaveToFile(std::ostream& SaveFile)
 	{
 		SaveFile << m_Items[i]->strText << " ListBox Item " << i << " Text" << "\n";
 	}
+
+	return true;
 }

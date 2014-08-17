@@ -1042,10 +1042,10 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	m_EditDialog.init(500,735,18, "Edit Dialog","", d3d::GREEN, m_hWnd, m_assetManger);
 	m_EditDialog.setLocation(550,0);
 
-	m_EditDialog.addStatic(IDC_CONTROLTYPESTATIC, "Control Type", "IDC_CONTROLTYPESTATIC", 125, 0, 200, 24);
+	m_EditDialog.addStatic(IDC_CONTROLTYPESTATIC, "Control Type", 125, 0, 200, 24);
 
 	CComboBoxUI* pComboBox;
-	m_EditDialog.addComboBox(IDC_COMBOX, "", "IDC_COMBOX", 125, 25, 200, 24, 0, &pComboBox);
+	m_EditDialog.addComboBox(IDC_COMBOX, "", 125, 25, 200, 24, 0, &pComboBox);
 	pComboBox->AddItem("Static", (void*)CControlUI::STATIC );
 	pComboBox->AddItem("Button", (void*)CControlUI::BUTTON);
 	pComboBox->AddItem("CheckBox", (void*)CControlUI::CHECKBOX);
@@ -1058,7 +1058,7 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	pComboBox->ConnectToSelectChg( boost::bind(&CGameWin::ComboboxSelChg, this, _1) );
 
 	//TODO fix the add functions I have broken them...
-	m_EditDialog.addStatic(IDC_WIDTHSTATIC, "Width", "IDC_WIDTHSTATIC", 125, 50, 60, 24);
+	m_EditDialog.addStatic(IDC_WIDTHSTATIC, "Width", 125, 50, 60, 24);
 	m_EditDialog.addStatic(IDC_HEIGHTSTATIC, "Height", 265, 50, 60, 24);
 
 	m_EditDialog.addEditbox(IDC_WIDTHEDITBOX, "", 125, 75, 70, 32, m_timer);
@@ -1174,6 +1174,9 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	m_EditDialog.addEditbox(IDC_FILENAMEEDITBOX, "", 125, 624, 200, 34, m_timer, &pFileNameEditBox);
 	m_EditDialog.addButton(IDC_LOADFILEBUTTON, "Load",125, 663, 70, 34, 0, &pLoadFileButton);
 	m_EditDialog.addButton(IDC_SAVEFILEBUTTON, "Save", 255, 663,70, 34, 0, &pSaveFilButton);
+
+	pLoadFileButton->connectToClick( boost::bind(&CGameWin::LoadDialogButtonClicked, this, _1) );
+	pSaveFilButton->connectToClick( boost::bind(&CGameWin::SaveDialogButtonClicked, this, _1) );
 
 	//-----------------------------------------------------------------------------
 	// Dialog initialization of the generated Dialog
@@ -1648,7 +1651,7 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 	UINT  controlHeight = atoi( m_EditDialog.getEditBox(IDC_HEIGHTEDITBOX)->GetText() );
 
 	pControlText = m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->GetText();
-	pControlIDText m_EditDialog.getEditBox(IDC_CONTROLTEXT)->GetText();
+	pControlIDText = m_EditDialog.getEditBox(IDC_IDEDITBOX)->GetText();
 
 	GetCursorPos( &cursorPoint );
 	ScreenToClient( m_hWnd, &cursorPoint );
@@ -1657,29 +1660,29 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 	{
 	case CControlUI::BUTTON:
 		{
-			m_GenDialog.addButton(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, pControlIDText, cursorPoint.x,
-				cursorPoint.y, controlWidth, controlWidth, 0);
+			m_GenDialog.addButton(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+				cursorPoint.y, controlWidth, controlWidth, 0, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::CHECKBOX:
 		{
-			m_GenDialog.addCheckBox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlIDText, cursorPoint.x, cursorPoint.y,
-				controlWidth, controlHeight, 0);
+			m_GenDialog.addCheckBox(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+				controlWidth, controlHeight, 0, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::RADIOBUTTON:
 		{
-			m_GenDialog.addRadioButton(IDC_GENCONTROLID + m_GenControlNum + 1, pControlIDText, cursorPoint.x,
-				cursorPoint.y, controlWidth, controlHeight, 0, 0);
+			m_GenDialog.addRadioButton(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x,
+				cursorPoint.y, controlWidth, controlHeight, 0, 0, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::COMBOBOX:
 		{
-			m_GenDialog.addComboBox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, pControlIDText, cursorPoint.x,
-				cursorPoint.y, controlWidth, controlHeight, 0);
+			m_GenDialog.addComboBox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+				cursorPoint.y, controlWidth, controlHeight, 0, nullptr, pControlIDText);
 
 			UINT comboboxSize = m_EditDialog.getComboBox(IDC_COMBOXITEMS)->GetNumItems();
 
@@ -1695,22 +1698,22 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 
 	case CControlUI::STATIC:
 		{
-			m_GenDialog.addStatic(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, pControlIDText, cursorPoint.x,
-				cursorPoint.y, controlWidth, controlHeight);
+			m_GenDialog.addStatic(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+				cursorPoint.y, controlWidth, controlHeight, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::EDITBOX:
 		{
-			m_GenDialog.addEditbox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, pControlIDText, cursorPoint.x,
-				cursorPoint.y, controlWidth, controlHeight, m_timer);
+			m_GenDialog.addEditbox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+				cursorPoint.y, controlWidth, controlHeight, m_timer, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::LISTBOX:
 		{
-			m_GenDialog.addListBox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlIDText, cursorPoint.x, cursorPoint.y,
-				controlWidth, controlHeight);
+			m_GenDialog.addListBox(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+				controlWidth, controlHeight, 0, nullptr, pControlIDText);
 			
 			UINT listboxSize = m_EditDialog.getListBox(IDC_LISTBOXITEMS)->GetSize();
 
@@ -1729,8 +1732,8 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 			int minValue = atoi ( m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->GetText() );
 			int maxValue = atoi ( m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->GetText() );
 
-			m_GenDialog.addSlider(IDC_GENCONTROLID + m_GenControlNum + 1, pControlIDText, cursorPoint.x, cursorPoint.y,
-				controlWidth, controlHeight, minValue, maxValue, (maxValue - minValue) / 2);
+			m_GenDialog.addSlider(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+				controlWidth, controlHeight, minValue, maxValue, (maxValue - minValue) / 2, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 	}
@@ -1770,6 +1773,22 @@ void CGameWin::RemoveComboBoxItemClicked(CButtonUI* pRemoveComboBoxItemButton)
 {
 	UINT itemIndex = m_EditDialog.getComboBox(IDC_COMBOXITEMS)->GetSelectedIndex();
 	m_EditDialog.getComboBox(IDC_COMBOXITEMS)->RemoveItem(itemIndex);
+}
+
+//-----------------------------------------------------------------------------
+// Name : SaveDialogButtonClicked ()
+//-----------------------------------------------------------------------------
+void CGameWin::SaveDialogButtonClicked(CButtonUI* pSaveButton)
+{
+	m_GenDialog.SaveDilaogToFile( m_EditDialog.getEditBox(IDC_FILENAMEEDITBOX)->GetText() );
+}
+
+//-----------------------------------------------------------------------------
+// Name : LoadDialogButtonClicked ()
+//-----------------------------------------------------------------------------
+void CGameWin::LoadDialogButtonClicked(CButtonUI* pLoadButton )
+{
+	m_GenDialog.LoadDialogFromFile( m_EditDialog.getEditBox(IDC_FILENAMEEDITBOX)->GetText() , m_timer);
 }
 
 //-----------------------------------------------------------------------------
