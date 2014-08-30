@@ -16,6 +16,19 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine,
 		WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), s.c_str(), s.size(), &n, 0);
 	}
 
+	// redirect unbuffered STDOUT to the console or in other words make cout print to the debug console
+	int hConHandle;
+	long lStdHandle;
+	FILE *fp;
+
+	lStdHandle = (long)GetStdHandle(STD_OUTPUT_HANDLE);
+	hConHandle = _open_osfhandle(lStdHandle, _O_TEXT);
+
+	fp = _fdopen( hConHandle, "w" );
+
+	*stdout = *fp;
+	setvbuf( stdout, NULL, _IONBF, 0 );
+
 	// Initialise the engine.
 	if (!gameWin.InitInstance( hInstance, lpCmdLine, nCmdShow )) return 0;
 

@@ -31,6 +31,8 @@ CDialogUI::CDialogUI(void)
 	m_captionText[0] = '\0';
 
 	m_pMouseOverControl = NULL;
+
+	s_pControlFocus = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -655,6 +657,27 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 // 			}
 		}break;
 
+	case WM_RBUTTONDBLCLK:
+		{
+			POINT mousePoint;
+
+			GetCursorPos(&mousePoint);
+			//ClientToScreen(hWnd,&mousePoint);
+			ScreenToClient(hWnd,&mousePoint);
+
+			mousePoint.x -= m_x;
+			mousePoint.y -= m_y;
+
+			if( m_bCaption )
+				mousePoint.y -= m_nCaptionHeight;
+
+			CControlUI* pControl = getControlAtPoint( mousePoint );
+			if( pControl != NULL && pControl->getEnabled() )
+			{
+				RemoveControl( pControl->getID() );
+			}
+		}break;
+
 	case WM_MOUSEMOVE:
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONUP:
@@ -666,7 +689,7 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 	case WM_XBUTTONUP:
 	case WM_LBUTTONDBLCLK:
 	case WM_MBUTTONDBLCLK:
-	case WM_RBUTTONDBLCLK:
+	//case WM_RBUTTONDBLCLK:
 	case WM_XBUTTONDBLCLK:
 	case WM_MOUSEWHEEL:
 		{
@@ -1194,6 +1217,63 @@ bool CDialogUI::addEditBoxFromFile(std::istream& InputFIle, CTimer* timer, CEdit
 }
 
 //-----------------------------------------------------------------------------
+// Name : RemoveControl()
+//-----------------------------------------------------------------------------
+void CDialogUI::RemoveControl(int ID)
+{
+	for (UINT i = 0; i < m_Controls.size(); i++)
+	{
+		if (m_Controls[i]->getID() == ID)
+		{
+			// clear the focus reference to this control
+			if (s_pControlFocus == m_Controls[i])
+				ClearFocus();
+
+			// clear the mouseOver reference to this control
+			if (m_pMouseOverControl == m_Controls[i])
+				m_pMouseOverControl = nullptr;
+
+			// Deletes the control and removes it from the vecotr
+			delete m_Controls[i];
+			m_Controls[i] = nullptr;
+
+			m_Controls.erase(m_Controls.begin() + i);
+
+			// remove the reference from the def vector to this control
+			for (UINT j = 0; j < m_Controls.size(); j++)
+			{
+				if (m_defInfo[j].controlID == ID )
+				{
+					m_defInfo.erase(m_defInfo.begin() + j);
+					break;
+				}
+			}
+
+			return;
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : RemoveAllControls 
+//-----------------------------------------------------------------------------
+void CDialogUI::RemoveAllControls()
+{
+	if( s_pControlFocus && s_pControlFocus->getParentDialog() == this )
+		s_pControlFocus = nullptr;
+
+	m_pMouseOverControl = nullptr;
+
+	for( UINT i = 0; i < m_Controls.size(); i++ )
+	{
+		delete m_Controls[i];
+		m_Controls[i] = nullptr;
+	}
+
+	m_Controls.clear();
+}
+
+//-----------------------------------------------------------------------------
 // Name : initControl()
 // Desc : initialize a control by giving it the default control settings
 //-----------------------------------------------------------------------------
@@ -1214,10 +1294,23 @@ bool CDialogUI::initControl(CControlUI* pControl)
 		}
 	}
 
-	//sets the check box parent aka this dialog
+	//sets the check box parent .. this dialog
 	pControl->setParent(this);
 
 	return pControl->onInit();
+}
+
+//-----------------------------------------------------------------------------
+// Name : UpdateControlDefText()
+//-----------------------------------------------------------------------------
+void CDialogUI::UpdateControlDefText(LPCTSTR strDefText, int controlID)
+{
+	for (UINT i = 0; i < m_defInfo.size(); i++)
+		if (m_defInfo[i].controlID == controlID)
+		{
+			m_defInfo[i].controlIDText = strDefText;
+			break;
+		}
 }
 
 //-----------------------------------------------------------------------------
@@ -1348,20 +1441,21 @@ bool CDialogUI::SaveDilaogToFile(LPCTSTR FileName)
 bool CDialogUI::LoadDialogFromFile(LPCTSTR FileName, CTimer* timer)
 {
 	std::ifstream inputFile;
-	std::ifstream inputDefFile;
 	UINT controlType;
 
+	// clear controls on the dialog
+	RemoveAllControls();
 	// check if we have controls in the dialog
-	if (m_Controls.size() > 0)
-	{
-		//if we have do a clean up
-		for (UINT i = 0; i < m_Controls.size(); i++)
-		{
-			delete m_Controls[i];
-		}
-
-		m_Controls.clear();
-	}
+// 	if (m_Controls.size() > 0)
+// 	{
+// 		//if we have do a clean up
+// 		for (UINT i = 0; i < m_Controls.size(); i++)
+// 		{
+// 			delete m_Controls[i];
+// 		}
+// 
+// 		m_Controls.clear();
+// 	}
 
 	inputFile.open(FileName, std::ifstream::in);
 
@@ -1430,6 +1524,38 @@ bool CDialogUI::LoadDialogFromFile(LPCTSTR FileName, CTimer* timer)
 	}while(!inputFile.eof());
 
 	inputFile.close();
+
+	m_defInfo.clear();
+
+	std::ifstream inputDefFile;
+
+	std::string defFileName;
+	std::string strID, sID;
+	int ID;
+	
+	defFileName = FileName;
+ 	defFileName.resize(defFileName.size() - 4); //deleting the file extension (.xxx)
+ 	defFileName = defFileName + "Def.h";
+
+	inputDefFile.open(defFileName);
+
+	do
+	{
+		inputDefFile >> strID;
+
+		if (inputDefFile.eof())
+			break;
+
+		inputDefFile >> strID;
+		inputDefFile >> sID;
+		ID = std::stoi(sID);
+
+		m_defInfo.push_back( DEF_INFO(strID, ID) );
+
+		inputDefFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	}while(!inputDefFile.eof());
+
+	inputDefFile.close();
 
 	return true;
 }
@@ -1543,4 +1669,24 @@ CEditBoxUI * CDialogUI::getEditBox( int ID )
 CListBoxUI * CDialogUI::getListBox( int ID )
 {
 	return static_cast< CListBoxUI* > (getControl(ID, CControlUI::LISTBOX));
+}
+
+//-----------------------------------------------------------------------------
+// Name : GetControlsNum 
+//-----------------------------------------------------------------------------
+int CDialogUI::getControlsNum()
+{
+	return m_Controls.size();
+}
+
+//-----------------------------------------------------------------------------
+// Name : getControlIDText 
+//-----------------------------------------------------------------------------
+const char* CDialogUI::getControlIDText(int ID)
+{
+	for (UINT i = 0; i <m_defInfo.size(); i++)
+	{
+		if (m_defInfo[i].controlID == ID)
+			return m_defInfo[i].controlIDText.c_str();
+	}
 }

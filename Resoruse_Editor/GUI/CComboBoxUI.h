@@ -4,6 +4,7 @@
 #include "CButtonUI.h"
 #include "CScrollBarUI.h"
 
+
 //-------------------------------------------------------------------------
 //structs for This Class.
 //-------------------------------------------------------------------------
@@ -47,13 +48,14 @@ public:
 	//-------------------------------------------------------------------------
 	//functions that handle control Rendering
 	//-------------------------------------------------------------------------
-	virtual void    Render( CAssetManager& assetManger); 
-	virtual void    UpdateRects();
+	virtual void    Render				( CAssetManager& assetManger); 
+	virtual void    UpdateRects			();
 
-	virtual bool    CanHaveFocus();
-	virtual void    OnFocusOut();
+	virtual bool    CanHaveFocus		();
+	virtual void    OnFocusOut			();
 
-	virtual bool	SaveToFile(std::ostream& SaveFile);
+	virtual bool	SaveToFile			(std::ostream& SaveFile);
+	void			CopyItemsFrom		(CComboBoxUI* sourceComboBox);
 
 	//-------------------------------------------------------------------------
 	//functions that handle checkBox specific properties

@@ -100,6 +100,9 @@ bool CCheckboxUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 //-----------------------------------------------------------------------------
 bool CCheckboxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer )
 {
+	if (!m_bEnabled || !m_bVisible)
+		return false;
+
 	switch(uMsg)
 	{
 	case WM_LBUTTONDOWN:

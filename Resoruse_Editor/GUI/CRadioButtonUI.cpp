@@ -133,3 +133,11 @@ void CRadioButtonUI::setChecked(bool bChecked)
 {
 	m_bChecked = bChecked;
 }
+
+//-----------------------------------------------------------------------------
+// Name : setButtonGroup ()
+//-----------------------------------------------------------------------------
+void CRadioButtonUI::setButtonGroup(UINT buttonGroup)
+{
+	m_nButtonGroup = buttonGroup;
+}

@@ -51,6 +51,7 @@ public:
 	virtual bool    CanHaveFocus		();
 
 	virtual bool	SaveToFile			(std::ostream& SaveFile);
+	void			CopyItemsFrom		(CListBoxUI* sourceListBox);
 
 	DWORD           GetStyle			() const;
 	void            SetStyle			( DWORD dwStyle );
@@ -84,7 +85,7 @@ protected:
 	RECT m_rcSelection; // Selection box bound
 
 	CScrollBarUI m_ScrollBar;
-	int m_nSBWidth;
+	int m_nSBWidth; //Scrollbar width
 
 	int m_nBorder;
 	int m_nMargin;

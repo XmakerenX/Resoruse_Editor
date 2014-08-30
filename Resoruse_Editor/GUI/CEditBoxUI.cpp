@@ -1,5 +1,6 @@
 #include "CEditBoxUI.h"
 #include "CDialogUI.h"
+#include <iostream>
 
 bool CEditBoxUI::s_bHideCaret;
 
@@ -55,6 +56,7 @@ CEditBoxUI::CEditBoxUI(std::istream& inputFile, CTimer* timer)
 	inputFile >> m_nBorder;
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 	inputFile >> m_nSpacing;
+	SetSpacing(m_nSpacing);
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 	inputFile >> m_bCaretOn;
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
@@ -66,6 +68,7 @@ CEditBoxUI::CEditBoxUI(std::istream& inputFile, CTimer* timer)
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 	inputFile >> m_CaretColor;
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
 }
 
 //-----------------------------------------------------------------------------
@@ -245,19 +248,23 @@ bool CEditBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STAT
 //-----------------------------------------------------------------------------
 bool CEditBoxUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* timer)
 {
-	if( !m_bHasFocus )
-		m_pParentDialog->RequestFocus( this );
-
 	if( !ContainsPoint( pt ) )
 		return false;
+
+	if( !m_bHasFocus )
+		m_pParentDialog->RequestFocus( this );
 
 	m_bMouseDrag = true;
 	SetCapture( hWnd );
 	// Determine the character corresponding to the coordinates.
 	int nCP, nTrail, nX1st;
 	nCP = (pt.x - m_rcText.left) / m_elementsFonts[0].nFontWidth;
+
+	if (nCP > m_Buffer.size())
+		nCP = m_Buffer.size();
+
 	// Cap at the NULL character.
-	if(nCP >= 0 && nCP < m_Buffer.size() )
+	if(nCP >= 0 && nCP < (m_Buffer.size() + 1) )
 		PlaceCaret( nCP );
 	else
 		PlaceCaret( 0 );

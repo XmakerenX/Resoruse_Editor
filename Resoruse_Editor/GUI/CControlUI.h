@@ -178,6 +178,10 @@ public:
 	UINT    getType				();
 	bool	getEnabled			();
 	bool    getVisible			();
+	int		getX				();
+	int		getY				();
+	int		getWidth			();
+	int		getHeight			();
 	CDialogUI* getParentDialog  ();
 	
 	virtual bool	SaveToFile  (std::ostream& SaveFile);

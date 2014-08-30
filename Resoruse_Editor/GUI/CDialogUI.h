@@ -78,7 +78,8 @@ public:
 	//-------------------------------------------------------------------------
 	// Functions that handle the Dialog Controls
 	//-------------------------------------------------------------------------
-	bool			 initControl	 (CControlUI* pControl);
+	bool			 initControl			(CControlUI* pControl);
+	void			 UpdateControlDefText	(LPCTSTR strDefText, int controlID);
 
 	bool			 addStatic				( int ID, LPCTSTR strText, int x, int y, int width, int height, CStaticUI** ppStaticCreated = NULL, LPCTSTR strID = "");
 	bool			 addButton				( int ID, LPCTSTR strText, int x, int y, int width, int height, UINT nHotkey, CButtonUI** ppButtonCreated = NULL, LPCTSTR strID = "");
@@ -98,6 +99,9 @@ public:
 	bool			 addSliderFromFile      ( std::istream& InputFIle, CSliderUI** ppSliderCreated = NULL);
 	bool			 addEditBoxFromFile     ( std::istream& InputFIle, CTimer* timer, CEditBoxUI** ppEditBoxCreated = NULL);
 
+	void			 RemoveControl			( int ID);
+	void			 RemoveAllControls		( );
+
 	CControlUI     * getControl				( int ID );
 	CControlUI     * getControl			    ( int ID, UINT nControlType );
 	CStaticUI      * getStatic			    ( int ID );
@@ -108,6 +112,8 @@ public:
 	CSliderUI	   * getSlider				( int ID );
 	CEditBoxUI	   * getEditBox				( int ID );
 	CListBoxUI	   * getListBox			    ( int ID );
+	int				 getControlsNum			();
+	const char	   * getControlIDText		( int ID);
 
 	void		     ClearRadioButtonGruop	( UINT nButtonGroup);
 

@@ -62,6 +62,9 @@ CControlUI::CControlUI(std::istream& inputFile)
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 	inputFile >> m_bEnabled;	
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
+	m_bMouseOver = false;
+	m_bHasFocus  = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -370,6 +373,38 @@ CDialogUI* CControlUI::getParentDialog()
 int CControlUI::getID()
 {
 	return m_ID;
+}
+
+//-----------------------------------------------------------------------------
+// Name : getX 
+//-----------------------------------------------------------------------------
+int CControlUI::getX()
+{
+	return m_x;
+}
+
+//-----------------------------------------------------------------------------
+// Name : getY 
+//-----------------------------------------------------------------------------
+int CControlUI::getY()
+{
+	return m_y;
+}
+
+//-----------------------------------------------------------------------------
+// Name : getWidth 
+//-----------------------------------------------------------------------------
+int CControlUI::getWidth()
+{
+	return m_width;
+}
+
+//-----------------------------------------------------------------------------
+// Name : getHeight 
+//-----------------------------------------------------------------------------
+int CControlUI::getHeight()
+{
+	return m_height;
 }
 
 //-----------------------------------------------------------------------------

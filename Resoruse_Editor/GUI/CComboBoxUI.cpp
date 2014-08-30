@@ -1,5 +1,6 @@
 #include "CComboBoxUI.h"
 #include "CDialogUI.h"
+#include <iostream>
 
 //-----------------------------------------------------------------------------
 // Name : CComboBoxUI(constructor) 
@@ -89,6 +90,9 @@ void CComboBoxUI::OnHotkey()
 //-----------------------------------------------------------------------------
 bool CComboBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer )
 {
+	if (!m_bEnabled || !m_bVisible)
+		return false;
+
 	// Let the scroll bar handle it first.
 	if( m_ScrollBar.HandleMouse( hWnd,uMsg, mousePoint, inputstate, timer) )
 		return true;
@@ -174,6 +178,7 @@ bool CComboBoxUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* 
 				m_selectionChangedSig( this);
 				//m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, true, m_ID, hWnd );
 				m_bOpened = false;
+
 				m_bMouseOver = false;
 
 				// 						if( !m_pDialog->m_bKeyboardInput )
@@ -487,7 +492,8 @@ HRESULT CComboBoxUI::AddItem( const char* strText, void* pData )
 		m_iSelected = 0;
 		m_iFocused = 0;
 		//m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, false, this );
-		m_pParentDialog->SendEvent( 8, false, m_ID, NULL );
+		m_selectionChangedSig(this);
+		//m_pParentDialog->SendEvent( 8, false, m_ID, NULL );
 	}
 
 	return S_OK;
@@ -774,4 +780,18 @@ bool CComboBoxUI::SaveToFile(std::ostream& SaveFile)
 	}
 
 	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : CopyItemsFrom
+//-----------------------------------------------------------------------------
+void CComboBoxUI::CopyItemsFrom(CComboBoxUI* sourceComboBox)
+{
+	// clears the items vector
+	RemoveAllItems();
+
+	for (UINT i = 0; i < sourceComboBox->GetNumItems(); i++)
+	{
+		AddItem( sourceComboBox->GetItem(i)->strText, sourceComboBox->GetItem(i)->pData );
+	}
 }

@@ -85,6 +85,8 @@ CGameWin::CGameWin() :Width(1024),Height(742)//640 480
 
 	m_GenControlNum = 0;
 	m_controlInCreation = false;
+	m_controlRelocate= false;
+	m_pCurSelectedControl = nullptr;
 // 	m_GuiDialog.Init(&m_GuiDilaogResManger, &m_timer);
 // 	m_GuiSelectPawn.Init(&m_GuiDilaogResManger, &m_timer);
 }
@@ -167,24 +169,27 @@ LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (m_controlInCreation)
 			{	
 				POINT genDailogLoc = m_GenDialog.getLocation();
+				genDailogLoc.y += m_GenDialog.getCaptionHeight();
 				int x = (int)LOWORD(lParam) - genDailogLoc.x;
 				int y = (int)HIWORD(lParam) - genDailogLoc.y;
 				m_GenDialog.getControl(IDC_GENCONTROLID + m_GenControlNum + 1)->setLocation(x, y);
+				m_GenDialog.getControl(IDC_GENCONTROLID + m_GenControlNum + 1)->setEnabled(true);
 				m_controlInCreation = false;
 				m_GenControlNum++;
 			}
 
-// 			if (m_controlRelocate && m_CurSelcetedControl)
-// 			{
-// 				POINT mousePoint;
-// 				mousePoint.x = (int)LOWORD(lParam) - m_GenDialog.getX();
-// 				mousePoint.y = (int)HIWORD(lParam) - m_GenDialog.getX();
-// 				//ClientToScreen(m_hWnd,&mousePoint);
-// 
-// 				m_CurSelcetedControl->SetLocation(mousePoint.x,mousePoint.y);
-// 				m_controlRelocate = false;
-// 				m_DrawLine = false;
-// 			}
+			if (m_controlRelocate && m_pCurSelectedControl)
+			{
+				POINT mousePoint;
+				POINT dialogPoint = m_GenDialog.getLocation();
+				mousePoint.x = (int)LOWORD(lParam) - dialogPoint.x;
+				mousePoint.y = (int)HIWORD(lParam) - ( dialogPoint.y + m_GenDialog.getCaptionHeight() );
+				//ClientToScreen(m_hWnd,&mousePoint);
+
+				m_pCurSelectedControl->setLocation(mousePoint.x,mousePoint.y);
+				m_pCurSelectedControl->setEnabled(true);
+				m_controlRelocate = false;
+			}
 
 			// Capture the mouse
 			/*m_hWnd=hWnd;*/
@@ -199,22 +204,25 @@ LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (m_controlInCreation)
 			{		
 				POINT genDialogLog = m_GenDialog.getLocation();
+				genDialogLog.y += m_GenDialog.getCaptionHeight();
 				int x = (int)LOWORD(lParam);
 				int y = (int)HIWORD(lParam);
 				m_GenDialog.getControl(IDC_GENCONTROLID + m_GenControlNum + 1)->setLocation( x - genDialogLog.x, y - genDialogLog.y);
 
 			}
 
-// 			if (m_controlRelocate && m_CurSelcetedControl)
-// 			{
-// 				POINT mousePoint;
-// 
-// 				mousePoint.x = (int)LOWORD(lParam);
-// 				mousePoint.y = (int)HIWORD(lParam);
-// 				//ClientToScreen(hWnd,&mousePoint);
-// 
-// 				m_CurSelcetedControl->SetLocation(mousePoint.x - m_GenDialog.getX() ,mousePoint.y - m_GenDialog.getY() );
-// 			}
+			if (m_controlRelocate && m_pCurSelectedControl)
+			{
+				POINT mousePoint;
+				POINT dialogPoint = m_GenDialog.getLocation();
+				dialogPoint.y += m_GenDialog.getCaptionHeight();
+
+				mousePoint.x = (int)LOWORD(lParam);
+				mousePoint.y = (int)HIWORD(lParam);
+				//ClientToScreen(hWnd,&mousePoint);
+
+				m_pCurSelectedControl->setLocation(mousePoint.x - dialogPoint.x ,mousePoint.y - dialogPoint.y );
+			}
 		}break;
 
 	case WM_LBUTTONUP:
@@ -229,6 +237,95 @@ LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			SetCapture( m_hWnd );
 			m_bPicking = true;
+
+			POINT mousePoint;
+			CControlUI* pCurSelectedControl = nullptr;
+
+			GetCursorPos(&mousePoint);
+			ScreenToClient(hWnd,&mousePoint);
+
+			mousePoint.x -= m_GenDialog.getLocation().x;
+			mousePoint.y -= m_GenDialog.getLocation().y + m_GenDialog.getCaptionHeight();
+
+			pCurSelectedControl = m_GenDialog.getControlAtPoint(mousePoint);
+
+			if (pCurSelectedControl) 
+			{
+				m_EditDialog.getComboBox(IDC_COMBOX)->SetSelectedByIndex(pCurSelectedControl->getType());
+
+				long long controlWidth = pCurSelectedControl->getWidth();
+				long long controlHeight = pCurSelectedControl->getHeight();
+
+				m_EditDialog.getEditBox(IDC_WIDTHEDITBOX)->SetText( std::to_string( controlWidth ).c_str() );
+				m_EditDialog.getEditBox(IDC_HEIGHTEDITBOX)->SetText( std::to_string( controlHeight ).c_str() );
+
+				const char* pControlIDText = m_GenDialog.getControlIDText(pCurSelectedControl->getID()); 
+				m_EditDialog.getEditBox(IDC_IDEDITBOX)->SetText(pControlIDText);
+
+				long long ControlX = pCurSelectedControl->getX();
+				long long ControlY = pCurSelectedControl->getY();
+
+				m_EditDialog.getEditBox(IDC_CONTROLX)->SetText( std::to_string(ControlX).c_str() );
+				m_EditDialog.getEditBox(IDC_CONTROLY)->SetText( std::to_string(ControlY).c_str() );
+
+				switch (pCurSelectedControl->getType())
+				{
+				case CControlUI::STATIC:
+				case CControlUI::BUTTON:
+				case CControlUI::EDITBOX:
+				case CControlUI::CHECKBOX:
+					{
+						m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->SetText( static_cast<CStaticUI*>(pCurSelectedControl)->getText() );
+						SetStaticGUI(true);
+
+					}break;
+				case CControlUI::RADIOBUTTON:
+					{
+						m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->SetText( static_cast<CStaticUI*>(pCurSelectedControl)->getText() );
+
+						long long controlButtonGroup = static_cast<CRadioButtonUI*>(pCurSelectedControl)->getButtonGroup();
+						m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->SetText( std::to_string(controlButtonGroup).c_str() );
+
+						SetRadioButtonGUI(true);
+					}break;
+				case CControlUI::SLIDER:
+					{
+						int  sliderMin;
+						int  sliderMax;
+
+						static_cast<CSliderUI*>(pCurSelectedControl)->GetRange(sliderMin, sliderMax);
+
+						m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->SetText( std::to_string( static_cast<long long>( sliderMin ) ).c_str() );
+						m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->SetText( std::to_string( static_cast<long long>( sliderMax ) ).c_str() );
+
+						SetSliderGUI(true);
+					}break;
+				case CControlUI::LISTBOX:
+					{
+						m_EditDialog.getListBox(IDC_LISTBOXITEMS)->CopyItemsFrom( static_cast<CListBoxUI*>(pCurSelectedControl) );
+						m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->SetText("");
+
+						SetListBoxGUI(true);
+
+					}break;
+				case CControlUI::COMBOBOX:
+					{
+						m_EditDialog.getComboBox(IDC_COMBOXITEMS)->CopyItemsFrom( static_cast<CComboBoxUI*>(pCurSelectedControl) );
+						m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->SetText("");
+
+						SetComboBoxGUI(true);
+					}break;
+				}
+				
+				m_pCurSelectedControl = pCurSelectedControl;
+				m_EditDialog.getButton(IDC_RELOCATEBUTTON)->setEnabled(true);
+			}
+			else
+			{
+				m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(true);
+				m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(false);
+				m_EditDialog.getButton(IDC_RELOCATEBUTTON)->setEnabled(false);
+			}
 
 		}break;
 
@@ -1051,8 +1148,8 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	pComboBox->AddItem("CheckBox", (void*)CControlUI::CHECKBOX);
 	pComboBox->AddItem("RadioButton", (void*)CControlUI::RADIOBUTTON);
 	pComboBox->AddItem("ComboBox", (void*)CControlUI::COMBOBOX);
-	pComboBox->AddItem("ListBox", (void*)CControlUI::LISTBOX);
 	pComboBox->AddItem("Slider", (void*)CControlUI::SLIDER);
+	pComboBox->AddItem("ListBox", (void*)CControlUI::LISTBOX);
 	pComboBox->AddItem("EditBox", (void*)CControlUI::EDITBOX);
 	
 	pComboBox->ConnectToSelectChg( boost::bind(&CGameWin::ComboboxSelChg, this, _1) );
@@ -1143,8 +1240,15 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	// The end of Dialog initialization and creation of create control button
  	//-----------------------------------------------------------------------------
 	CButtonUI* pCreateControlButton = nullptr;
+	CButtonUI* pSetChangesButton = nullptr;
+
 	m_EditDialog.addButton(IDC_CREATECONTROL, "Create Control",150, 310, 150, 25, 0, &pCreateControlButton);
 	pCreateControlButton->connectToClick( boost::bind(&CGameWin::CreateControlClicked, this, _1) );
+
+	m_EditDialog.addButton(IDC_SETCHANGESBUTTON, "Set Changes", 150, 310, 150, 25,0, &pSetChangesButton);
+	pSetChangesButton->connectToClick( boost::bind(&CGameWin::SetChangesButtonClicked, this, _1) );
+	pSetChangesButton->setVisible(false);
+
 	//m_EditDialog.
 
 	//-----------------------------------------------------------------------------
@@ -1177,6 +1281,20 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 
 	pLoadFileButton->connectToClick( boost::bind(&CGameWin::LoadDialogButtonClicked, this, _1) );
 	pSaveFilButton->connectToClick( boost::bind(&CGameWin::SaveDialogButtonClicked, this, _1) );
+
+	CEditBoxUI* pControlXEditBox = nullptr;
+	CEditBoxUI* pControlYEditBox = nullptr;
+
+	m_EditDialog.addStatic(IDC_CONTROLXSTATIC, "X", 330, 592, 50, 34);
+	m_EditDialog.addStatic(IDC_CONTROLYSTATIC, "Y", 385, 592, 50, 34);
+
+	m_EditDialog.addEditbox(IDC_CONTROLX, "", 330, 625, 50, 34, m_timer, &pControlXEditBox);
+	m_EditDialog.addEditbox(IDC_CONTROLY, "", 385, 625, 50, 34, m_timer, &pControlYEditBox);
+
+	CButtonUI* pRelocateButton = nullptr;
+	m_EditDialog.addButton(IDC_RELOCATEBUTTON, "Relocate Control", 330, 553, 100, 34, 0, &pRelocateButton);
+	pRelocateButton->connectToClick( boost::bind(&CGameWin::RelocateControlClicked, this, _1) );
+	pRelocateButton->setEnabled(false);
 
 	//-----------------------------------------------------------------------------
 	// Dialog initialization of the generated Dialog
@@ -1693,6 +1811,8 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 					AddItem(pCurItem->strText, pCurItem->pData);
 			}
 
+			m_EditDialog.getComboBox(IDC_COMBOXITEMS)->RemoveAllItems();
+
 			m_controlInCreation = true;
 		}break;
 
@@ -1724,6 +1844,8 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 					AddItem(pCurItem->strText, pCurItem->pData);
 			}
 
+			m_EditDialog.getListBox(IDC_LISTBOXITEMS)->RemoveAllItems();
+
 			m_controlInCreation = true;
 		}break;
 
@@ -1737,6 +1859,10 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 			m_controlInCreation = true;
 		}break;
 	}
+
+	if (m_controlInCreation)
+		// Temporally disabling the control to avoid it picking up messages before it is in place.
+		m_GenDialog.getControl(IDC_GENCONTROLID + m_GenControlNum + 1)->setEnabled(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -1776,6 +1902,68 @@ void CGameWin::RemoveComboBoxItemClicked(CButtonUI* pRemoveComboBoxItemButton)
 }
 
 //-----------------------------------------------------------------------------
+// Name : SetChangesButtonClicked ()
+//-----------------------------------------------------------------------------
+void CGameWin::SetChangesButtonClicked(CButtonUI* pSetChangesButton)
+{
+	UINT controlWidth = atoi( m_EditDialog.getEditBox(IDC_WIDTHEDITBOX)->GetText() );
+	UINT controlHeight = atoi( m_EditDialog.getEditBox(IDC_HEIGHTEDITBOX)->GetText() );
+
+	int controlX = atoi( m_EditDialog.getEditBox(IDC_CONTROLX)->GetText() );
+	int controlY = atoi( m_EditDialog.getEditBox(IDC_CONTROLY)->GetText() );
+
+	m_pCurSelectedControl->setLocation(controlX, controlY);
+	m_pCurSelectedControl->setSize(controlWidth, controlHeight);
+
+	ULONG selectedItem = (ULONG)m_EditDialog.getComboBox(IDC_COMBOX)->GetSelectedData();
+
+	switch(selectedItem)
+	{
+	case CControlUI::STATIC:
+	case CControlUI::BUTTON:
+	case CControlUI::EDITBOX:
+	case CControlUI::CHECKBOX:
+		{
+			LPCTSTR pControlText = m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->GetText();
+			static_cast<CStaticUI*>(m_pCurSelectedControl)->setText(pControlText);
+		}break;
+
+	case CControlUI::RADIOBUTTON:
+		{
+			LPCTSTR pControlText = m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->GetText();
+			static_cast<CRadioButtonUI*>(m_pCurSelectedControl)->setText(pControlText);
+
+			UINT buttonGroup = atoi( m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->GetText() ) ;
+			static_cast<CRadioButtonUI*>(m_pCurSelectedControl)->setButtonGroup(buttonGroup);
+		}break;
+
+	case CControlUI::SLIDER:
+		{
+			int sliderMin = atoi( m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->GetText() );
+			int sliderMax = atoi( m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->GetText() );
+
+			static_cast<CSliderUI*>(m_pCurSelectedControl)->SetRange(sliderMin, sliderMax);
+		}break;
+
+	case CControlUI::LISTBOX:
+		{
+			static_cast<CListBoxUI*>(m_pCurSelectedControl)->CopyItemsFrom( m_EditDialog.getListBox(IDC_LISTBOXITEMS) );
+		}break;
+
+	case CControlUI::COMBOBOX:
+		{
+			static_cast<CComboBoxUI*>(m_pCurSelectedControl)->CopyItemsFrom( m_EditDialog.getComboBox(IDC_COMBOXITEMS) );
+		}break;
+	}
+
+	LPCTSTR pControlIDText = m_EditDialog.getEditBox(IDC_IDEDITBOX)->GetText();
+
+	m_GenDialog.UpdateControlDefText( pControlIDText, m_pCurSelectedControl->getID());
+	
+
+}
+
+//-----------------------------------------------------------------------------
 // Name : SaveDialogButtonClicked ()
 //-----------------------------------------------------------------------------
 void CGameWin::SaveDialogButtonClicked(CButtonUI* pSaveButton)
@@ -1789,6 +1977,7 @@ void CGameWin::SaveDialogButtonClicked(CButtonUI* pSaveButton)
 void CGameWin::LoadDialogButtonClicked(CButtonUI* pLoadButton )
 {
 	m_GenDialog.LoadDialogFromFile( m_EditDialog.getEditBox(IDC_FILENAMEEDITBOX)->GetText() , m_timer);
+	m_GenControlNum = m_GenDialog.getControlsNum();
 }
 
 //-----------------------------------------------------------------------------
@@ -1800,6 +1989,24 @@ void CGameWin::SetGenDialogSize(CButtonUI* pDialogSetButton)
 	UINT dialogHeight = atoi( m_EditDialog.getEditBox(IDC_DIALOGHEIGHT)->GetText() );
 
 	m_GenDialog.setSize(dialogWidth, dialogHeight);
+}
+
+//-----------------------------------------------------------------------------
+// Name : RelocateControlClicked ()
+//-----------------------------------------------------------------------------
+void CGameWin::RelocateControlClicked(CButtonUI* pRecloateControlButton)
+{
+	POINT mousePoint; 
+	POINT dialogPoint = m_GenDialog.getLocation();
+	dialogPoint.y +=  m_GenDialog.getCaptionHeight();
+	mousePoint.x = m_pCurSelectedControl->getX() + dialogPoint.x;
+	mousePoint.y = m_pCurSelectedControl->getY() + dialogPoint.y;
+	ClientToScreen(m_hWnd,&mousePoint);
+
+	SetCursorPos(mousePoint.x, mousePoint.y);
+	// Temporally disabled the control to prevent it form processing messages till it is placed.
+	m_pCurSelectedControl->setEnabled(false);
+	m_controlRelocate = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -1819,127 +2026,232 @@ void CGameWin::ComboboxSelChg(CComboBoxUI* pCombobox)
 	case CControlUI::EDITBOX:
 	case CControlUI::CHECKBOX:
 		{
-			m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->setVisible(false);
-			m_EditDialog.getStatic(IDC_SLIDERSTATIC)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->setVisible(false);
-
-			m_EditDialog.getListBox(IDC_LISTBOXITEMS)->setVisible(false);
-			m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setVisible(false);
-			m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->setVisible(false);
-			m_EditDialog.getButton(IDC_LISTBOXITEMSADD)->setVisible(false);
-			m_EditDialog.getButton(IDC_LISTBOXITEMSREMOVE)->setVisible(false);
-
-			m_EditDialog.getComboBox(IDC_COMBOXITEMS)->setVisible(false);
-			m_EditDialog.getButton(IDC_COMBOBOXITEMSADD)->setVisible(false);
-			m_EditDialog.getButton(IDC_COMBOBOXITEMSREMOVE)->setVisible(false);
-
-			m_EditDialog.getStatic(IDC_CONTROLTEXT)->setVisible(true);
-			m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->setVisible(true);
-
-			m_EditDialog.getButton(IDC_CREATECONTROL)->setLocation(150, 310);
+			SetStaticGUI();
 		}break;
 	case CControlUI::RADIOBUTTON:
 		{
-			m_EditDialog.getStatic(IDC_SLIDERSTATIC)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->setVisible(false);
-
-			m_EditDialog.getListBox(IDC_LISTBOXITEMS)->setVisible(false);
-			m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setVisible(false);
-			m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->setVisible(false);
-			m_EditDialog.getButton(IDC_LISTBOXITEMSADD)->setVisible(false);
-			m_EditDialog.getButton(IDC_LISTBOXITEMSREMOVE)->setVisible(false);
-
-			m_EditDialog.getComboBox(IDC_COMBOXITEMS)->setVisible(false);
-			m_EditDialog.getButton(IDC_COMBOBOXITEMSADD)->setVisible(false);
-			m_EditDialog.getButton(IDC_COMBOBOXITEMSREMOVE)->setVisible(false);
-
-			m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(true);
-			m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->setVisible(true);
-
-			m_EditDialog.getStatic(IDC_CONTROLTEXT)->setVisible(true);
-			m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->setVisible(true);
-
-			m_EditDialog.getButton(IDC_CREATECONTROL)->setLocation(150, 310);
+			SetRadioButtonGUI();
 		}break;
 	case CControlUI::SLIDER:
 		{
-			m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->setVisible(false);
-
-			m_EditDialog.getListBox(IDC_LISTBOXITEMS)->setVisible(false);
-			m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setVisible(false);
-			m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->setVisible(false);
-			m_EditDialog.getButton(IDC_LISTBOXITEMSADD)->setVisible(false);
-			m_EditDialog.getButton(IDC_LISTBOXITEMSREMOVE)->setVisible(false);
-
-			m_EditDialog.getComboBox(IDC_COMBOXITEMS)->setVisible(false);
-			m_EditDialog.getButton(IDC_COMBOBOXITEMSADD)->setVisible(false);
-			m_EditDialog.getButton(IDC_COMBOBOXITEMSREMOVE)->setVisible(false);
-
-			m_EditDialog.getStatic(IDC_CONTROLTEXT)->setVisible(true);
-			m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->setVisible(true);
-
-			m_EditDialog.getStatic(IDC_SLIDERSTATIC)->setVisible(true);
-			m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->setVisible(true);
-			m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->setVisible(true);
-
-			m_EditDialog.getButton(IDC_CREATECONTROL)->setLocation(150, 310);
+			SetSliderGUI();
 		}break;
 	case CControlUI::LISTBOX:
 		{
-			m_EditDialog.getStatic(IDC_CONTROLTEXT)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->setVisible(false);
-
-			m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->setVisible(false);
-
-			m_EditDialog.getStatic(IDC_SLIDERSTATIC)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->setVisible(false);
-
-			m_EditDialog.getComboBox(IDC_COMBOXITEMS)->setVisible(false);
-			m_EditDialog.getButton(IDC_COMBOBOXITEMSADD)->setVisible(false);
-			m_EditDialog.getButton(IDC_COMBOBOXITEMSREMOVE)->setVisible(false);
-
-			m_EditDialog.getListBox(IDC_LISTBOXITEMS)->setVisible(true);
-			m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setVisible(true);
-			m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setText("ListBox Item text");
-			m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->setVisible(true);
-			m_EditDialog.getButton(IDC_LISTBOXITEMSADD)->setVisible(true);
-			m_EditDialog.getButton(IDC_LISTBOXITEMSREMOVE)->setVisible(true);
-
-			m_EditDialog.getButton(IDC_CREATECONTROL)->setLocation(150, 468);
+			SetListBoxGUI();
 		}break;
 
 	case CControlUI::COMBOBOX:
 		{
-			m_EditDialog.getStatic(IDC_CONTROLTEXT)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->setVisible(false);
-
-			m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->setVisible(false);
-
-			m_EditDialog.getStatic(IDC_SLIDERSTATIC)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->setVisible(false);
-			m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->setVisible(false);
-
-			m_EditDialog.getListBox(IDC_LISTBOXITEMS)->setVisible(false);
-			m_EditDialog.getButton(IDC_LISTBOXITEMSADD)->setVisible(false);
-			m_EditDialog.getButton(IDC_LISTBOXITEMSREMOVE)->setVisible(false);
-
-			m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setVisible(true);
-			m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setText("Combobox Item text");
-			m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->setVisible(true);
-			m_EditDialog.getComboBox(IDC_COMBOXITEMS)->setVisible(true);
-			m_EditDialog.getButton(IDC_COMBOBOXITEMSADD)->setVisible(true);
-			m_EditDialog.getButton(IDC_COMBOBOXITEMSREMOVE)->setVisible(true);
-
-			m_EditDialog.getButton(IDC_CREATECONTROL)->setLocation(150, 468);
+			SetComboBoxGUI();
 		}
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : SetStaticGUI ()
+//-----------------------------------------------------------------------------
+void CGameWin::SetStaticGUI(bool ControlSelected /* = false */)
+{
+	m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->setVisible(false);
+	m_EditDialog.getStatic(IDC_SLIDERSTATIC)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->setVisible(false);
+
+	m_EditDialog.getListBox(IDC_LISTBOXITEMS)->setVisible(false);
+	m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setVisible(false);
+	m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->setVisible(false);
+	m_EditDialog.getButton(IDC_LISTBOXITEMSADD)->setVisible(false);
+	m_EditDialog.getButton(IDC_LISTBOXITEMSREMOVE)->setVisible(false);
+
+	m_EditDialog.getComboBox(IDC_COMBOXITEMS)->setVisible(false);
+	m_EditDialog.getButton(IDC_COMBOBOXITEMSADD)->setVisible(false);
+	m_EditDialog.getButton(IDC_COMBOBOXITEMSREMOVE)->setVisible(false);
+
+	m_EditDialog.getStatic(IDC_CONTROLTEXT)->setVisible(true);
+	m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->setVisible(true);
+
+	m_EditDialog.getButton(IDC_CREATECONTROL)->setLocation(150, 310);
+	m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setLocation(150, 310);
+
+	if (!ControlSelected)
+	{
+		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(true);
+		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(false);
+		
+	}
+	else
+	{
+		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(true);
+		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(false);
+	}
+
+}
+
+//-----------------------------------------------------------------------------
+// Name : SetRadioButtonGUI ()
+//-----------------------------------------------------------------------------
+void CGameWin::SetRadioButtonGUI(bool ControlSelected /* = false */)
+{
+	m_EditDialog.getStatic(IDC_SLIDERSTATIC)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->setVisible(false);
+
+	m_EditDialog.getListBox(IDC_LISTBOXITEMS)->setVisible(false);
+	m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setVisible(false);
+	m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->setVisible(false);
+	m_EditDialog.getButton(IDC_LISTBOXITEMSADD)->setVisible(false);
+	m_EditDialog.getButton(IDC_LISTBOXITEMSREMOVE)->setVisible(false);
+
+	m_EditDialog.getComboBox(IDC_COMBOXITEMS)->setVisible(false);
+	m_EditDialog.getButton(IDC_COMBOBOXITEMSADD)->setVisible(false);
+	m_EditDialog.getButton(IDC_COMBOBOXITEMSREMOVE)->setVisible(false);
+
+	m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(true);
+	m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->setVisible(true);
+
+	m_EditDialog.getStatic(IDC_CONTROLTEXT)->setVisible(true);
+	m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->setVisible(true);
+
+	m_EditDialog.getButton(IDC_CREATECONTROL)->setLocation(150, 310);
+	m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setLocation(150, 310);
+
+	if (!ControlSelected)
+	{
+		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(true);
+		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(false);
+
+	}
+	else
+	{
+		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(true);
+		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(false);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : SetSliderGUI ()
+//-----------------------------------------------------------------------------
+void CGameWin::SetSliderGUI(bool ControlSelected /* = false */)
+{
+	m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->setVisible(false);
+
+	m_EditDialog.getListBox(IDC_LISTBOXITEMS)->setVisible(false);
+	m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setVisible(false);
+	m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->setVisible(false);
+	m_EditDialog.getButton(IDC_LISTBOXITEMSADD)->setVisible(false);
+	m_EditDialog.getButton(IDC_LISTBOXITEMSREMOVE)->setVisible(false);
+
+	m_EditDialog.getComboBox(IDC_COMBOXITEMS)->setVisible(false);
+	m_EditDialog.getButton(IDC_COMBOBOXITEMSADD)->setVisible(false);
+	m_EditDialog.getButton(IDC_COMBOBOXITEMSREMOVE)->setVisible(false);
+
+	m_EditDialog.getStatic(IDC_CONTROLTEXT)->setVisible(true);
+	m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->setVisible(true);
+
+	m_EditDialog.getStatic(IDC_SLIDERSTATIC)->setVisible(true);
+	m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->setVisible(true);
+	m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->setVisible(true);
+
+	m_EditDialog.getButton(IDC_CREATECONTROL)->setLocation(150, 310);
+	m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setLocation(150, 310);
+
+	if (!ControlSelected)
+	{
+		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(true);
+		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(false);
+	}
+	else
+	{
+		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(true);
+		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(false);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : SetListBoxGUI ()
+//-----------------------------------------------------------------------------
+void CGameWin::SetListBoxGUI(bool ControlSelected /* = false */)
+{
+	m_EditDialog.getStatic(IDC_CONTROLTEXT)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->setVisible(false);
+
+	m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->setVisible(false);
+
+	m_EditDialog.getStatic(IDC_SLIDERSTATIC)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->setVisible(false);
+
+	m_EditDialog.getComboBox(IDC_COMBOXITEMS)->setVisible(false);
+	m_EditDialog.getButton(IDC_COMBOBOXITEMSADD)->setVisible(false);
+	m_EditDialog.getButton(IDC_COMBOBOXITEMSREMOVE)->setVisible(false);
+
+	m_EditDialog.getListBox(IDC_LISTBOXITEMS)->setVisible(true);
+	m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setVisible(true);
+	m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setText("ListBox Item text");
+	m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->setVisible(true);
+	m_EditDialog.getButton(IDC_LISTBOXITEMSADD)->setVisible(true);
+	m_EditDialog.getButton(IDC_LISTBOXITEMSREMOVE)->setVisible(true);
+
+	m_EditDialog.getButton(IDC_CREATECONTROL)->setLocation(150, 468);
+	m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setLocation(150, 468);
+	
+	if (!ControlSelected)
+	{
+		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(true);
+		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(false);
+	}
+	else
+	{
+		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(true);
+		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(false);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : SetComboBoxGUI ()
+//-----------------------------------------------------------------------------
+void CGameWin::SetComboBoxGUI(bool ControlSelected /* = false */)
+{
+	m_EditDialog.getStatic(IDC_CONTROLTEXT)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->setVisible(false);
+
+	m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->setVisible(false);
+
+	m_EditDialog.getStatic(IDC_SLIDERSTATIC)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->setVisible(false);
+	m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->setVisible(false);
+
+	m_EditDialog.getListBox(IDC_LISTBOXITEMS)->setVisible(false);
+	m_EditDialog.getButton(IDC_LISTBOXITEMSADD)->setVisible(false);
+	m_EditDialog.getButton(IDC_LISTBOXITEMSREMOVE)->setVisible(false);
+
+	m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setVisible(true);
+	m_EditDialog.getStatic(IDC_LISTBOXSTATIC)->setText("Combobox Item text");
+	m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->setVisible(true);
+	m_EditDialog.getComboBox(IDC_COMBOXITEMS)->setVisible(true);
+	m_EditDialog.getButton(IDC_COMBOBOXITEMSADD)->setVisible(true);
+	m_EditDialog.getButton(IDC_COMBOBOXITEMSREMOVE)->setVisible(true);
+
+	m_EditDialog.getButton(IDC_CREATECONTROL)->setLocation(150, 468);
+	m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setLocation(150, 468);
+
+
+	if (!ControlSelected)
+	{
+		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(true);
+		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(false);
+	}
+	else
+	{
+		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(true);
+		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(false);
+	}
+
 }
 
 //-----------------------------------------------------------------------------

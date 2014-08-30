@@ -87,6 +87,12 @@ class CMyObject;
 #define IDC_FILENAMEEDITBOX		 134
 #define IDC_LOADFILEBUTTON		 135
 #define IDC_SAVEFILEBUTTON		 136
+#define IDC_SETCHANGESBUTTON	 137
+#define IDC_CONTROLXSTATIC	     138
+#define IDC_CONTROLYSTATIC		 139
+#define IDC_CONTROLX			 140
+#define IDC_CONTROLY			 141
+#define IDC_RELOCATEBUTTON		 142
 
 
 
@@ -118,15 +124,25 @@ public:
 	bool         InitInstance				(HINSTANCE hInstance, LPCTSTR lpCmdLine, int iCmdShow );
 	LRESULT		 WinProc					(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 	void         OnGUIEvent					(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext );
+
 	void         CreateControlClicked		(CButtonUI* createControl);
 	void		 AddListBoxItemClicked		(CButtonUI* pAddListBoxItemButton);
 	void		 RemoveListBoxItemClikced	(CButtonUI* pRemoveListBoxItemButton);
 	void         AddComboBoxItemClicked		(CButtonUI* pAddComboBoxItemButton);
 	void		 RemoveComboBoxItemClicked  (CButtonUI* pRemoveComboBoxItemButton);
+	void		 SetChangesButtonClicked	(CButtonUI* pSetChangesButton);
 	void		 SaveDialogButtonClicked	(CButtonUI* pSaveButton);
 	void		 LoadDialogButtonClicked	(CButtonUI* pLoadButton);
 	void		 SetGenDialogSize			(CButtonUI* pDialogSetButton);
+	void		 RelocateControlClicked		(CButtonUI* pRecloateControlButton);
 	void         ComboboxSelChg				(CComboBoxUI* pCombobox);
+
+	void		 SetStaticGUI				( bool ControlSelected = false);
+	void		 SetRadioButtonGUI			( bool ControlSelected = false);
+	void		 SetSliderGUI				( bool ControlSelected = false);
+	void		 SetListBoxGUI				( bool ControlSelected = false);
+	void		 SetComboBoxGUI				( bool ControlSelected = false);
+
 	int          BeginGame					( );
 	bool         ShutDown					( );
 
@@ -230,6 +246,9 @@ private:
 	CDialogUI				 m_EditDialog;
 	ULONG					 m_GenControlNum;
 	bool					 m_controlInCreation;
+	bool					 m_controlRelocate;
+
+	CControlUI			   * m_pCurSelectedControl;
 
 	CTimer*					 m_timer;
 

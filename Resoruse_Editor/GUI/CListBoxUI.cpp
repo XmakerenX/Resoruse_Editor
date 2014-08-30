@@ -91,8 +91,9 @@ bool CListBoxUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STAT
 
 	// First acquire focus
 	if( WM_LBUTTONDOWN == uMsg )
-		if( !m_bHasFocus )
-			m_pParentDialog->RequestFocus( this );
+		if (ContainsPoint(mousePoint))
+			if( !m_bHasFocus )
+				m_pParentDialog->RequestFocus( this );
 
 	// Let the scroll bar handle it first.
 	if( m_ScrollBar.HandleMouse( hWnd, uMsg, mousePoint, inputstate, timer ) )
@@ -140,9 +141,13 @@ bool CListBoxUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* t
 	{
 		// Compute the index of the clicked item
 
-		int nClicked;
+		int nClicked = -1;
+		int temp = m_rcBoundingBox.top;
+
 		if( m_nTextHeight )
+		{
 			nClicked = m_ScrollBar.GetTrackPos() + ( pt.y - m_rcText.top ) / m_nTextHeight;
+		}
 		else
 			nClicked = -1;
 
@@ -382,6 +387,8 @@ void CListBoxUI::Render( CAssetManager& assetManger )
 	FONT_ITEM font = assetManger.getFontItem(m_elementsFonts[0].fontIndex);
 	
 	POINT dialogPos = m_pParentDialog->getLocation();
+	LONG  dialogCaptionHeihgt =  m_pParentDialog->getCaptionHeight();
+	dialogPos.y += dialogCaptionHeihgt;
 
 	pTexture = assetManger.getTexturePtr(m_elementsGFX[0].iTexture);
 	renderRect(m_elementsGFX[0].rcTexture, m_rcBoundingBox, sprite, pTexture, D3DCOLOR_ARGB( 255, 255, 255, 255 ), REGLUAR, dialogPos);
@@ -731,4 +738,18 @@ bool CListBoxUI::SaveToFile(std::ostream& SaveFile)
 	}
 
 	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : CopyItemsFrom
+//-----------------------------------------------------------------------------
+void CListBoxUI::CopyItemsFrom(CListBoxUI* sourceListBox)
+{
+	// clears the items vector
+	RemoveAllItems();
+
+	for (UINT i = 0; i < sourceListBox->GetSize(); i++)
+	{
+		AddItem( sourceListBox->GetItem(i)->strText, sourceListBox->GetItem(i)->pData );
+	}
 }

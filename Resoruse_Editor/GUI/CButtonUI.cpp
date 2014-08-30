@@ -33,6 +33,8 @@ CButtonUI::CButtonUI(CDialogUI* pParentDialog, int ID, LPCTSTR strText, int x, i
 CButtonUI::CButtonUI(std::istream& inputFile)
 	:CStaticUI(inputFile)
 {
+	m_type = CControlUI::BUTTON;
+
 	UINT nHotkey;
 
 	inputFile >> nHotkey;

@@ -19,7 +19,9 @@ public:
 	virtual bool	SaveToFile			(std::ostream& SaveFile);
 
 	UINT getButtonGroup();
+
 	void setChecked(bool bChecked);
+	void setButtonGroup(UINT buttonGroup);
 
 protected:
 	UINT m_nButtonGroup;

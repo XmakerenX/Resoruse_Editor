@@ -6,6 +6,9 @@
 //-----------------------------------------------------------------------------
 //#include <tchar.h>
 #include <windows.h>
+#include <io.h>
+#include <fcntl.h>
+#include <iostream>
 #include <D3DX9.h>
 #include <stdio.h>
 #include <vector>

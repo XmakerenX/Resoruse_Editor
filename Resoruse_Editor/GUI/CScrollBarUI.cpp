@@ -288,6 +288,8 @@ void CScrollBarUI::Render( CAssetManager& assetManger)
 			pTexture = assetManger.getTexturePtr((m_elementsGFX[i].iTexture) );
 
 			POINT dialogPos = m_pParentDialog->getLocation();
+			LONG  dialogCaptionHeihgt =  m_pParentDialog->getCaptionHeight();
+			dialogPos.y += dialogCaptionHeihgt;
 
 			renderRect(m_elementsGFX[i].rcTexture, m_rcElements[i], sprite, pTexture, d3d::WHITE, TOP, dialogPos);
 		}
