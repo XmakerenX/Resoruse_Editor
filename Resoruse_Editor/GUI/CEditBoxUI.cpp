@@ -987,13 +987,13 @@ bool CEditBoxUI::SaveToFile(std::ostream& SaveFile)
 	CControlUI::SaveToFile(SaveFile);
 
 	//TODO: make all the editbox options saveable
-	SaveFile << m_nBorder << " EditBox Border Number" << "\n";
-	SaveFile << m_nSpacing << " EditBox Spacing" << "\n";
-	SaveFile << m_bCaretOn << " is EditBox Caret On" << "\n";
- 	SaveFile << m_TextColor << " EditBox Text Color" << "\n";
- 	SaveFile << m_SelTextColor << " EditBox Selection Color" << "\n";
- 	SaveFile << m_SelBkColor << " EditBox Background Color" << "\n";
- 	SaveFile << m_CaretColor << " EditBox Caret Color" << "\n";
+	SaveFile << m_nBorder << "| EditBox Border Number" << "\n";
+	SaveFile << m_nSpacing << "| EditBox Spacing" << "\n";
+	SaveFile << m_bCaretOn << "| is EditBox Caret On" << "\n";
+ 	SaveFile << m_TextColor << "| EditBox Text Color" << "\n";
+ 	SaveFile << m_SelTextColor << "| EditBox Selection Color" << "\n";
+ 	SaveFile << m_SelBkColor << "| EditBox Background Color" << "\n";
+ 	SaveFile << m_CaretColor << "| EditBox Caret Color" << "\n";
 
 	return true;
 }

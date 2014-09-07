@@ -412,16 +412,16 @@ int CControlUI::getHeight()
 //-----------------------------------------------------------------------------
 bool CControlUI::SaveToFile(std::ostream& SaveFile)
 {
-	SaveFile << m_type	  << " Control Type"   << "\n";
-	SaveFile << m_ID	  << " Control ID"     << "\n";
+	SaveFile << m_type	  << "| Control Type"   << "\n";
+	SaveFile << m_ID	  << "| Control ID"     << "\n";
 
-	SaveFile << m_x       << " Control X"	   << "\n";
-	SaveFile << m_y	      << " Control Y"	   << "\n";
-	SaveFile << m_width   << " Control Width"  <<  "\n";
-	SaveFile << m_height  << " Control Height" << "\n";
+	SaveFile << m_x       << "| Control X"	   << "\n";
+	SaveFile << m_y	      << "| Control Y"	   << "\n";
+	SaveFile << m_width   << "| Control Width"  <<  "\n";
+	SaveFile << m_height  << "| Control Height" << "\n";
 
-	SaveFile << m_bVisible << " is Control Visible" << "\n";
-	SaveFile << m_bEnabled << " is Control Enabled" << "\n";
+	SaveFile << m_bVisible << "| is Control Visible" << "\n";
+	SaveFile << m_bEnabled << "| is Control Enabled" << "\n";
 
 	return true;
 }

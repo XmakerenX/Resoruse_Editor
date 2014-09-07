@@ -126,8 +126,8 @@ public:
 	//-------------------------------------------------------------------------
 	// Save/Load Functions
 	//-------------------------------------------------------------------------
-	bool				SaveDilaogToFile	(LPCTSTR FileName);
-	bool			    LoadDialogFromFile	(LPCTSTR FileName, CTimer* timer);
+	bool				SaveDilaogToFile	(LPCTSTR FileName, ULONG curControlID);
+	ULONG			    LoadDialogFromFile	(LPCTSTR FileName, CTimer* timer);
 
 	//-------------------------------------------------------------------------
 	// get and set Functions 

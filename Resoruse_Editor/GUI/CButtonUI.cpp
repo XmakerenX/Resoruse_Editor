@@ -38,6 +38,7 @@ CButtonUI::CButtonUI(std::istream& inputFile)
 	UINT nHotkey;
 
 	inputFile >> nHotkey;
+	m_bPressed = false;
 	setHotKey(nHotkey);
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 }
@@ -258,7 +259,7 @@ bool CButtonUI::SaveToFile(std::ostream& SaveFile)
 {
 	CStaticUI::SaveToFile(SaveFile);
 
-	SaveFile << m_nHotkey << " Button HotKey" << "\n";
+	SaveFile << m_nHotkey << "| Button HotKey" << "\n";
 
 //TODO: add the abilty to save custom buttons
 // 	if  ( isControlDefualt() )

@@ -143,8 +143,8 @@ void CStaticUI::Render( CAssetManager& assetManger)
 bool CStaticUI::SaveToFile( std::ostream& SaveFile )
 {
 	CControlUI::SaveToFile(SaveFile);
-	SaveFile << m_strText << " Control Text" << "\n";
-	SaveFile << m_textColor.r << " "<< m_textColor.g << " "<< m_textColor.b << " " << m_textColor.a << " Control Text Color"
+	SaveFile << m_strText << "| Control Text" << "\n";
+	SaveFile << m_textColor.r << " "<< m_textColor.g << " "<< m_textColor.b << " " << m_textColor.a << "| Control Text Color"
 		<< "\n";
 
 	return true;

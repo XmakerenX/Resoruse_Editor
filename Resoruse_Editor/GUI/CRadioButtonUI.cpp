@@ -42,6 +42,9 @@ bool CRadioButtonUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 //-----------------------------------------------------------------------------
 bool CRadioButtonUI::HandleMouse( HWND hWnd, UINT uMsg, POINT mousePoint, INPUT_STATE inputstate, CTimer* timer )
 {
+	if (!m_bEnabled || !m_bVisible)
+		return false;
+
 	switch(uMsg)
 	{
 	case WM_LBUTTONDOWN:
@@ -113,7 +116,7 @@ bool CRadioButtonUI::SaveToFile(std::ostream& SaveFile)
 {
 	CCheckboxUI::SaveToFile(SaveFile);
 
-	SaveFile << m_nButtonGroup << " RadioButton Button Group" << "\n";
+	SaveFile << m_nButtonGroup << "| RadioButton Button Group" << "\n";
 
 	return true;
 }

@@ -219,8 +219,8 @@ bool CSliderUI::SaveToFile(std::ostream& SaveFile)
 {
 	CControlUI::SaveToFile(SaveFile);
 
-	SaveFile << m_nMin << " Slider Minimum Value" << "\n";
-	SaveFile << m_nMax << " Slider Maximum Value" << "\n";
+	SaveFile << m_nMin << "| Slider Minimum Value" << "\n";
+	SaveFile << m_nMax << "| Slider Maximum Value" << "\n";
 
 	return true;
 }

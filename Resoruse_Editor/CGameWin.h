@@ -245,6 +245,7 @@ private:
 	CDialogUI				 m_GenDialog;
 	CDialogUI				 m_EditDialog;
 	ULONG					 m_GenControlNum;
+	ULONG					 m_curControlID;
 	bool					 m_controlInCreation;
 	bool					 m_controlRelocate;
 

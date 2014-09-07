@@ -768,15 +768,15 @@ bool CComboBoxUI::SaveToFile(std::ostream& SaveFile)
 {
 	CButtonUI::SaveToFile(SaveFile);
 
-	SaveFile << m_nDropHeight << " ComboBox Drop Height" << "\n";
-	SaveFile << m_nSBWidth << " ComboBox SBWidth" << "\n";
-	SaveFile << m_nFontHeight << " ComboBox Font Height" << "\n";
+	SaveFile << m_nDropHeight << "| ComboBox Drop Height" << "\n";
+	SaveFile << m_nSBWidth << "| ComboBox SBWidth" << "\n";
+	SaveFile << m_nFontHeight << "| ComboBox Font Height" << "\n";
 
-	SaveFile << m_Items.size() << " ComboBox Items Size" << "\n";
+	SaveFile << m_Items.size() << "| ComboBox Items Size" << "\n";
 
 	for (UINT i = 0; i < m_Items.size(); i++)
 	{
-		SaveFile << m_Items[i]->strText << " ComboBox Item "<< i <<" Text" << "\n";
+		SaveFile << m_Items[i]->strText << "| ComboBox Item "<< i <<" Text" << "\n";
 	}
 
 	return true;

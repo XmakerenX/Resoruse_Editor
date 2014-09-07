@@ -15,7 +15,7 @@ CDialogUI::CDialogUI(void)
 	m_nCaptionHeight = 18;
 
 	m_bVisible = true;
-	m_bCaption = false;
+	m_bCaption = true;
 	m_bMinimized = false;
 	m_bDrag = false;
 
@@ -1240,7 +1240,7 @@ void CDialogUI::RemoveControl(int ID)
 			m_Controls.erase(m_Controls.begin() + i);
 
 			// remove the reference from the def vector to this control
-			for (UINT j = 0; j < m_Controls.size(); j++)
+			for (UINT j = 0; j < m_defInfo.size(); j++)
 			{
 				if (m_defInfo[j].controlID == ID )
 				{
@@ -1397,7 +1397,7 @@ void CDialogUI::ClearFocus()
 // Name : SaveDilaogToFile 
 // Desc : Saves the dialog and all of his contorls to file
 //-----------------------------------------------------------------------------
-bool CDialogUI::SaveDilaogToFile(LPCTSTR FileName)
+bool CDialogUI::SaveDilaogToFile(LPCTSTR FileName, ULONG curControlID)
 {
 	std::ofstream saveFile,defFile;
 	std::string defFileName = FileName;
@@ -1416,10 +1416,11 @@ bool CDialogUI::SaveDilaogToFile(LPCTSTR FileName)
 
 	saveFile.open(FileName);
 
-	saveFile << m_width << " Dialog Width" << "\n";
-	saveFile << m_height << " Dialog Height" << "\n";
-	saveFile << m_nCaptionHeight << " Dialog Caption Height" << "\n";
-	saveFile << m_captionText << " Dialog Caption Text" << "\n";
+	saveFile << m_width << "| Dialog Width" << "\n";
+	saveFile << m_height << "| Dialog Height" << "\n";
+	saveFile << m_nCaptionHeight << "| Dialog Caption Height" << "\n";
+	saveFile << m_captionText << "| Dialog Caption Text" << "\n";
+	saveFile << curControlID << "| Current Control ID" << "\n";
 
 	saveFile << "/////////////////////////////////////////////////////////////////////////////\n";
 
@@ -1438,7 +1439,7 @@ bool CDialogUI::SaveDilaogToFile(LPCTSTR FileName)
 // Name : LoadDialogFromFile 
 // Desc : loads the dialog and all of his controls from file
 //-----------------------------------------------------------------------------
-bool CDialogUI::LoadDialogFromFile(LPCTSTR FileName, CTimer* timer)
+ULONG CDialogUI::LoadDialogFromFile(LPCTSTR FileName, CTimer* timer)
 {
 	std::ifstream inputFile;
 	UINT controlType;
@@ -1466,8 +1467,19 @@ bool CDialogUI::LoadDialogFromFile(LPCTSTR FileName, CTimer* timer)
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 	inputFile >> m_nCaptionHeight;
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
-	inputFile >> m_captionText;
+
+	inputFile.getline(m_captionText);
+	std::string captionText(m_captionText);
+	captionText = captionText.substr(0, captionText.find('|') );
+	m_captionText = captionText.c_str();
+
+	//inputFile >> m_captionText;
+	//inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
+	ULONG curControlID = 0;
+	inputFile >> curControlID;
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 
 	do
@@ -1557,7 +1569,7 @@ bool CDialogUI::LoadDialogFromFile(LPCTSTR FileName, CTimer* timer)
 
 	inputDefFile.close();
 
-	return true;
+	return curControlID;
 }
 
 //-----------------------------------------------------------------------------

@@ -171,7 +171,7 @@ bool CCheckboxUI::Released( HWND hWnd, POINT pt)
 bool CCheckboxUI::SaveToFile(std::ostream& SaveFile)
 {
 	CButtonUI::SaveToFile(SaveFile);
-	SaveFile << m_bChecked << " is CheckBox Checked" << "\n";
+	SaveFile << m_bChecked << "| is CheckBox Checked" << "\n";
 
 	return true;
 }

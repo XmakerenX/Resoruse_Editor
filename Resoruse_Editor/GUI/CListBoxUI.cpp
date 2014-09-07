@@ -724,17 +724,17 @@ bool CListBoxUI::SaveToFile(std::ostream& SaveFile)
 {
 	CControlUI::SaveToFile(SaveFile);
 
-	SaveFile << m_nSBWidth << " ListBox SBWidth" << "\n";
-	SaveFile << m_nBorder << " ListBox Border" << "\n";
-	SaveFile << m_nMargin << " ListBox Margin" << "\n";
-	SaveFile << m_nTextHeight << " ListBox Text Height" << "\n";
-	SaveFile << m_dwStyle << " ListBox Style" << "\n";
+	SaveFile << m_nSBWidth << "| ListBox SBWidth" << "\n";
+	SaveFile << m_nBorder << "| ListBox Border" << "\n";
+	SaveFile << m_nMargin << "| ListBox Margin" << "\n";
+	SaveFile << m_nTextHeight << "| ListBox Text Height" << "\n";
+	SaveFile << m_dwStyle << "| ListBox Style" << "\n";
 
-	SaveFile << m_Items.size() << " ListBox Item size" << "\n";
+	SaveFile << m_Items.size() << "| ListBox Item size" << "\n";
 
 	for (UINT i = 0; i < m_Items.size(); i++)
 	{
-		SaveFile << m_Items[i]->strText << " ListBox Item " << i << " Text" << "\n";
+		SaveFile << m_Items[i]->strText << "| ListBox Item " << i << " Text" << "\n";
 	}
 
 	return true;

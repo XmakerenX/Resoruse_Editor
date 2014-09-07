@@ -84,6 +84,7 @@ CGameWin::CGameWin() :Width(1024),Height(742)//640 480
 	m_numActiveLights = 0;
 
 	m_GenControlNum = 0;
+	m_curControlID = IDC_GENCONTROLID + m_GenControlNum;
 	m_controlInCreation = false;
 	m_controlRelocate= false;
 	m_pCurSelectedControl = nullptr;
@@ -172,10 +173,11 @@ LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				genDailogLoc.y += m_GenDialog.getCaptionHeight();
 				int x = (int)LOWORD(lParam) - genDailogLoc.x;
 				int y = (int)HIWORD(lParam) - genDailogLoc.y;
-				m_GenDialog.getControl(IDC_GENCONTROLID + m_GenControlNum + 1)->setLocation(x, y);
-				m_GenDialog.getControl(IDC_GENCONTROLID + m_GenControlNum + 1)->setEnabled(true);
+				m_GenDialog.getControl(m_curControlID + 1)->setLocation(x, y);
+				m_GenDialog.getControl(m_curControlID + 1)->setEnabled(true);
 				m_controlInCreation = false;
 				m_GenControlNum++;
+				m_curControlID++;
 			}
 
 			if (m_controlRelocate && m_pCurSelectedControl)
@@ -207,7 +209,7 @@ LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				genDialogLog.y += m_GenDialog.getCaptionHeight();
 				int x = (int)LOWORD(lParam);
 				int y = (int)HIWORD(lParam);
-				m_GenDialog.getControl(IDC_GENCONTROLID + m_GenControlNum + 1)->setLocation( x - genDialogLog.x, y - genDialogLog.y);
+				m_GenDialog.getControl(m_curControlID + 1)->setLocation( x - genDialogLog.x, y - genDialogLog.y);
 
 			}
 
@@ -1642,56 +1644,56 @@ void CGameWin::OnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserCon
 			{
 			case CControlUI::BUTTON:
 				{
-					m_GenDialog.addButton(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+					m_GenDialog.addButton(m_curControlID + 1, pControlText, cursorPoint.x,
 						cursorPoint.y, controlWidth, controlWidth, 0);
 					m_controlInCreation = true;
 				}break;
 
 			case CControlUI::CHECKBOX:
 				{
-					m_GenDialog.addCheckBox(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+					m_GenDialog.addCheckBox(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
 						controlWidth, controlHeight, 0);
 					m_controlInCreation = true;
 				}break;
 
 			case CControlUI::RADIOBUTTON:
 				{
-					m_GenDialog.addRadioButton(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x,
+					m_GenDialog.addRadioButton(m_curControlID + 1, cursorPoint.x,
 						cursorPoint.y, controlWidth, controlHeight, 0, 0);
 					m_controlInCreation = true;
 				}break;
 
 			case CControlUI::COMBOBOX:
 				{
-					m_GenDialog.addComboBox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+					m_GenDialog.addComboBox(m_curControlID + 1, pControlText, cursorPoint.x,
 						cursorPoint.y, controlWidth, controlHeight, 0);
 					m_controlInCreation = true;
 				}break;
 
 			case CControlUI::STATIC:
 				{
-					m_GenDialog.addStatic(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+					m_GenDialog.addStatic(m_curControlID + 1, pControlText, cursorPoint.x,
 						cursorPoint.y, controlWidth, controlHeight);
 					m_controlInCreation = true;
 				}break;
 
 			case CControlUI::EDITBOX:
 				{
-					m_GenDialog.addEditbox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+					m_GenDialog.addEditbox(m_curControlID + 1, pControlText, cursorPoint.x,
 						cursorPoint.y, controlWidth, controlHeight, m_timer);
 					m_controlInCreation = true;
 				}break;
 
 			case CControlUI::LISTBOX:
 				{
-					m_GenDialog.addListBox(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+					m_GenDialog.addListBox(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
 						controlWidth, controlHeight);
 					m_controlInCreation = true;
 				}break;
 
 			case CControlUI::SLIDER:
 				{
-					m_GenDialog.addSlider(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+					m_GenDialog.addSlider(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
 						controlWidth, controlHeight, 0, 0, 0);
 					m_controlInCreation = true;
 				}break;
@@ -1778,28 +1780,28 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 	{
 	case CControlUI::BUTTON:
 		{
-			m_GenDialog.addButton(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+			m_GenDialog.addButton(m_curControlID + 1, pControlText, cursorPoint.x,
 				cursorPoint.y, controlWidth, controlWidth, 0, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::CHECKBOX:
 		{
-			m_GenDialog.addCheckBox(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+			m_GenDialog.addCheckBox(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
 				controlWidth, controlHeight, 0, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::RADIOBUTTON:
 		{
-			m_GenDialog.addRadioButton(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x,
+			m_GenDialog.addRadioButton(m_curControlID + 1, cursorPoint.x,
 				cursorPoint.y, controlWidth, controlHeight, 0, 0, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::COMBOBOX:
 		{
-			m_GenDialog.addComboBox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+			m_GenDialog.addComboBox(m_curControlID + 1, pControlText, cursorPoint.x,
 				cursorPoint.y, controlWidth, controlHeight, 0, nullptr, pControlIDText);
 
 			UINT comboboxSize = m_EditDialog.getComboBox(IDC_COMBOXITEMS)->GetNumItems();
@@ -1807,7 +1809,7 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 			for (UINT itemIndex = 0; itemIndex < comboboxSize; itemIndex++)
 			{
 				ComboBoxItem* pCurItem = m_EditDialog.getComboBox(IDC_COMBOXITEMS)->GetItem(itemIndex);
-				m_GenDialog.getComboBox(IDC_GENCONTROLID + m_GenControlNum + 1)->
+				m_GenDialog.getComboBox(m_curControlID + 1)->
 					AddItem(pCurItem->strText, pCurItem->pData);
 			}
 
@@ -1818,21 +1820,21 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 
 	case CControlUI::STATIC:
 		{
-			m_GenDialog.addStatic(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+			m_GenDialog.addStatic(m_curControlID + 1, pControlText, cursorPoint.x,
 				cursorPoint.y, controlWidth, controlHeight, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::EDITBOX:
 		{
-			m_GenDialog.addEditbox(IDC_GENCONTROLID + m_GenControlNum + 1, pControlText, cursorPoint.x,
+			m_GenDialog.addEditbox(m_curControlID + 1, pControlText, cursorPoint.x,
 				cursorPoint.y, controlWidth, controlHeight, m_timer, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::LISTBOX:
 		{
-			m_GenDialog.addListBox(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+			m_GenDialog.addListBox(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
 				controlWidth, controlHeight, 0, nullptr, pControlIDText);
 			
 			UINT listboxSize = m_EditDialog.getListBox(IDC_LISTBOXITEMS)->GetSize();
@@ -1840,7 +1842,7 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 			for (UINT itemIndex = 0; itemIndex < listboxSize; itemIndex++)
 			{
 				ListBoxItemUI* pCurItem = m_EditDialog.getListBox(IDC_LISTBOXITEMS)->GetItem(itemIndex);
-				m_GenDialog.getListBox(IDC_GENCONTROLID + m_GenControlNum + 1)->
+				m_GenDialog.getListBox(m_curControlID + 1)->
 					AddItem(pCurItem->strText, pCurItem->pData);
 			}
 
@@ -1854,7 +1856,7 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 			int minValue = atoi ( m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->GetText() );
 			int maxValue = atoi ( m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->GetText() );
 
-			m_GenDialog.addSlider(IDC_GENCONTROLID + m_GenControlNum + 1, cursorPoint.x, cursorPoint.y,
+			m_GenDialog.addSlider(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
 				controlWidth, controlHeight, minValue, maxValue, (maxValue - minValue) / 2, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
@@ -1862,7 +1864,7 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 
 	if (m_controlInCreation)
 		// Temporally disabling the control to avoid it picking up messages before it is in place.
-		m_GenDialog.getControl(IDC_GENCONTROLID + m_GenControlNum + 1)->setEnabled(false);
+		m_GenDialog.getControl(m_curControlID + 1)->setEnabled(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -1968,7 +1970,7 @@ void CGameWin::SetChangesButtonClicked(CButtonUI* pSetChangesButton)
 //-----------------------------------------------------------------------------
 void CGameWin::SaveDialogButtonClicked(CButtonUI* pSaveButton)
 {
-	m_GenDialog.SaveDilaogToFile( m_EditDialog.getEditBox(IDC_FILENAMEEDITBOX)->GetText() );
+	m_GenDialog.SaveDilaogToFile( m_EditDialog.getEditBox(IDC_FILENAMEEDITBOX)->GetText(), m_curControlID );
 }
 
 //-----------------------------------------------------------------------------
@@ -1976,7 +1978,7 @@ void CGameWin::SaveDialogButtonClicked(CButtonUI* pSaveButton)
 //-----------------------------------------------------------------------------
 void CGameWin::LoadDialogButtonClicked(CButtonUI* pLoadButton )
 {
-	m_GenDialog.LoadDialogFromFile( m_EditDialog.getEditBox(IDC_FILENAMEEDITBOX)->GetText() , m_timer);
+	m_curControlID = m_GenDialog.LoadDialogFromFile( m_EditDialog.getEditBox(IDC_FILENAMEEDITBOX)->GetText() , m_timer);
 	m_GenControlNum = m_GenDialog.getControlsNum();
 }
 
