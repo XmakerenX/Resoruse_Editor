@@ -1468,10 +1468,10 @@ ULONG CDialogUI::LoadDialogFromFile(LPCTSTR FileName, CTimer* timer)
 	inputFile >> m_nCaptionHeight;
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 
-	inputFile.getline(m_captionText);
-	std::string captionText(m_captionText);
+	std::string captionText;
+	std::getline(inputFile, captionText);
 	captionText = captionText.substr(0, captionText.find('|') );
-	m_captionText = captionText.c_str();
+	strcpy_s(m_captionText, MAX_PATH, captionText.c_str() );
 
 	//inputFile >> m_captionText;
 	//inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line

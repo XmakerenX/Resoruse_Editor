@@ -34,8 +34,11 @@ CStaticUI::CStaticUI(std::istream& inputFile)
 	m_type = STATIC;
 	char strText[MAX_PATH];
 
-	inputFile >> strText;
-	setText(strText);
+	std::string controlText;
+
+	std::getline(inputFile, controlText);
+	controlText = controlText.substr(0, controlText.find('|') );
+	setText(controlText.c_str() );
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 	inputFile >> m_textColor.r;
 	inputFile >> m_textColor.g;

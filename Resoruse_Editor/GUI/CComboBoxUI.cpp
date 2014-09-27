@@ -44,7 +44,8 @@ CComboBoxUI::CComboBoxUI(std::istream& inputFile)
 	{
 		std::string strText;
 
-		inputFile >> strText;
+		std::getline(inputFile, strText);
+		strText = strText.substr(0, strText.find('|') );
 		AddItem(strText.c_str(), nullptr);
 
 		inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line

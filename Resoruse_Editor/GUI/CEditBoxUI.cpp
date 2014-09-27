@@ -53,6 +53,10 @@ CEditBoxUI::CEditBoxUI(std::istream& inputFile, CTimer* timer)
 
 	m_bMouseDrag = false;
 
+	std::string bufferText;
+	std::getline(inputFile, bufferText);
+	bufferText = bufferText.substr(0, bufferText.find('|') );
+	SetText(bufferText.c_str() );
 	inputFile >> m_nBorder;
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 	inputFile >> m_nSpacing;
@@ -542,7 +546,7 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	nCaretX = m_rcText.left + fontItem.width + m_nCaret * fontItem.width;
 
 	if (nCaretX > m_rcText.right)
-		 m_nFirstVisible = (nCaretX - m_rcText.right) / fontItem.avgWidth;
+		      m_nFirstVisible = (nCaretX - m_rcText.right) / fontItem.avgWidth;
 
 	nCaretX = m_rcText.right - fontItem.weight;
 
@@ -985,8 +989,9 @@ void CEditBoxUI::OnFocusOut()
 bool CEditBoxUI::SaveToFile(std::ostream& SaveFile)
 {
 	CControlUI::SaveToFile(SaveFile);
-
+	
 	//TODO: make all the editbox options saveable
+	SaveFile << m_Buffer << "| EditBox text " << "\n";
 	SaveFile << m_nBorder << "| EditBox Border Number" << "\n";
 	SaveFile << m_nSpacing << "| EditBox Spacing" << "\n";
 	SaveFile << m_bCaretOn << "| is EditBox Caret On" << "\n";
