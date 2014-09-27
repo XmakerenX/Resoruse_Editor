@@ -85,6 +85,8 @@ protected:
 
 	boost::signals2::signal<void (CEditBoxUI*)> m_editboxChangedSig;
 
+	CAssetManager* m_assetManger;
+
 	// Mouse-specific
 	bool m_bMouseDrag;       // True to indicate drag in progress
 

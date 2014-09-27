@@ -34,6 +34,8 @@ CEditBoxUI::CEditBoxUI(CDialogUI* pParentDialog, int ID, LPCTSTR strText, int x,
 	m_bInsertMode = true;
 
 	m_bMouseDrag = false;
+
+	m_assetManger = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -72,6 +74,8 @@ CEditBoxUI::CEditBoxUI(std::istream& inputFile, CTimer* timer)
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 	inputFile >> m_CaretColor;
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
+
+	m_assetManger = false;
 
 }
 
@@ -456,6 +460,23 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 						m_Buffer[m_nCaret] = ( char )wParam;
 						PlaceCaret( m_nCaret + 1 );
 						m_nSelStart = m_nCaret;
+
+						LPD3DXFONT pFont = m_assetManger->getFontPtr(0);
+						RECT rt = {0,0,0,0};
+						
+						std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
+
+						if (visibleText.size() > 0 && visibleText[visibleText.size() - 1] == ' ')
+							visibleText[visibleText.size() - 1] = ';';
+
+						pFont->DrawTextA(m_assetManger->getSprite(), visibleText.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
+
+						int textEdge =  m_rcText.left + rt.right;
+
+						if (textEdge > m_rcText.right)
+						{
+							m_nFirstVisible++;
+						}
 					}
 					else
 					{
@@ -466,6 +487,22 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 							PlaceCaret( m_nCaret + 1 );
 							m_nSelStart = m_nCaret;
 						//}
+							LPD3DXFONT pFont = m_assetManger->getFontPtr(0);
+							RECT rt = {0,0,0,0};
+
+							std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
+
+							if (visibleText.size() > 0 && visibleText[visibleText.size() - 1] == ' ')
+								visibleText[visibleText.size() - 1] = ';';
+
+							pFont->DrawTextA(m_assetManger->getSprite(), visibleText.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
+
+							int textEdge =  m_rcText.left + rt.right;
+
+							if (textEdge > m_rcText.right)
+							{
+								m_nFirstVisible++;
+							}
 					}
 					ResetCaretBlink();
 					m_editboxChangedSig(this);
@@ -513,6 +550,9 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	if( m_bVisible == false )
 		return;
 
+	if (m_assetManger == NULL)
+		m_assetManger = &assetManger;
+
 	HRESULT hr;
 	LPDIRECT3DTEXTURE9 pTexture;
 	// acquire a pointer to the sprite to draw to
@@ -546,7 +586,7 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	nCaretX = m_rcText.left + fontItem.width + m_nCaret * fontItem.width;
 
 	if (nCaretX > m_rcText.right)
-		      m_nFirstVisible = (nCaretX - m_rcText.right) / fontItem.avgWidth;
+		      ;//m_nFirstVisible = (nCaretX - m_rcText.right) / fontItem.avgWidth;
 
 	nCaretX = m_rcText.right - fontItem.weight;
 
@@ -620,7 +660,8 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	//
 	// Element 0 for text
 	RECT rt = {0, 0, 0, 0};
-	std::string temp = m_Buffer.substr(m_nFirstVisible, m_nCaret);
+	//std::string temp = m_Buffer.substr(m_nFirstVisible, m_nCaret);
+	std::string temp = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
 
 	if (m_nFirstVisible > 0)
 		RenderText(temp.c_str(), m_rcText, pFont,  DT_LEFT | DT_VCENTER, assetManger.getSprite(), m_TextColor, dialogPos);
