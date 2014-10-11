@@ -59,6 +59,9 @@ public:
 	//void            ParseFloatArray( float* pNumbers, int nCount );
 	void            SetTextFloatArray( const float* pNumbers, int nCount );
 
+	int				CalcFirstVisibleCharUp();
+	int				CalcFirstVisibleCharDown();
+
 protected:
 	void            PlaceCaret( int nCP );
 	void            DeleteSelectionText();

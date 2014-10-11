@@ -371,6 +371,10 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 						PlaceCaret( m_nCaret - 1 );
 						m_nSelStart = m_nCaret;
 						m_Buffer.erase(m_nCaret,1);
+
+						if (m_nFirstVisible > 0)
+							CalcFirstVisibleCharDown();
+
 						m_editboxChangedSig(this);
 						//m_Buffer.RemoveChar( m_nCaret );
 						//m_pDialog->SendEvent( EVENT_EDITBOX_CHANGE, true, this );
@@ -461,22 +465,19 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 						PlaceCaret( m_nCaret + 1 );
 						m_nSelStart = m_nCaret;
 
-						LPD3DXFONT pFont = m_assetManger->getFontPtr(0);
+						LPD3DXFONT pFont = m_assetManger->getFontPtr(2);
 						RECT rt = {0,0,0,0};
 						
 						std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
 
-						if (visibleText.size() > 0 && visibleText[visibleText.size() - 1] == ' ')
-							visibleText[visibleText.size() - 1] = ';';
+						//if (visibleText.size() > 0 && visibleText[visibleText.size() - 1] == ' ')
+						//	visibleText[visibleText.size() - 1] = ';';
 
 						pFont->DrawTextA(m_assetManger->getSprite(), visibleText.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
 
 						int textEdge =  m_rcText.left + rt.right;
 
-						if (textEdge > m_rcText.right)
-						{
-							m_nFirstVisible++;
-						}
+						CalcFirstVisibleCharUp();
 					}
 					else
 					{
@@ -487,7 +488,7 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 							PlaceCaret( m_nCaret + 1 );
 							m_nSelStart = m_nCaret;
 						//}
-							LPD3DXFONT pFont = m_assetManger->getFontPtr(0);
+							LPD3DXFONT pFont = m_assetManger->getFontPtr(2);
 							RECT rt = {0,0,0,0};
 
 							std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
@@ -499,10 +500,7 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 							int textEdge =  m_rcText.left + rt.right;
 
-							if (textEdge > m_rcText.right)
-							{
-								m_nFirstVisible++;
-							}
+							CalcFirstVisibleCharUp();
 					}
 					ResetCaretBlink();
 					m_editboxChangedSig(this);
@@ -660,13 +658,20 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	//
 	// Element 0 for text
 	RECT rt = {0, 0, 0, 0};
-	//std::string temp = m_Buffer.substr(m_nFirstVisible, m_nCaret);
-	std::string temp = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
+	std::string temp = m_Buffer.substr(m_nFirstVisible, m_nCaret);
+	//std::string temp = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
 
-	if (m_nFirstVisible > 0)
-		RenderText(temp.c_str(), m_rcText, pFont,  DT_LEFT | DT_VCENTER, assetManger.getSprite(), m_TextColor, dialogPos);
+	std::string textToRender = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
+
+// 	if (m_nFirstVisible > 0)
+// 		RenderText(temp.c_str(), m_rcText, pFont,  DT_LEFT | DT_VCENTER, assetManger.getSprite(), m_TextColor, dialogPos);
+// 	else
+// 		RenderText(m_Buffer.c_str(), m_rcText, pFont,  DT_LEFT | DT_VCENTER, assetManger.getSprite(), m_TextColor, dialogPos);
+
+	if (m_nFirstVisible == 0)
+		RenderText(textToRender.c_str(), m_rcText, pFont,  DT_LEFT | DT_VCENTER , assetManger.getSprite(), m_TextColor, dialogPos);
 	else
-		RenderText(m_Buffer.c_str(), m_rcText, pFont,  DT_LEFT | DT_VCENTER, assetManger.getSprite(), m_TextColor, dialogPos);
+		RenderText(textToRender.c_str(), m_rcText, pFont,  DT_RIGHT | DT_VCENTER , assetManger.getSprite(), m_TextColor, dialogPos);
 
 	if (temp.size() > 0 && temp[temp.size() - 1] == ' ')
 		temp[temp.size() - 1] = ';';
@@ -1042,4 +1047,58 @@ bool CEditBoxUI::SaveToFile(std::ostream& SaveFile)
  	SaveFile << m_CaretColor << "| EditBox Caret Color" << "\n";
 
 	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : CalcFirstVisibleCharUp 
+//-----------------------------------------------------------------------------
+int CEditBoxUI::CalcFirstVisibleCharUp()
+{
+	LPD3DXFONT pFont = m_assetManger->getFontPtr(2);
+	RECT rt = {0,0,0,0};
+
+	std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
+
+	//if (visibleText.size() > 0 && visibleText[visibleText.size() - 1] == ' ')
+	//	visibleText[visibleText.size() - 1] = ';';
+
+	pFont->DrawTextA(m_assetManger->getSprite(), visibleText.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
+
+	int textEdge =  m_rcText.left + rt.right;
+
+	if (textEdge > m_rcText.right )
+	{
+		m_nFirstVisible++;
+		return m_nFirstVisible;
+		//CalcFirstVisibleCharUp();
+	}
+	else
+		return m_nFirstVisible;
+}
+
+//-----------------------------------------------------------------------------
+// Name : CalcFirstVisibleCharDown 
+//-----------------------------------------------------------------------------
+int CEditBoxUI::CalcFirstVisibleCharDown()
+{
+	LPD3DXFONT pFont = m_assetManger->getFontPtr(2);
+	RECT rt = {0,0,0,0};
+
+	std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
+
+	//if (visibleText.size() > 0 && visibleText[visibleText.size() - 1] == ' ')
+	//	visibleText[visibleText.size() - 1] = ';';
+
+	pFont->DrawTextA(m_assetManger->getSprite(), visibleText.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
+
+	int textEdge =  m_rcText.left + rt.right;
+
+	if (textEdge < m_rcText.right )
+	{
+		m_nFirstVisible--;
+		return m_nFirstVisible;
+		//CalcFirstVisibleCharDown();
+	}
+	else
+		return m_nFirstVisible;
 }
