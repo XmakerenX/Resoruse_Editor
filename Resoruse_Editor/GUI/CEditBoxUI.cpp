@@ -658,7 +658,9 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	//
 	// Element 0 for text
 	RECT rt = {0, 0, 0, 0};
-	std::string temp = m_Buffer.substr(m_nFirstVisible, m_nCaret);
+	RECT rtFullText = {0, 0, 0, 0};
+	//std::string temp = m_Buffer.substr(m_nFirstVisible, m_nCaret);
+	std::string temp = m_Buffer.substr(0, m_nCaret);
 	//std::string temp = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
 
 	std::string textToRender = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
@@ -677,6 +679,13 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 		temp[temp.size() - 1] = ';';
 
 	pFont->DrawTextA(assetManger.getSprite(), temp.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
+	pFont->DrawTextA(assetManger.getSprite(), m_Buffer.c_str(), -1, &rtFullText, DT_CALCRECT, d3d::WHITE);
+
+	if (m_nFirstVisible != 0 )
+	{
+		int rtExtra = rtFullText.right - rt.right;
+		rt.right = (m_rcText.right - m_rcText.left) - rtExtra;
+	}
 
 	// Render the selected text
 	if( m_nCaret != m_nSelStart )
