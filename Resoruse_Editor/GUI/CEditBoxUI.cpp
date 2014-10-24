@@ -268,6 +268,23 @@ bool CEditBoxUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* t
 	int nCP, nTrail, nX1st;
 	nCP = (pt.x - m_rcText.left) / m_elementsFonts[0].nFontWidth;
 
+	RECT rcFullText = {0, 0, 0, 0};
+	RECT rcCursorText = {0, 0, 0, 0};
+
+	m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), m_Buffer.c_str(), -1
+		, &rcFullText, DT_CALCRECT, d3d::WHITE);
+
+	int firstVisibleChar = ( rcFullText.right - (m_rcText.right - m_rcText.left) ) / m_elementsFonts[0].nFontWidth;
+	nCP += m_nFirstVisible;
+
+	for (nCP = m_nFirstVisible; rcCursorText.right < (pt.x - m_rcText.left); nCP++)
+	{
+		std::string curCursorText = m_Buffer.substr(0, nCP);
+		m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), curCursorText.c_str(), -1
+			, &rcCursorText, DT_CALCRECT, d3d::WHITE);
+	}
+	nCP--; 
+
 	if (nCP > m_Buffer.size())
 		nCP = m_Buffer.size();
 
@@ -637,6 +654,15 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 		OffsetRect( &rcSelection, m_rcText.left - nXFirst, 0 );
 		IntersectRect( &rcSelection, &m_rcText, &rcSelection );
 
+		RECT rtFullText = {0, 0, 0, 0};
+		pFont->DrawTextA(assetManger.getSprite(), m_Buffer.c_str(), -1, &rtFullText, DT_CALCRECT, d3d::WHITE);
+ 
+ 		if (m_nFirstVisible != 0 )
+ 		{
+ 			int rtExtra = rtFullText.right - rcSelectX.right;
+ 			rcSelectX.right = (m_rcText.right - m_rcText.left) - rtExtra;
+ 		}
+
 		nSelLeftX = m_rcText.left + rcSelectX.right + rcSelectionBound.left;
 		nSelRightX = m_rcText.left + rcSelectX.right + rcSelectionBound.right;
 		SetRect( &rcSelection, nSelLeftX, m_rcText.top, nSelRightX, m_rcText.bottom );
@@ -690,7 +716,8 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	// Render the selected text
 	if( m_nCaret != m_nSelStart )
 	{
-		int nFirstToRender = __max( m_nFirstVisible, __min( m_nSelStart, m_nCaret ) );
+		//int nFirstToRender = __max( m_nFirstVisible, __min( m_nSelStart, m_nCaret ) );
+		int nFirstToRender = __min(m_nSelStart, m_nCaret);
 		int nNumChatToRender = __max( m_nSelStart, m_nCaret ) - nFirstToRender;
 
 		temp = m_Buffer.substr( nFirstToRender, nNumChatToRender);
