@@ -265,25 +265,40 @@ bool CEditBoxUI::Pressed( HWND hWnd, POINT pt, INPUT_STATE inputState, CTimer* t
 	m_bMouseDrag = true;
 	SetCapture( hWnd );
 	// Determine the character corresponding to the coordinates.
-	int nCP, nTrail, nX1st;
-	nCP = (pt.x - m_rcText.left) / m_elementsFonts[0].nFontWidth;
+ 	int nCP, nTrail, nX1st;
+// 	nCP = (pt.x - m_rcText.left) / m_elementsFonts[0].nFontWidth;
+// 
+// 	RECT rcFullText = {0, 0, 0, 0};
+// 	RECT rcCursorText = {0, 0, 0, 0};
+// 
+// 	m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), m_Buffer.c_str(), -1
+// 		, &rcFullText, DT_CALCRECT, d3d::WHITE);
+// 
+// 	int firstVisibleChar = ( rcFullText.right - (m_rcText.right - m_rcText.left) ) / m_elementsFonts[0].nFontWidth;
+// 	nCP += m_nFirstVisible;
+// 
+// 	for (nCP = m_nFirstVisible; nCP < m_Buffer.size() ; nCP++)
+// 	{
+// 		std::string curCursorText = m_Buffer.substr(0, nCP);
+// 		m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), curCursorText.c_str(), -1
+// 			, &rcCursorText, DT_CALCRECT, d3d::WHITE);
+// 
+// 		if (m_nFirstVisible != 0 )
+// 		{
+// 			int rtExtra = rcFullText.right - rcCursorText.right;
+// 			rcCursorText.right = (m_rcText.right - m_rcText.left) - rtExtra;
+// 		}
+// 
+// 		if (rcCursorText.right < (pt.x - m_rcText.left) )
+// 			continue;
+// 		else 
+// 			break;
+// 	}
+// 
+// 	if ( ( pt.x - m_rcText.left ) < rcCursorText.right)
+// 		nCP--; 
 
-	RECT rcFullText = {0, 0, 0, 0};
-	RECT rcCursorText = {0, 0, 0, 0};
-
-	m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), m_Buffer.c_str(), -1
-		, &rcFullText, DT_CALCRECT, d3d::WHITE);
-
-	int firstVisibleChar = ( rcFullText.right - (m_rcText.right - m_rcText.left) ) / m_elementsFonts[0].nFontWidth;
-	nCP += m_nFirstVisible;
-
-	for (nCP = m_nFirstVisible; rcCursorText.right < (pt.x - m_rcText.left); nCP++)
-	{
-		std::string curCursorText = m_Buffer.substr(0, nCP);
-		m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), curCursorText.c_str(), -1
-			, &rcCursorText, DT_CALCRECT, d3d::WHITE);
-	}
-	nCP--; 
+	nCP = CalcCaretPosByPoint(pt);
 
 	if (nCP > m_Buffer.size())
 		nCP = m_Buffer.size();
@@ -319,7 +334,8 @@ bool CEditBoxUI::Dragged( POINT pt)
 	{
 		// Determine the character corresponding to the coordinates.
 		int nCP, nTrail, nX1st;
-		nCP = (pt.x - m_rcText.left) / m_elementsFonts[0].nFontWidth;
+		//nCP = (pt.x - m_rcText.left) / m_elementsFonts[0].nFontWidth;
+		nCP = CalcCaretPosByPoint(pt);
 
 		// Cap at the NULL character.
 		if(nCP >= 0 && nCP < m_Buffer.size() )
@@ -927,6 +943,44 @@ void CEditBoxUI::SetTextFloatArray( const float* pNumbers, int nCount )
 		strBuffer[strlen( strBuffer ) - 1] = 0;
 
 	SetText( strBuffer );
+}
+
+//-----------------------------------------------------------------------------
+// Name : CalcCaretPosByPoint() 
+//-----------------------------------------------------------------------------
+int CEditBoxUI::CalcCaretPosByPoint( POINT pt )
+{
+	// Determine the character corresponding to the coordinates.
+	int nCP;
+
+	RECT rcFullText = {0, 0, 0, 0};
+	RECT rcCursorText = {0, 0, 0, 0};
+
+	m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), m_Buffer.c_str(), -1
+		, &rcFullText, DT_CALCRECT, d3d::WHITE);
+
+	for (nCP = m_nFirstVisible; nCP < m_Buffer.size() ; nCP++)
+	{
+		std::string curCursorText = m_Buffer.substr(0, nCP);
+		m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), curCursorText.c_str(), -1
+			, &rcCursorText, DT_CALCRECT, d3d::WHITE);
+
+		if (m_nFirstVisible != 0 )
+		{
+			int rtExtra = rcFullText.right - rcCursorText.right;
+			rcCursorText.right = (m_rcText.right - m_rcText.left) - rtExtra;
+		}
+
+		if (rcCursorText.right < (pt.x - m_rcText.left) )
+			continue;
+		else 
+			break;
+	}
+
+	if ( ( pt.x - m_rcText.left ) < rcCursorText.right)
+		nCP--; 
+
+	return nCP;
 }
 
 //-----------------------------------------------------------------------------

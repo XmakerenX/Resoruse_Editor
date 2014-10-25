@@ -63,28 +63,29 @@ public:
 	int				CalcFirstVisibleCharDown();
 
 protected:
+	int				CalcCaretPosByPoint( POINT pt );
 	void            PlaceCaret( int nCP );
 	void            DeleteSelectionText();
 	void            ResetCaretBlink();
 	void            CopyToClipboard();
 	void            PasteFromClipboard();
 
-	std::string m_Buffer;     // Buffer to hold text
-	int m_nBorder;      // Border of the window
-	int m_nSpacing;     // Spacing between the text and the edge of border
-	RECT m_rcText;       // Bounding rectangle for the text
-	RECT            m_rcRender[9];  // Convenient rectangles for rendering elements
-	double m_dfBlink;      // Caret blink time in milliseconds
-	double m_dfLastBlink;  // Last timestamp of caret blink
-	bool m_bCaretOn;     // Flag to indicate whether caret is currently visible
-	int m_nCaret;       // Caret position, in characters
-	bool m_bInsertMode;  // If true, control is in insert mode. Else, overwrite mode.
-	int m_nSelStart;    // Starting position of the selection. The caret marks the end.
-	int m_nFirstVisible;// First visible character in the edit control
-	D3DCOLOR m_TextColor;    // Text color
-	D3DCOLOR m_SelTextColor; // Selected text color
-	D3DCOLOR m_SelBkColor;   // Selected background color
-	D3DCOLOR m_CaretColor;   // Caret color
+	std::string	 m_Buffer;        // Buffer to hold text
+	int			 m_nBorder;       // Border of the window
+	int			 m_nSpacing;      // Spacing between the text and the edge of border
+	RECT		 m_rcText;        // Bounding rectangle for the text
+	RECT		 m_rcRender[9];   // Convenient rectangles for rendering elements
+	double		 m_dfBlink;       // Caret blink time in milliseconds
+	double		 m_dfLastBlink;   // Last timestamp of caret blink
+	bool		 m_bCaretOn;      // Flag to indicate whether caret is currently visible
+	int			 m_nCaret;        // Caret position, in characters
+	bool		 m_bInsertMode;   // If true, control is in insert mode. Else, overwrite mode.
+	int			 m_nSelStart;     // Starting position of the selection. The caret marks the end.
+	int			 m_nFirstVisible; // First visible character in the edit control
+	D3DCOLOR	 m_TextColor;     // Text color
+	D3DCOLOR	 m_SelTextColor;  // Selected text color
+	D3DCOLOR	 m_SelBkColor;    // Selected background color
+	D3DCOLOR	 m_CaretColor;    // Caret color
 
 	boost::signals2::signal<void (CEditBoxUI*)> m_editboxChangedSig;
 
