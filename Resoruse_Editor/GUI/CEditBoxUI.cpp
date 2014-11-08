@@ -20,6 +20,8 @@ CEditBoxUI::CEditBoxUI(CDialogUI* pParentDialog, int ID, LPCTSTR strText, int x,
 
 	m_nBorder = 5;  // Default border width
 	m_nSpacing = 4;  // Default spacing
+	m_nVisibleChars = m_Buffer.size();
+	m_nBackwardChars = 0;
 
 	m_bCaretOn = true;
 	m_dfBlink = GetCaretBlinkTime() * 0.001f;
@@ -52,6 +54,7 @@ CEditBoxUI::CEditBoxUI(std::istream& inputFile, CTimer* timer)
 	m_nFirstVisible = 0;
 	m_nCaret = m_nSelStart = 0;
 	m_bInsertMode = true;
+	m_nBackwardChars = 0;
 
 	m_bMouseDrag = false;
 
@@ -59,6 +62,7 @@ CEditBoxUI::CEditBoxUI(std::istream& inputFile, CTimer* timer)
 	std::getline(inputFile, bufferText);
 	bufferText = bufferText.substr(0, bufferText.find('|') );
 	SetText(bufferText.c_str() );
+	m_nVisibleChars = m_Buffer.size();
 	inputFile >> m_nBorder;
 	inputFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //skips to next line
 	inputFile >> m_nSpacing;
@@ -166,22 +170,38 @@ bool CEditBoxUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				break;
 
 			case VK_LEFT:
-				if( GetKeyState( VK_CONTROL ) < 0 )
 				{
-					// Control is down. Move the caret to a new item
-					// instead of a character.
-					m_nCaret--;
-					//m_Buffer.GetPriorItemPos( m_nCaret, &m_nCaret );
-					PlaceCaret( m_nCaret );
+					if( GetKeyState( VK_CONTROL ) < 0 )
+					{
+						// Control is down. Move the caret to a new item
+						// instead of a character.
+						m_nCaret--;
+						//m_Buffer.GetPriorItemPos( m_nCaret, &m_nCaret );
+						if ( m_nCaret < m_nFirstVisible)
+						{
+							if (m_nFirstVisible > 0 && m_nBackwardChars < m_nFirstVisible)
+								m_nBackwardChars++;
+							//m_nFirstVisible = m_nCaret;
+						}
+						PlaceCaret( m_nCaret );
+					}
+					else if( m_nCaret > 0 )
+					{
+						if ( m_nCaret - 1 < m_nFirstVisible)
+						{
+							if (m_nFirstVisible > 0 && m_nBackwardChars < m_nFirstVisible)
+								m_nBackwardChars++;
+							//m_nFirstVisible = m_nCaret - 1;
+						}
+						PlaceCaret( m_nCaret - 1 );
+					}
+					if( GetKeyState( VK_SHIFT ) >= 0 )
+						// Shift is not down. Update selection
+						// start along with the caret.
+						m_nSelStart = m_nCaret;
+					ResetCaretBlink();
+					bHandled = true;
 				}
-				else if( m_nCaret > 0 )
-					PlaceCaret( m_nCaret - 1 );
-				if( GetKeyState( VK_SHIFT ) >= 0 )
-					// Shift is not down. Update selection
-					// start along with the caret.
-					m_nSelStart = m_nCaret;
-				ResetCaretBlink();
-				bHandled = true;
 				break;
 
 			case VK_RIGHT:
@@ -190,11 +210,28 @@ bool CEditBoxUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					// Control is down. Move the caret to a new item
 					// instead of a character.
 					m_nCaret++;
+
+					if ( (m_nCaret - m_nFirstVisible) < m_nVisibleChars )
+					{
+						if (m_nBackwardChars > 0)
+							m_nBackwardChars--;
+						//m_nCaret = m_nVisibleChars + m_nFirstVisible;
+					}
 					//m_Buffer.GetNextItemPos( m_nCaret, &m_nCaret );
 					PlaceCaret( m_nCaret );
 				}
 				else if( m_nCaret < m_Buffer.size() )
-					PlaceCaret( m_nCaret + 1 );
+				{
+					if ( (m_nCaret + 1 - m_nFirstVisible) >= m_nVisibleChars )
+					{
+						if (m_nBackwardChars > 0)
+							m_nBackwardChars--;
+						//m_nCaret = m_nVisibleChars + m_nFirstVisible;
+						PlaceCaret(m_nCaret + 1);
+					}
+					else
+						PlaceCaret( m_nCaret + 1 );
+				}
 				if( GetKeyState( VK_SHIFT ) >= 0 )
 					// Shift is not down. Update selection
 					// start along with the caret.
@@ -408,6 +445,8 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 						if (m_nFirstVisible > 0)
 							CalcFirstVisibleCharDown();
 
+						m_nVisibleChars = m_Buffer.size() - m_nFirstVisible;
+
 						m_editboxChangedSig(this);
 						//m_Buffer.RemoveChar( m_nCaret );
 						//m_pDialog->SendEvent( EVENT_EDITBOX_CHANGE, true, this );
@@ -501,16 +540,18 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 						LPD3DXFONT pFont = m_assetManger->getFontPtr(2);
 						RECT rt = {0,0,0,0};
 						
-						std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
 
 						//if (visibleText.size() > 0 && visibleText[visibleText.size() - 1] == ' ')
 						//	visibleText[visibleText.size() - 1] = ';';
 
-						pFont->DrawTextA(m_assetManger->getSprite(), visibleText.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
-
-						int textEdge =  m_rcText.left + rt.right;
+/*						int textEdge =  m_rcText.left + rt.right;*/
 
 						CalcFirstVisibleCharUp();
+
+// 						std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
+// 						m_nVisibleChars = visibleText.size();
+// 
+// 						pFont->DrawTextA(m_assetManger->getSprite(), visibleText.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
 					}
 					else
 					{
@@ -524,16 +565,18 @@ bool CEditBoxUI::MsgProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 							LPD3DXFONT pFont = m_assetManger->getFontPtr(2);
 							RECT rt = {0,0,0,0};
 
-							std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
-
-							if (visibleText.size() > 0 && visibleText[visibleText.size() - 1] == ' ')
-								visibleText[visibleText.size() - 1] = ';';
-
-							pFont->DrawTextA(m_assetManger->getSprite(), visibleText.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
-
-							int textEdge =  m_rcText.left + rt.right;
-
 							CalcFirstVisibleCharUp();
+
+// 							std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
+// 							m_nVisibleChars = visibleText.size();
+// 
+// 							if (visibleText.size() > 0 && visibleText[visibleText.size() - 1] == ' ')
+// 								visibleText[visibleText.size() - 1] = ';';
+// 
+// 							pFont->DrawTextA(m_assetManger->getSprite(), visibleText.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
+// 
+// 							int textEdge =  m_rcText.left + rt.right;
+
 					}
 					ResetCaretBlink();
 					m_editboxChangedSig(this);
@@ -583,6 +626,9 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 
 	if (m_assetManger == NULL)
 		m_assetManger = &assetManger;
+
+	//std::cout << "m_nBackwardChars = " << m_nBackwardChars << std::endl;
+	//std::cout << "m_nCaret : " << m_nCaret << std::endl;
 
 	HRESULT hr;
 	LPDIRECT3DTEXTURE9 pTexture;
@@ -705,14 +751,19 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	std::string temp = m_Buffer.substr(0, m_nCaret);
 	//std::string temp = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
 
-	std::string textToRender = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
+	std::string textToRender;
+
+	if (m_nBackwardChars == 0)
+		textToRender = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible );
+	else
+		textToRender = m_Buffer.substr(m_nFirstVisible - m_nBackwardChars, m_Buffer.size() - (m_nFirstVisible /*- m_nBackwardChars * 2*/) );
 
 // 	if (m_nFirstVisible > 0)
 // 		RenderText(temp.c_str(), m_rcText, pFont,  DT_LEFT | DT_VCENTER, assetManger.getSprite(), m_TextColor, dialogPos);
 // 	else
 // 		RenderText(m_Buffer.c_str(), m_rcText, pFont,  DT_LEFT | DT_VCENTER, assetManger.getSprite(), m_TextColor, dialogPos);
 
-	if (m_nFirstVisible == 0)
+	if (m_nFirstVisible - m_nBackwardChars == 0)
 		RenderText(textToRender.c_str(), m_rcText, pFont,  DT_LEFT | DT_VCENTER , assetManger.getSprite(), m_TextColor, dialogPos);
 	else
 		RenderText(textToRender.c_str(), m_rcText, pFont,  DT_RIGHT | DT_VCENTER , assetManger.getSprite(), m_TextColor, dialogPos);
@@ -723,7 +774,7 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	pFont->DrawTextA(assetManger.getSprite(), temp.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
 	pFont->DrawTextA(assetManger.getSprite(), m_Buffer.c_str(), -1, &rtFullText, DT_CALCRECT, d3d::WHITE);
 
-	if (m_nFirstVisible != 0 )
+	if (m_nFirstVisible - m_nBackwardChars != 0 )
 	{
 		int rtExtra = rtFullText.right - rt.right;
 		rt.right = (m_rcText.right - m_rcText.left) - rtExtra;
@@ -959,9 +1010,9 @@ int CEditBoxUI::CalcCaretPosByPoint( POINT pt )
 	m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), m_Buffer.c_str(), -1
 		, &rcFullText, DT_CALCRECT, d3d::WHITE);
 
-	for (nCP = m_nFirstVisible; nCP < m_Buffer.size() ; nCP++)
+	for (nCP = m_nFirstVisible; nCP <= m_Buffer.size() ; nCP++)
 	{
-		std::string curCursorText = m_Buffer.substr(0, nCP);
+		std  ::string curCursorText = m_Buffer.substr(0, nCP);
 		m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), curCursorText.c_str(), -1
 			, &rcCursorText, DT_CALCRECT, d3d::WHITE);
 
@@ -989,6 +1040,11 @@ int CEditBoxUI::CalcCaretPosByPoint( POINT pt )
 void CEditBoxUI::PlaceCaret( int nCP )
 {
 	assert( nCP >= 0 && nCP <= m_Buffer.size() );
+// 	if ( nCP < m_nFirstVisible)
+// 		m_nFirstVisible = nCP;
+// 	if ( (nCP - m_nFirstVisible) < m_nVisibleChars )
+// 		nCP = m_nVisibleChars + m_nFirstVisible;
+
 	m_nCaret = nCP;
 }
 
@@ -1002,6 +1058,8 @@ void CEditBoxUI::DeleteSelectionText()
 	// Update caret and selection
 	PlaceCaret( nFirst );
 	m_nSelStart = m_nCaret;
+	CalcFirstVisibleCharDown();
+	m_nVisibleChars = m_Buffer.size() - m_nFirstVisible;
 
 	// Remove the characters
 	m_Buffer.erase(nFirst, nLast - nFirst);
@@ -1148,6 +1206,7 @@ int CEditBoxUI::CalcFirstVisibleCharUp()
 	RECT rt = {0,0,0,0};
 
 	std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
+	m_nVisibleChars = visibleText.size();
 
 	//if (visibleText.size() > 0 && visibleText[visibleText.size() - 1] == ' ')
 	//	visibleText[visibleText.size() - 1] = ';';
@@ -1159,8 +1218,8 @@ int CEditBoxUI::CalcFirstVisibleCharUp()
 	if (textEdge > m_rcText.right )
 	{
 		m_nFirstVisible++;
-		return m_nFirstVisible;
-		//CalcFirstVisibleCharUp();
+		//return m_nFirstVisible;
+		CalcFirstVisibleCharUp();
 	}
 	else
 		return m_nFirstVisible;
@@ -1175,6 +1234,7 @@ int CEditBoxUI::CalcFirstVisibleCharDown()
 	RECT rt = {0,0,0,0};
 
 	std::string visibleText = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
+	m_nVisibleChars = visibleText.size();
 
 	//if (visibleText.size() > 0 && visibleText[visibleText.size() - 1] == ' ')
 	//	visibleText[visibleText.size() - 1] = ';';
@@ -1186,8 +1246,8 @@ int CEditBoxUI::CalcFirstVisibleCharDown()
 	if (textEdge < m_rcText.right )
 	{
 		m_nFirstVisible--;
-		return m_nFirstVisible;
-		//CalcFirstVisibleCharDown();
+		//return m_nFirstVisible;
+		CalcFirstVisibleCharDown();
 	}
 	else
 		return m_nFirstVisible;

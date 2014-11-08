@@ -73,6 +73,8 @@ protected:
 	std::string	 m_Buffer;        // Buffer to hold text
 	int			 m_nBorder;       // Border of the window
 	int			 m_nSpacing;      // Spacing between the text and the edge of border
+	int			 m_nVisibleChars; //
+	int			 m_nBackwardChars;
 	RECT		 m_rcText;        // Bounding rectangle for the text
 	RECT		 m_rcRender[9];   // Convenient rectangles for rendering elements
 	double		 m_dfBlink;       // Caret blink time in milliseconds
