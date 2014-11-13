@@ -211,7 +211,7 @@ bool CEditBoxUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					// instead of a character.
 					m_nCaret++;
 
-					if ( (m_nCaret - m_nFirstVisible) < m_nVisibleChars )
+					if ( (m_nCaret - (m_nFirstVisible - m_nBackwardChars) ) < m_nVisibleChars )
 					{
 						if (m_nBackwardChars > 0)
 							m_nBackwardChars--;
@@ -222,7 +222,7 @@ bool CEditBoxUI::HandleKeyboard( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				}
 				else if( m_nCaret < m_Buffer.size() )
 				{
-					if ( (m_nCaret + 1 - m_nFirstVisible) >= m_nVisibleChars )
+					if ( (m_nCaret + 1 - ( m_nFirstVisible - m_nBackwardChars ) ) > m_nVisibleChars )
 					{
 						if (m_nBackwardChars > 0)
 							m_nBackwardChars--;
@@ -376,14 +376,31 @@ bool CEditBoxUI::Dragged( POINT pt)
 
 		// Cap at the NULL character.
 		if(nCP >= 0 && nCP < m_Buffer.size() )
+		{
+			if (m_nCaret < m_nFirstVisible)
+				if (m_nFirstVisible > 0 && m_nBackwardChars < m_nFirstVisible)
+				m_nBackwardChars += m_nFirstVisible - m_nCaret;
+
+			if ( (m_nCaret + 1 - ( m_nFirstVisible - m_nBackwardChars ) ) > m_nVisibleChars )
+				if (m_nBackwardChars > 0)
+					m_nBackwardChars -= m_nCaret - m_nVisibleChars;
 			PlaceCaret( nCP );
+		}
 		else
 		{
 			if (nCP < 0 || m_Buffer.size() == 0)
+			{
 				nCP = 0;
+				//m_nFirstVisible = 0;
+				//m_nBackwardChars = 0;
+			}
 
 			if (nCP > m_Buffer.size())
+			{
 				nCP = m_Buffer.size() -1;
+				//m_nFirstVisible = CalcFirstVisibleCharUp();
+				//m_nBackwardChars = m_nFirstVisible;
+			}
 
 			PlaceCaret( nCP );
 		}
@@ -694,7 +711,7 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 		int nFirstToRender = __max( m_nFirstVisible, __min( m_nSelStart, m_nCaret ) );
 		int nNumChatToRender = __max( m_nSelStart, m_nCaret ) - nFirstToRender;
 
-		std::string temp = m_Buffer.substr( nFirstToRender, nNumChatToRender);
+		std::string temp = m_Buffer.substr( nFirstToRender, nNumChatToRender + m_nBackwardChars);
 		if (temp.size() > 0 && temp[0] == ' ')
 			temp[0] = ';';
 		if (temp.size() > 0 && temp[temp.size() -1] == ' ')
@@ -749,6 +766,7 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	RECT rtFullText = {0, 0, 0, 0};
 	//std::string temp = m_Buffer.substr(m_nFirstVisible, m_nCaret);
 	std::string temp = m_Buffer.substr(0, m_nCaret);
+	std::string fullText = m_Buffer.substr(0, m_Buffer.size() - m_nBackwardChars);
 	//std::string temp = m_Buffer.substr(m_nFirstVisible, m_Buffer.size() - m_nFirstVisible);
 
 	std::string textToRender;
@@ -772,9 +790,10 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 		temp[temp.size() - 1] = ';';
 
 	pFont->DrawTextA(assetManger.getSprite(), temp.c_str(), -1, &rt, DT_CALCRECT, d3d::WHITE);
-	pFont->DrawTextA(assetManger.getSprite(), m_Buffer.c_str(), -1, &rtFullText, DT_CALCRECT, d3d::WHITE);
+	//pFont->DrawTextA(assetManger.getSprite(), m_Buffer.c_str(), -1, &rtFullText, DT_CALCRECT, d3d::WHITE);
+	pFont->DrawTextA(assetManger.getSprite(), fullText.c_str(), -1, &rtFullText, DT_CALCRECT, d3d::WHITE);
 
-	if (m_nFirstVisible - m_nBackwardChars != 0 )
+	if (m_nFirstVisible - m_nBackwardChars != 0)
 	{
 		int rtExtra = rtFullText.right - rt.right;
 		rt.right = (m_rcText.right - m_rcText.left) - rtExtra;
@@ -787,7 +806,7 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 		int nFirstToRender = __min(m_nSelStart, m_nCaret);
 		int nNumChatToRender = __max( m_nSelStart, m_nCaret ) - nFirstToRender;
 
-		temp = m_Buffer.substr( nFirstToRender, nNumChatToRender);
+		temp = m_Buffer.substr( nFirstToRender, nNumChatToRender  + m_nBackwardChars);
 		RenderText(temp.c_str(), rcSelection, pFont,  DT_LEFT | DT_VCENTER, assetManger.getTopSprite(), m_SelTextColor, dialogPos);
 	}
 
@@ -1010,13 +1029,13 @@ int CEditBoxUI::CalcCaretPosByPoint( POINT pt )
 	m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), m_Buffer.c_str(), -1
 		, &rcFullText, DT_CALCRECT, d3d::WHITE);
 
-	for (nCP = m_nFirstVisible; nCP <= m_Buffer.size() ; nCP++)
+	for (nCP = m_nFirstVisible - m_nBackwardChars; nCP <= m_Buffer.size() ; nCP++)
 	{
 		std  ::string curCursorText = m_Buffer.substr(0, nCP);
 		m_assetManger->getFontPtr(2)->DrawTextA(m_assetManger->getSprite(), curCursorText.c_str(), -1
 			, &rcCursorText, DT_CALCRECT, d3d::WHITE);
 
-		if (m_nFirstVisible != 0 )
+		if (m_nFirstVisible - m_nBackwardChars != 0 )
 		{
 			int rtExtra = rcFullText.right - rcCursorText.right;
 			rcCursorText.right = (m_rcText.right - m_rcText.left) - rtExtra;
