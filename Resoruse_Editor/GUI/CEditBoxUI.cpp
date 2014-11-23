@@ -377,14 +377,32 @@ bool CEditBoxUI::Dragged( POINT pt)
 		// Cap at the NULL character.
 		if(nCP >= 0 && nCP < m_Buffer.size() )
 		{
+
 			if (m_nCaret < m_nFirstVisible)
 				if (m_nFirstVisible > 0 && m_nBackwardChars < m_nFirstVisible)
-				m_nBackwardChars += m_nFirstVisible - m_nCaret;
+				{
+					m_nBackwardChars += m_nFirstVisible - m_nCaret;
+
+					if (m_nBackwardChars > m_nFirstVisible)
+						m_nBackwardChars = m_nFirstVisible;
+				}
 
 			if ( (m_nCaret + 1 - ( m_nFirstVisible - m_nBackwardChars ) ) > m_nVisibleChars )
 				if (m_nBackwardChars > 0)
+				{
 					m_nBackwardChars -= m_nCaret - m_nVisibleChars;
+
+					if (m_nBackwardChars < 0)
+						m_nBackwardChars = 0;
+				}
+			
 			PlaceCaret( nCP );
+
+			if ( nCP > m_nCaret)
+				CalcFirstVisibleCharUp();
+			
+			if ( nCP < m_nCaret)
+				CalcFirstVisibleCharDown();
 		}
 		else
 		{
@@ -397,12 +415,18 @@ bool CEditBoxUI::Dragged( POINT pt)
 
 			if (nCP > m_Buffer.size())
 			{
-				nCP = m_Buffer.size() -1;
+				nCP = m_Buffer.size();
 				//m_nFirstVisible = CalcFirstVisibleCharUp();
 				//m_nBackwardChars = m_nFirstVisible;
 			}
 
 			PlaceCaret( nCP );
+
+			if ( nCP > m_nCaret)
+				CalcFirstVisibleCharUp();
+
+			if ( nCP < m_nCaret)
+				CalcFirstVisibleCharDown();
 		}
 		return true;
 
@@ -708,10 +732,10 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 			nSelRightX = nTemp;
 		}
 		
-		int nFirstToRender = __max( m_nFirstVisible, __min( m_nSelStart, m_nCaret ) );
+		int nFirstToRender = __max( m_nFirstVisible - m_nBackwardChars, __min( m_nSelStart, m_nCaret ) );
 		int nNumChatToRender = __max( m_nSelStart, m_nCaret ) - nFirstToRender;
 
-		std::string temp = m_Buffer.substr( nFirstToRender, nNumChatToRender + m_nBackwardChars);
+		std::string temp = m_Buffer.substr( nFirstToRender, nNumChatToRender /*+ m_nBackwardChars*/);
 		if (temp.size() > 0 && temp[0] == ' ')
 			temp[0] = ';';
 		if (temp.size() > 0 && temp[temp.size() -1] == ' ')
@@ -736,7 +760,7 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 		RECT rtFullText = {0, 0, 0, 0};
 		pFont->DrawTextA(assetManger.getSprite(), m_Buffer.c_str(), -1, &rtFullText, DT_CALCRECT, d3d::WHITE);
  
- 		if (m_nFirstVisible != 0 )
+ 		if (m_nFirstVisible - m_nBackwardChars != 0 )
  		{
  			int rtExtra = rtFullText.right - rcSelectX.right;
  			rcSelectX.right = (m_rcText.right - m_rcText.left) - rtExtra;
