@@ -1,66 +1,33 @@
-500 Dialog Width
-700 Dialog Height
-18 Dialog Caption Height
-Gendialog Dialog Caption Text
-205Current Control ID
+500| Dialog Width
+200| Dialog Height
+18| Dialog Caption Height
+Gendialog| Dialog Caption Text
+202| Current Control ID
 /////////////////////////////////////////////////////////////////////////////
-0 Control Type
-201 Control ID
-4 Control X
-8 Control Y
-110 Control Width
-34 Control Height
-1 is Control Visible
-1 is Control Enabled
-API Version Control Text
-1 1 1 1 Control Text Color
+0| Control Type
+201| Control ID
+18| Control X
+5| Control Y
+110| Control Width
+25| Control Height
+1| is Control Visible
+1| is Control Enabled
+API Version| Control Text
+1 1 1 1| Control Text Color
 /////////////////////////////////////////////////////////////////////////////
-4 Control Type
-202 Control ID
-163 Control X
-8 Control Y
-320 Control Width
-34 Control Height
-1 is Control Visible
-1 is Control Enabled
-API Version Control Text
-1 1 1 1 Control Text Color
-0 Button HotKey
-100 ComboBox Drop Height
-16 ComboBox SBWidth
-3452816845 ComboBox Font Height
-0 ComboBox Items Size
-/////////////////////////////////////////////////////////////////////////////
-0 Control Type
-203 Control ID
-4 Control X
-88 Control Y
-140 Control Width
-34 Control Height
-1 is Control Visible
-1 is Control Enabled
-Render Device Control Text
-1 1 1 1 Control Text Color
-/////////////////////////////////////////////////////////////////////////////
-0 Control Type
-204 Control ID
-4 Control X
-48 Control Y
-150 Control Width
-34 Control Height
-1 is Control Visible
-1 is Control Enabled
-Display Adapter Control Text
-1 1 1 1 Control Text Color
-/////////////////////////////////////////////////////////////////////////////
-0 Control Type
-205 Control ID
-8 Control X
-126 Control Y
-140 Control Width
-34 Control Height
-1 is Control Visible
-1 is Control Enabled
-Adapter Format Control Text
-1 1 1 1 Control Text Color
+4| Control Type
+202| Control ID
+146| Control X
+6| Control Y
+335| Control Width
+25| Control Height
+1| is Control Visible
+1| is Control Enabled
+API Version| Control Text
+1 1 1 1| Control Text Color
+0| Button HotKey
+100| ComboBox Drop Height
+16| ComboBox SBWidth
+3452816845| ComboBox Font Height
+0| ComboBox Items Size
 /////////////////////////////////////////////////////////////////////////////

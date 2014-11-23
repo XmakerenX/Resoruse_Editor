@@ -1298,7 +1298,12 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	pRelocateButton->connectToClick( boost::bind(&CGameWin::RelocateControlClicked, this, _1) );
 	pRelocateButton->setEnabled(false);
 
-	//-----------------------------------------------------------------------------
+	CButtonUI* pDeleteButton = nullptr;
+	m_EditDialog.addButton(IDC_DELETEBUTTON, "Delete Contorl", 330, 500, 100, 34, 0, &pDeleteButton);
+	pDeleteButton->connectToClick( boost::bind(&CGameWin::DeleteControlClicked, this, _1) );
+	pDeleteButton->setEnabled(false);
+
+	//---------------------------------------------------------------------------
 	// Dialog initialization of the generated Dialog
 	//-----------------------------------------------------------------------------
 	m_GenDialog.init(500,200, 18,"Gendialog", "dialog.png", D3DCOLOR_ARGB(200,255,255,255), m_hWnd, m_assetManger);
@@ -2012,6 +2017,21 @@ void CGameWin::RelocateControlClicked(CButtonUI* pRecloateControlButton)
 }
 
 //-----------------------------------------------------------------------------
+// Name : DeleteControlClicked ()
+//-----------------------------------------------------------------------------
+void CGameWin::DeleteControlClicked(CButtonUI* pDeleteButton)
+{
+	m_GenDialog.RemoveControl(m_pCurSelectedControl->getID());
+	m_pCurSelectedControl = nullptr;
+
+	m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(true);
+	m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(false);
+	m_EditDialog.getButton(IDC_RELOCATEBUTTON)->setEnabled(false);
+	m_EditDialog.getButton(IDC_DELETEBUTTON)->setEnabled(false);
+
+}
+
+//-----------------------------------------------------------------------------
 // Name : ComboboxSelChg ()
 //-----------------------------------------------------------------------------
 void CGameWin::ComboboxSelChg(CComboBoxUI* pCombobox)
@@ -2087,6 +2107,7 @@ void CGameWin::SetStaticGUI(bool ControlSelected /* = false */)
 	{
 		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(true);
 		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(false);
+		m_EditDialog.getButton(IDC_DELETEBUTTON)->setEnabled(true);
 	}
 
 }
@@ -2129,6 +2150,7 @@ void CGameWin::SetRadioButtonGUI(bool ControlSelected /* = false */)
 	{
 		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(true);
 		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(false);
+		m_EditDialog.getButton(IDC_DELETEBUTTON)->setEnabled(true);
 	}
 }
 
@@ -2169,6 +2191,7 @@ void CGameWin::SetSliderGUI(bool ControlSelected /* = false */)
 	{
 		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(true);
 		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(false);
+		m_EditDialog.getButton(IDC_DELETEBUTTON)->setEnabled(true);
 	}
 }
 
@@ -2210,6 +2233,7 @@ void CGameWin::SetListBoxGUI(bool ControlSelected /* = false */)
 	{
 		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(true);
 		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(false);
+		m_EditDialog.getButton(IDC_DELETEBUTTON)->setEnabled(true);
 	}
 }
 
@@ -2252,6 +2276,7 @@ void CGameWin::SetComboBoxGUI(bool ControlSelected /* = false */)
 	{
 		m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(true);
 		m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(false);
+		m_EditDialog.getButton(IDC_DELETEBUTTON)->setEnabled(true);
 	}
 
 }

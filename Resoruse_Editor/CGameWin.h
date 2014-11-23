@@ -93,6 +93,7 @@ class CMyObject;
 #define IDC_CONTROLX			 140
 #define IDC_CONTROLY			 141
 #define IDC_RELOCATEBUTTON		 142
+#define IDC_DELETEBUTTON		 143
 
 
 
@@ -135,6 +136,7 @@ public:
 	void		 LoadDialogButtonClicked	(CButtonUI* pLoadButton);
 	void		 SetGenDialogSize			(CButtonUI* pDialogSetButton);
 	void		 RelocateControlClicked		(CButtonUI* pRecloateControlButton);
+	void		 DeleteControlClicked		(CButtonUI* pDeleteButton);
 	void         ComboboxSelChg				(CComboBoxUI* pCombobox);
 
 	void		 SetStaticGUI				( bool ControlSelected = false);

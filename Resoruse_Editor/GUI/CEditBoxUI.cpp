@@ -417,7 +417,7 @@ bool CEditBoxUI::Dragged( POINT pt)
 			{
 				nCP = m_Buffer.size();
 				//m_nFirstVisible = CalcFirstVisibleCharUp();
-				//m_nBackwardChars = m_nFirstVisible;
+				m_nBackwardChars = 0;
 			}
 
 			PlaceCaret( nCP );
@@ -697,7 +697,6 @@ void CEditBoxUI::Render( CAssetManager& assetManger )
 	// Compute the X coordinates of the first visible character.
 	//
 	FONT_ITEM fontItem = assetManger.getFontItem(m_elementsFonts[0].fontIndex);
-
 
 	int nXFirst = m_rcText.left + fontItem.width;
 	// compute the x coordinates of the caret
@@ -1286,7 +1285,7 @@ int CEditBoxUI::CalcFirstVisibleCharDown()
 
 	int textEdge =  m_rcText.left + rt.right;
 
-	if (textEdge < m_rcText.right )
+	if (textEdge < m_rcText.right  && m_nFirstVisible > 0)
 	{
 		m_nFirstVisible--;
 		//return m_nFirstVisible;
