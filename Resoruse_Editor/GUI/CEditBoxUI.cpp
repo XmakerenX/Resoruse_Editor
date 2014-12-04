@@ -21,13 +21,14 @@ CEditBoxUI::CEditBoxUI(CDialogUI* pParentDialog, int ID, LPCTSTR strText, int x,
 	m_nBorder = 5;  // Default border width
 	m_nSpacing = 4;  // Default spacing
 	m_nVisibleChars = m_Buffer.size();
+	m_nFirstVisible = 0;
 	m_nBackwardChars = 0;
 
 	m_bCaretOn = true;
 	m_dfBlink = GetCaretBlinkTime() * 0.001f;
 	m_dfLastBlink = timer->getCurrentTime();
 	s_bHideCaret = false;
-	m_nFirstVisible = 0;
+
 	m_TextColor = D3DCOLOR_ARGB( 255, 16, 16, 16 );
 	m_SelTextColor = D3DCOLOR_ARGB( 255, 255, 255, 255 );
 	m_SelBkColor = D3DCOLOR_ARGB( 255, 40, 50, 92 );
@@ -51,9 +52,9 @@ CEditBoxUI::CEditBoxUI(std::istream& inputFile, CTimer* timer)
 	m_dfBlink = GetCaretBlinkTime() * 0.001f;
 	m_dfLastBlink = timer->getCurrentTime();
 	s_bHideCaret = false;
-	m_nFirstVisible = 0;
 	m_nCaret = m_nSelStart = 0;
 	m_bInsertMode = true;
+	m_nFirstVisible = 0;
 	m_nBackwardChars = 0;
 
 	m_bMouseDrag = false;
@@ -882,6 +883,8 @@ void CEditBoxUI::SetText( LPCTSTR strText, bool bSelected /* = false */ )
 
 	m_Buffer = strText;
 	m_nFirstVisible = 0;
+	m_nBackwardChars = 0;
+	m_nVisibleChars = m_Buffer.size();
 	// Move the caret to the end of the text
 	PlaceCaret( m_Buffer.size() );
 
@@ -926,6 +929,8 @@ void CEditBoxUI::ClearText()
 {
 	m_Buffer.clear();
 	m_nFirstVisible = 0;
+	m_nBackwardChars = 0;
+	m_nVisibleChars = m_Buffer.size();
 	PlaceCaret( 0 );
 	m_nSelStart = 0;
 }
@@ -1292,5 +1297,10 @@ int CEditBoxUI::CalcFirstVisibleCharDown()
 		CalcFirstVisibleCharDown();
 	}
 	else
+	{
+		if (m_nBackwardChars > m_nFirstVisible)
+			m_nBackwardChars = m_nFirstVisible;
+
 		return m_nFirstVisible;
+	}
 }

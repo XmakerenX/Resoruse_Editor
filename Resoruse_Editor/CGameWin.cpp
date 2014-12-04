@@ -1786,7 +1786,7 @@ void CGameWin::CreateControlClicked(CButtonUI* createControl)
 	case CControlUI::BUTTON:
 		{
 			m_GenDialog.addButton(m_curControlID + 1, pControlText, cursorPoint.x,
-				cursorPoint.y, controlWidth, controlWidth, 0, nullptr, pControlIDText);
+				cursorPoint.y, controlWidth, controlHeight, 0, nullptr, pControlIDText);
 			m_controlInCreation = true;
 		}break;
 
