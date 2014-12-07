@@ -543,6 +543,9 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 	HRESULT hr = 0;
 	D3DDEVTYPE deviceType = D3DDEVTYPE_HAL;
 
+	D3DFORMAT formats[6] = { D3DFMT_A1R5G5B5, D3DFMT_A2R10G10B10, D3DFMT_A8R8G8B8, D3DFMT_R5G6B5, D3DFMT_X1R5G5B5
+							, D3DFMT_X8R8G8B8};
+
 	//Creating the IDirect3D9 object.
 	m_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
 
@@ -551,6 +554,8 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 		::MessageBox(m_hWnd,"failed to create an IDirect3D9 object","lolz",MB_OK);
 		return S_FALSE;
 	}
+
+	m_pD3D->EnumAdapterModes(D3DADAPTER_DEFAULT,  )
 
 	//Checking for hardware vp.
 	//TODO add more checking for future use!!!
