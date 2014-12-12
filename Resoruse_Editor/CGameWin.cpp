@@ -543,8 +543,12 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 	HRESULT hr = 0;
 	D3DDEVTYPE deviceType = D3DDEVTYPE_HAL;
 
-	D3DFORMAT formats[6] = { D3DFMT_A1R5G5B5, D3DFMT_A2R10G10B10, D3DFMT_A8R8G8B8, D3DFMT_R5G6B5, D3DFMT_X1R5G5B5
+	D3DFORMAT adapterFormats[6] = { D3DFMT_A1R5G5B5, D3DFMT_A2R10G10B10, D3DFMT_A8R8G8B8, D3DFMT_R5G6B5, D3DFMT_X1R5G5B5
 							, D3DFMT_X8R8G8B8};
+	
+	D3DFORMAT format = D3DFMT_X8R8G8B8;
+
+	D3DFORMAT depthFormats[2] = { D3DFMT_D24S8, D3DFMT_D16};
 
 	//Creating the IDirect3D9 object.
 	m_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
@@ -555,11 +559,88 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 		return S_FALSE;
 	}
 
-	m_pD3D->EnumAdapterModes(D3DADAPTER_DEFAULT,  )
+	D3DDISPLAYMODE activeMode;
+	m_pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT,&activeMode);
+
+	UINT adapterCount = m_pD3D->GetAdapterCount();
+
+	// ---------------------------------------------
+	// Enum for all Adapters
+	// ---------------------------------------------
+	for (UINT adapterIndex = 0; adapterIndex < adapterCount; adapterIndex++)
+	{
+		D3DADAPTER_IDENTIFIER9 adapterIden;
+		m_pD3D->GetAdapterIdentifier(adapterIndex, 0, &adapterIden);
+
+		ADAPTERINFO curAdapterInfo;
+
+		curAdapterInfo.adapterNum = adapterIndex;
+		curAdapterInfo.adapterDescription = adapterIden.Description;
+
+		int modeCount = m_pD3D->GetAdapterModeCount(adapterIndex ,format);
+
+		std::vector<D3DFORMAT> validDepths;
+		std::vector<D3DMULTISAMPLE_TYPE> validMultiSampleTypes;
+
+		// --------------------------------------------------
+		// Enum DepthStencil and multiSample for HAL Device 
+		// --------------------------------------------------
+		hr = m_pD3D->CheckDeviceType(0, D3DDEVTYPE_HAL, format, format, TRUE);
+		if ( SUCCEEDED(hr) )
+		{
+			curAdapterInfo.bDepthEnable[ADAPTERINFO::HAL_WIN] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_HAL, format, curAdapterInfo.validDepths[ADAPTERINFO::HAL_WIN]);
+			EnumMultiSample(adapterIndex, D3DDEVTYPE_HAL, format, TRUE, curAdapterInfo.validMultiSampleTypes[ADAPTERINFO::HAL_WIN]);
+		}
+
+		hr = m_pD3D->CheckDeviceType(0, D3DDEVTYPE_HAL, format, format, FALSE);
+		if ( SUCCEEDED(hr) )
+		{
+			curAdapterInfo.bDepthEnable[ADAPTERINFO::HAL_FULL] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_HAL, format, curAdapterInfo.validDepths[ADAPTERINFO::HAL_FULL]);
+			EnumMultiSample(adapterIndex, D3DDEVTYPE_HAL, format, FALSE, curAdapterInfo.validMultiSampleTypes[ADAPTERINFO::HAL_FULL]);
+		}
+
+		// --------------------------------------------------
+		// Enum DepthStencil and multiSample for REF Device 
+		// --------------------------------------------------
+		hr = m_pD3D->CheckDeviceType(0, D3DDEVTYPE_REF, format, format, TRUE);
+		if ( SUCCEEDED(hr) )
+		{
+			curAdapterInfo.bDepthEnable[ADAPTERINFO::REF_WIN] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_REF, format, curAdapterInfo.validDepths[ADAPTERINFO::REF_WIN]);
+			EnumMultiSample(adapterIndex, D3DDEVTYPE_REF, format, TRUE, curAdapterInfo.validMultiSampleTypes[ADAPTERINFO::REF_WIN]);
+		}
+
+		hr = m_pD3D->CheckDeviceType(0, D3DDEVTYPE_REF, format, format, FALSE);
+		if ( SUCCEEDED(hr) )
+		{
+			curAdapterInfo.bDepthEnable[ADAPTERINFO::REF_FULL] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_REF, format, curAdapterInfo.validDepths[ADAPTERINFO::REF_FULL]);
+			EnumMultiSample(adapterIndex, D3DDEVTYPE_REF, format, FALSE, curAdapterInfo.validMultiSampleTypes[ADAPTERINFO::REF_FULL]);
+		}
+ 
+		 // ---------------------------------------------
+		 // Enum for all Display Modes
+		 // ---------------------------------------------
+		 for (UINT modeIndex = 0; modeIndex < modeCount; modeIndex++)
+		 {
+			  D3DDISPLAYMODE curMode;
+
+			  hr = m_pD3D->EnumAdapterModes(adapterIndex, format, modeIndex, &curMode);
+
+			  if (SUCCEEDED(hr))
+			  {
+				  curAdapterInfo.displayModes.push_back(curMode);
+// 				  std::cout << "Width= "   << curMode.Width		  << std::endl;
+// 				  std::cout << "Height= "  << curMode.Height	  << std::endl;
+// 				  std::cout << "Format= "  << curMode.Format	  << std::endl;
+// 				  std::cout << "Refresh= " << curMode.RefreshRate << std::endl;
+			  }
+		}
+		
+	}
 
 	//Checking for hardware vp.
 	//TODO add more checking for future use!!!
-	D3DCAPS9 caps;
+
+	D3DCAPS9 caps; 
 	m_pD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, deviceType, &caps);
 
 	int vp = 0;
@@ -567,6 +648,29 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 		vp = D3DCREATE_HARDWARE_VERTEXPROCESSING;
 	else
 		vp = D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+
+	D3DFORMAT depthstencil;
+	BOOL	  depthStencilEnabled = FALSE;
+	if( m_pD3D->CheckDeviceFormat( 0, deviceType, D3DFMT_X8R8G8B8, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, D3DFMT_D24S8 ) != D3D_OK )
+	{
+		depthStencilEnabled = FALSE;//crash?
+	} 
+	else
+	{
+		depthStencilEnabled = TRUE;
+		depthstencil = D3DFMT_D24S8;
+	}
+
+	DWORD quality;
+	D3DMULTISAMPLE_TYPE multisample;
+	if( m_pD3D->CheckDeviceMultiSampleType( 0, deviceType, D3DFMT_X8R8G8B8, windowed, D3DMULTISAMPLE_16_SAMPLES,
+		&quality ) != D3D_OK )
+	{
+		;
+	} else
+	{
+		multisample = D3DMULTISAMPLE_16_SAMPLES;
+	}
 
 	//Filling out the D3DPRESENT_PARAMETERS structure.
 	D3DPRESENT_PARAMETERS d3dpp;
@@ -579,8 +683,8 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 	d3dpp.SwapEffect                 = D3DSWAPEFFECT_DISCARD; 
 	d3dpp.hDeviceWindow              = m_hWnd;
 	d3dpp.Windowed                   = windowed;
-	d3dpp.EnableAutoDepthStencil     = TRUE; 
-	d3dpp.AutoDepthStencilFormat     = D3DFMT_D24S8;
+	d3dpp.EnableAutoDepthStencil     = depthStencilEnabled; 
+	d3dpp.AutoDepthStencilFormat     = depthstencil;
 	d3dpp.Flags                      = 0;
 	d3dpp.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
 	d3dpp.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE;
@@ -675,6 +779,53 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 	//m_toonEffect->SetTexture("ShadeTex",m_shadeTex);
 
 	return S_OK;
+}
+
+//-----------------------------------------------------------------------------
+// Name : EnumDepthStencil ()
+//-----------------------------------------------------------------------------
+BOOL CGameWin::EnumDepthStencil(D3DFORMAT depthFormats[], UINT formatsCount, UINT adapter, D3DDEVTYPE deviceType, D3DFORMAT backBufferFromat, std::vector<D3DFORMAT>& validDepths)
+{
+	for (UINT i = 0; i < formatsCount; i++)
+	{
+		HRESULT hr;
+
+		hr = m_pD3D->CheckDeviceFormat( adapter, deviceType, backBufferFromat, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, depthFormats[i] );
+		if (SUCCEEDED(hr))
+			validDepths.push_back(depthFormats[i]);
+	}
+
+	if (validDepths.size() > 0)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+//-----------------------------------------------------------------------------
+// Name : EnumMultiSample ()
+//-----------------------------------------------------------------------------
+void CGameWin::EnumMultiSample(UINT adapter, D3DDEVTYPE deviceType, D3DFORMAT backBufferFormat, bool windowed, std::vector<D3DMULTISAMPLE_TYPE>& validMultiSampleTypes)
+{
+	HRESULT hr;
+
+	DWORD quality;
+	D3DMULTISAMPLE_TYPE multisample;
+
+	hr =  m_pD3D->CheckDeviceMultiSampleType( adapter, deviceType, backBufferFormat, windowed, D3DMULTISAMPLE_2_SAMPLES, &quality );
+	if (SUCCEEDED(hr))
+		validMultiSampleTypes.push_back(D3DMULTISAMPLE_2_SAMPLES);
+
+	hr =  m_pD3D->CheckDeviceMultiSampleType( adapter, deviceType, backBufferFormat, windowed, D3DMULTISAMPLE_4_SAMPLES, &quality );
+	if (SUCCEEDED(hr))
+		validMultiSampleTypes.push_back(D3DMULTISAMPLE_4_SAMPLES);
+
+	hr =  m_pD3D->CheckDeviceMultiSampleType( adapter, deviceType, backBufferFormat, windowed, D3DMULTISAMPLE_8_SAMPLES, &quality );
+	if (SUCCEEDED(hr))
+		validMultiSampleTypes.push_back(D3DMULTISAMPLE_8_SAMPLES);
+
+	hr = m_pD3D->CheckDeviceMultiSampleType( adapter, deviceType, backBufferFormat, windowed, D3DMULTISAMPLE_16_SAMPLES, &quality );
+	if (SUCCEEDED(hr))
+		validMultiSampleTypes.push_back(D3DMULTISAMPLE_16_SAMPLES);
 }
 
 //-----------------------------------------------------------------------------

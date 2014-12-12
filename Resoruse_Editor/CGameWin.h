@@ -107,7 +107,42 @@ enum DrawingMethod{DRAW_SIMPLE,DRAW_ATTRIBOBJECT,DRAW_OBJECTATTRIB};
 
 const char	piecesMeshesPath[6][MAX_PATH] = {"pawn.x","knight.x","bishop.x","rook.x","queen.x","king.x"};//store the paths to the pieces meshes 
 
+struct deviceInfo
+{
+	enum MODE{WINDOWED, FULLSCREEN};
 
+	D3DDEVTYPE deviceType;
+	D3DFORMAT fomrat;
+
+	BOOL bDepthEnable[2];
+	std::vector<D3DFORMAT> validDepths[2];
+	std::vector<D3DMULTISAMPLE_TYPE> validMultiSampleTypes[2];
+};
+
+struct ADAPTERINFO
+{
+	enum DEVICETYPES{HAL_WIN,HAL_FULL,REF_WIN,REF_FULL};
+
+	UINT adapterNum;
+	std::string adapterDescription;
+
+	BOOL bDepthEnable[4];
+	std::vector<D3DFORMAT> validDepths[4];
+	std::vector<D3DMULTISAMPLE_TYPE> validMultiSampleTypes[4];
+	std::vector<D3DDISPLAYMODE> displayModes;
+};
+
+struct MODEINFO
+{
+	MODEINFO::MODEINFO(D3DDISPLAYMODE newMode, D3DDEVTYPE newDeviceType)
+	{
+		mode = newMode;
+		deviceType = newDeviceType;
+	}
+
+	D3DDISPLAYMODE mode;
+	D3DDEVTYPE deviceType;
+};
 
 class CGameWin
 {
@@ -162,6 +197,8 @@ private:
 	bool        CreateDisplay		(HINSTANCE hInstance,bool windowed);
 	bool		CreateDisplayWindow (HINSTANCE hInstance);
 	HRESULT		CreateDevice		(bool windowed);
+	BOOL		EnumDepthStencil	(D3DFORMAT depthFormats[], UINT formatsCount, UINT adapter, D3DDEVTYPE deviceType, D3DFORMAT backBufferFromat, std::vector<D3DFORMAT>& validDepths);
+	void		EnumMultiSample		(UINT adapter, D3DDEVTYPE deviceType, D3DFORMAT backBufferFormat, bool windowed, std::vector<D3DMULTISAMPLE_TYPE>& validMultiSampleTypes);
 	//bool		CreateGUIObjects	();
 
 	void		resetDevice			();
@@ -230,7 +267,11 @@ private:
 	// Directx device and object pointers
 	//-------------------------------------------------------------------------
 	IDirect3D9             * m_pD3D;             // Direct3D Object
-	IDirect3DDevice9*        m_pD3DDevice;       // Direct3D Device Object
+	IDirect3DDevice9	   * m_pD3DDevice;       // Direct3D Device Object
+
+	std::vector<MODEINFO> m_displayModes;
+	std::vector<D3DFORMAT> m_adapterFormats;
+	std::vector<ADAPTERINFO> m_adpatersInfo;
 
 	//-------------------------------------------------------------------------
 	// the scene objects data
@@ -252,6 +293,8 @@ private:
 	bool					 m_controlRelocate;
 
 	CControlUI			   * m_pCurSelectedControl;
+
+
 
 	CTimer*					 m_timer;
 
