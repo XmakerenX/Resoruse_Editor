@@ -107,28 +107,26 @@ enum DrawingMethod{DRAW_SIMPLE,DRAW_ATTRIBOBJECT,DRAW_OBJECTATTRIB};
 
 const char	piecesMeshesPath[6][MAX_PATH] = {"pawn.x","knight.x","bishop.x","rook.x","queen.x","king.x"};//store the paths to the pieces meshes 
 
-struct deviceInfo
+struct DEVICETYPEINFO
 {
 	enum MODE{WINDOWED, FULLSCREEN};
 
 	D3DDEVTYPE deviceType;
 	D3DFORMAT fomrat;
 
+	bool bHardwareAcceleration[2];
 	BOOL bDepthEnable[2];
 	std::vector<D3DFORMAT> validDepths[2];
 	std::vector<D3DMULTISAMPLE_TYPE> validMultiSampleTypes[2];
+	std::vector<DWORD> vpTypes;
 };
 
 struct ADAPTERINFO
 {
-	enum DEVICETYPES{HAL_WIN,HAL_FULL,REF_WIN,REF_FULL};
-
 	UINT adapterNum;
 	std::string adapterDescription;
 
-	BOOL bDepthEnable[4];
-	std::vector<D3DFORMAT> validDepths[4];
-	std::vector<D3DMULTISAMPLE_TYPE> validMultiSampleTypes[4];
+	std::vector<DEVICETYPEINFO> deviceTypes;
 	std::vector<D3DDISPLAYMODE> displayModes;
 };
 

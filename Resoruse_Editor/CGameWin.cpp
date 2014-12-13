@@ -585,37 +585,68 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 		// --------------------------------------------------
 		// Enum DepthStencil and multiSample for HAL Device 
 		// --------------------------------------------------
+		DEVICETYPEINFO halDeviceType;
+		halDeviceType.deviceType = D3DDEVTYPE_HAL;
+		halDeviceType.bHardwareAcceleration[DEVICETYPEINFO::WINDOWED] = false;
+		halDeviceType.bHardwareAcceleration[DEVICETYPEINFO::FULLSCREEN] = false;
+
 		hr = m_pD3D->CheckDeviceType(0, D3DDEVTYPE_HAL, format, format, TRUE);
 		if ( SUCCEEDED(hr) )
 		{
-			curAdapterInfo.bDepthEnable[ADAPTERINFO::HAL_WIN] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_HAL, format, curAdapterInfo.validDepths[ADAPTERINFO::HAL_WIN]);
-			EnumMultiSample(adapterIndex, D3DDEVTYPE_HAL, format, TRUE, curAdapterInfo.validMultiSampleTypes[ADAPTERINFO::HAL_WIN]);
+			halDeviceType.bHardwareAcceleration[DEVICETYPEINFO::WINDOWED] = true;
+
+			halDeviceType.bDepthEnable[DEVICETYPEINFO::WINDOWED] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_HAL, format, halDeviceType.validDepths[DEVICETYPEINFO::WINDOWED]);
+			EnumMultiSample(adapterIndex, D3DDEVTYPE_HAL, format, TRUE, halDeviceType.validMultiSampleTypes[DEVICETYPEINFO::WINDOWED]);
 		}
 
 		hr = m_pD3D->CheckDeviceType(0, D3DDEVTYPE_HAL, format, format, FALSE);
 		if ( SUCCEEDED(hr) )
 		{
-			curAdapterInfo.bDepthEnable[ADAPTERINFO::HAL_FULL] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_HAL, format, curAdapterInfo.validDepths[ADAPTERINFO::HAL_FULL]);
-			EnumMultiSample(adapterIndex, D3DDEVTYPE_HAL, format, FALSE, curAdapterInfo.validMultiSampleTypes[ADAPTERINFO::HAL_FULL]);
+			halDeviceType.bHardwareAcceleration[DEVICETYPEINFO::FULLSCREEN] = true;
+
+			halDeviceType.bDepthEnable[DEVICETYPEINFO::FULLSCREEN] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_HAL, format, halDeviceType.validDepths[DEVICETYPEINFO::FULLSCREEN]);
+			EnumMultiSample(adapterIndex, D3DDEVTYPE_HAL, format, FALSE, halDeviceType.validMultiSampleTypes[DEVICETYPEINFO::FULLSCREEN]);
 		}
+
+		D3DCAPS9 caps; 
+		m_pD3D->GetDeviceCaps(adapterIndex, D3DDEVTYPE_HAL, &caps);
+
+		int vp = 0;
+		if( caps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT )
+			vp = D3DCREATE_HARDWARE_VERTEXPROCESSING;
+		else
+			vp = D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+
+		curAdapterInfo.deviceTypes.push_back(halDeviceType);
 
 		// --------------------------------------------------
 		// Enum DepthStencil and multiSample for REF Device 
 		// --------------------------------------------------
+		DEVICETYPEINFO refDeviceType;
+		refDeviceType.deviceType = D3DDEVTYPE_REF;
+		refDeviceType.bHardwareAcceleration[DEVICETYPEINFO::WINDOWED] = false;
+		refDeviceType.bHardwareAcceleration[DEVICETYPEINFO::FULLSCREEN] = false;
+
 		hr = m_pD3D->CheckDeviceType(0, D3DDEVTYPE_REF, format, format, TRUE);
 		if ( SUCCEEDED(hr) )
 		{
-			curAdapterInfo.bDepthEnable[ADAPTERINFO::REF_WIN] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_REF, format, curAdapterInfo.validDepths[ADAPTERINFO::REF_WIN]);
-			EnumMultiSample(adapterIndex, D3DDEVTYPE_REF, format, TRUE, curAdapterInfo.validMultiSampleTypes[ADAPTERINFO::REF_WIN]);
+			refDeviceType.bHardwareAcceleration[DEVICETYPEINFO::WINDOWED] = true;
+
+			refDeviceType.bDepthEnable[DEVICETYPEINFO::WINDOWED] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_REF, format, refDeviceType.validDepths[DEVICETYPEINFO::WINDOWED]);
+			EnumMultiSample(adapterIndex, D3DDEVTYPE_REF, format, TRUE, refDeviceType.validMultiSampleTypes[DEVICETYPEINFO::WINDOWED]);
 		}
 
 		hr = m_pD3D->CheckDeviceType(0, D3DDEVTYPE_REF, format, format, FALSE);
 		if ( SUCCEEDED(hr) )
 		{
-			curAdapterInfo.bDepthEnable[ADAPTERINFO::REF_FULL] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_REF, format, curAdapterInfo.validDepths[ADAPTERINFO::REF_FULL]);
-			EnumMultiSample(adapterIndex, D3DDEVTYPE_REF, format, FALSE, curAdapterInfo.validMultiSampleTypes[ADAPTERINFO::REF_FULL]);
+			refDeviceType.bHardwareAcceleration[DEVICETYPEINFO::FULLSCREEN] = true;
+
+			refDeviceType.bDepthEnable[DEVICETYPEINFO::FULLSCREEN] = EnumDepthStencil( depthFormats, 2, adapterIndex, D3DDEVTYPE_REF, format, refDeviceType.validDepths[DEVICETYPEINFO::FULLSCREEN]);
+			EnumMultiSample(adapterIndex, D3DDEVTYPE_REF, format, FALSE, refDeviceType.validMultiSampleTypes[DEVICETYPEINFO::FULLSCREEN]);
 		}
  
+		curAdapterInfo.deviceTypes.push_back(refDeviceType);
+
 		 // ---------------------------------------------
 		 // Enum for all Display Modes
 		 // ---------------------------------------------
@@ -634,6 +665,8 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 // 				  std::cout << "Refresh= " << curMode.RefreshRate << std::endl;
 			  }
 		}
+
+		 m_adpatersInfo.push_back(curAdapterInfo);
 		
 	}
 
