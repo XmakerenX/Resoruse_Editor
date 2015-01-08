@@ -39,6 +39,7 @@
 // #include "GUI\CStatic3D.h"
 
 //#include "Pawnsdef.h" //pawns promotion Dilaog definitions of controls ID's
+#include "settingsDef.h"
 
 const UINT MAX_ACTIVE_LIGHTS = 4;
 
@@ -94,7 +95,7 @@ class CMyObject;
 #define IDC_CONTROLY			 141
 #define IDC_RELOCATEBUTTON		 142
 #define IDC_DELETEBUTTON		 143
-
+#define IDC_OPTIONSBUTTON		 144
 
 
 #define IDC_GENCONTROLID         200
@@ -170,6 +171,7 @@ public:
 	void		 SetGenDialogSize			(CButtonUI* pDialogSetButton);
 	void		 RelocateControlClicked		(CButtonUI* pRecloateControlButton);
 	void		 DeleteControlClicked		(CButtonUI* pDeleteButton);
+	void		 OptionsControlClicked		(CButtonUI* pOptionsButton);
 	void         ComboboxSelChg				(CComboBoxUI* pCombobox);
 
 	void		 SetStaticGUI				( bool ControlSelected = false);
@@ -285,6 +287,7 @@ private:
 
 	CDialogUI				 m_GenDialog;
 	CDialogUI				 m_EditDialog;
+	CDialogUI				 m_OptionsDialog;
 	ULONG					 m_GenControlNum;
 	ULONG					 m_curControlID;
 	bool					 m_controlInCreation;

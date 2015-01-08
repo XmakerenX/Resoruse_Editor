@@ -117,6 +117,9 @@ bool CGameWin::InitInstance(HINSTANCE hInstance, LPCTSTR lpCmdLine, int iCmdShow
 //-----------------------------------------------------------------------------
 LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	if (m_OptionsDialog.MsgProc(hWnd, message, wParam, lParam, m_timer))
+		return 0;
+
 	if (m_GenDialog.MsgProc(hWnd,message,wParam,lParam, m_timer) )
 		return 0;
 
@@ -608,14 +611,14 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 			EnumMultiSample(adapterIndex, D3DDEVTYPE_HAL, format, FALSE, halDeviceType.validMultiSampleTypes[DEVICETYPEINFO::FULLSCREEN]);
 		}
 
+		// Enum all valid vertex processing types
 		D3DCAPS9 caps; 
 		m_pD3D->GetDeviceCaps(adapterIndex, D3DDEVTYPE_HAL, &caps);
 
-		int vp = 0;
 		if( caps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT )
-			vp = D3DCREATE_HARDWARE_VERTEXPROCESSING;
-		else
-			vp = D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+			halDeviceType.vpTypes.push_back(D3DCREATE_HARDWARE_VERTEXPROCESSING);
+		
+		halDeviceType.vpTypes.push_back(D3DCREATE_SOFTWARE_VERTEXPROCESSING);
 
 		curAdapterInfo.deviceTypes.push_back(halDeviceType);
 
@@ -645,6 +648,15 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 			EnumMultiSample(adapterIndex, D3DDEVTYPE_REF, format, FALSE, refDeviceType.validMultiSampleTypes[DEVICETYPEINFO::FULLSCREEN]);
 		}
  
+		// Enum all valid vertex processing types
+		//D3DCAPS9 caps; 
+		m_pD3D->GetDeviceCaps(adapterIndex, D3DDEVTYPE_HAL, &caps);
+
+		if( caps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT )
+			refDeviceType.vpTypes.push_back(D3DCREATE_HARDWARE_VERTEXPROCESSING);
+
+		refDeviceType.vpTypes.push_back(D3DCREATE_SOFTWARE_VERTEXPROCESSING);
+
 		curAdapterInfo.deviceTypes.push_back(refDeviceType);
 
 		 // ---------------------------------------------
@@ -672,7 +684,6 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 
 	//Checking for hardware vp.
 	//TODO add more checking for future use!!!
-
 	D3DCAPS9 caps; 
 	m_pD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, deviceType, &caps);
 
@@ -1128,12 +1139,13 @@ void CGameWin::FrameAdvance(float timeDelta)
 
 	m_EditDialog.OnRender(timeDelta,  D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
 	m_GenDialog.OnRender(timeDelta, D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
+	m_OptionsDialog.OnRender(timeDelta, D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
 
  	CMySprite* pMySprite = m_assetManger.getMySprite();
  	pMySprite->render(m_highLightEffect);
 
 	sprite->End();
-
+,
 	pMySprite->renderTopQuads(m_highLightEffect);
 	sprite2->End();
 
@@ -1323,6 +1335,7 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	// TODO: check if m_hWnd is set to valid value!
 	m_EditDialog.SetCallback(StaticOnGUIEvent);
 	m_GenDialog.SetCallback (StaticOnGUIEvent);
+	m_OptionsDialog.SetCallback(StaticOnGUIEvent);
 
 	//-----------------------------------------------------------------------------
 	// Dialog initialization
@@ -1492,11 +1505,19 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	pDeleteButton->connectToClick( boost::bind(&CGameWin::DeleteControlClicked, this, _1) );
 	pDeleteButton->setEnabled(false);
 
+	CButtonUI* pOptionsButton = nullptr;
+	m_EditDialog.addButton(IDC_OPTIONSBUTTON, "Options", 450, 75, 100, 34, 0, &pOptionsButton);
+	pOptionsButton->connectToClick( boost::bind(&CGameWin::OptionsControlClicked, this, _1) );
+	pOptionsButton->setEnabled(true);
+
 	//---------------------------------------------------------------------------
 	// Dialog initialization of the generated Dialog
 	//-----------------------------------------------------------------------------
 	m_GenDialog.init(500,200, 18,"Gendialog", "dialog.png", D3DCOLOR_ARGB(200,255,255,255), m_hWnd, m_assetManger);
 	m_GenDialog.setLocation(0, 50);
+
+	m_OptionsDialog.init(100,100, 18, "Gendlin", "dialog.png")
+	m_OptionsDialog.LoadDialogFromFile("settings.txt", m_timer);
 
 	return true;
 }
@@ -2218,6 +2239,14 @@ void CGameWin::DeleteControlClicked(CButtonUI* pDeleteButton)
 	m_EditDialog.getButton(IDC_RELOCATEBUTTON)->setEnabled(false);
 	m_EditDialog.getButton(IDC_DELETEBUTTON)->setEnabled(false);
 
+}
+
+//-----------------------------------------------------------------------------
+// Name : OptionsControlClicked ()
+//-----------------------------------------------------------------------------
+void CGameWin::OptionsControlClicked(CButtonUI* pOptionsButton)
+{
+	;
 }
 
 //-----------------------------------------------------------------------------
