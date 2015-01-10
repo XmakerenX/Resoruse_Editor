@@ -1516,8 +1516,39 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	m_GenDialog.init(500,200, 18,"Gendialog", "dialog.png", D3DCOLOR_ARGB(200,255,255,255), m_hWnd, m_assetManger);
 	m_GenDialog.setLocation(0, 50);
 
-	m_OptionsDialog.init(100,100, 18, "Gendlin", "dialog.png")
+	m_OptionsDialog.init(100,100, 18, "Gendlin", "dialog.png", D3DCOLOR_ARGB(200,255,255,255), m_hWnd, m_assetManger);
 	m_OptionsDialog.LoadDialogFromFile("settings.txt", m_timer);
+
+	m_OptionsDialog.getComboBox(IDC_APIVERCOM)->AddItem("Direct3D 9", nullptr);
+
+	for (UINT i = 0; i < m_adpatersInfo.size(); i++)
+	{
+		m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)->AddItem(m_adpatersInfo[i].adapterDescription.c_str(), nullptr);
+	}
+
+	if (m_adpatersInfo.size() == 0 )
+		return false;
+
+	ADAPTERINFO& curAdapter = m_adpatersInfo[0];
+
+	if (curAdapter.deviceTypes.size() == 0)
+		return false;
+
+	for (UINT i = 0; i < curAdapter.deviceTypes.size(); i++)
+		m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->AddItem(curAdapter.deviceTypes[i].deviceDescription.c_str(), nullptr);
+
+	DEVICETYPEINFO& curDeviceInfo = curAdapter.deviceTypes[0];
+
+	m_OptionsDialog.getComboBox(IDC_BBFORMATCOM)->AddItem("D3DFMT_X8R8G8B8",nullptr);
+
+	if (curDeviceInfo.bDepthEnable[DEVICETYPEINFO::WINDOWED])
+	{
+		for (UINT i = 0; i < curDeviceInfo.validDepths[DEVICETYPEINFO::WINDOWED].size(); i++)
+			m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->AddItem(D3DFORMAT)
+	}
+	else
+		m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->setEnabled(false);
+
 
 	return true;
 }

@@ -113,6 +113,7 @@ struct DEVICETYPEINFO
 	enum MODE{WINDOWED, FULLSCREEN};
 
 	D3DDEVTYPE deviceType;
+	std::string deviceDescription;
 	D3DFORMAT fomrat;
 
 	bool bHardwareAcceleration[2];
