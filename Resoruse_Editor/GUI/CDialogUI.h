@@ -134,6 +134,7 @@ public:
 	//-------------------------------------------------------------------------
 	void	setSize			 (UINT width, UINT height);
 	void	setLocation		 (int x, int y);
+	void	setVisible		 (bool bVisible);
 
 	POINT   getLocation	     ();
 	LONG	getCaptionHeight ();

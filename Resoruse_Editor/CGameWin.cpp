@@ -2,6 +2,10 @@
 // #include "GUI\CComboBox3D.h"
 // #include "GUI\CListBox3D.h"
 
+const std::unordered_map<UINT,char*> CGameWin::s_depthFormatsString = InitDepthFormatMap();
+const std::unordered_map<UINT,char*> CGameWin::s_mutliSampleString = InitMultiSampleMap();
+const std::unordered_map<UINT,char*> CGameWin::s_vertexProcString = InitVertexProcMap();
+
 //-----------------------------------------------------------------------------
 // Name : CGameWin (constructor)
 //-----------------------------------------------------------------------------
@@ -956,365 +960,45 @@ void CGameWin::resetDevice()
 }
 
 //-----------------------------------------------------------------------------
-// Name : CreateGUIObjects 
+// Name : InitDepthFormatMap ()
 //-----------------------------------------------------------------------------
-// bool CGameWin::CreateGUIObjects()
-// {
-// 	int DilaogX,DilaogY;
-// 	//setting GUI Items
-// 	m_GuiDilaogResManger.OnD3D9CreateDevice(m_pD3DDevice);
-// 	m_GuiDilaogResManger.OnD3D9ResetDevice();
-// 
-// 	m_GuiDialog.SetCallback(StaticOnGUIEvent);
-// 	m_GuiSelectPawn.SetCallback(StaticOnGUIEvent);
-// 	
-// 	//m_GuiDialog.AddButton(IDC_DISABLE, "Disable", 300 , 300, 125, 22);
-// 
-// 	m_GuiDialog.SetLocation(0, 0);
-// 	m_GuiDialog.SetSize( Width, Height );
-// 
-// 	m_GuiSelectPawn.LoadDialogFromFile("Pawns.txt");
-// 	DilaogX = ( Width / 2 ) - ( m_GuiSelectPawn.GetWidth() / 2);
-// 	DilaogY = ( Height / 2) - ( m_GuiSelectPawn.GetHeight() / 2);
-// 
-// 	m_GuiSelectPawn.SetLocation(DilaogX,DilaogY);
-// 	m_GuiSelectPawn.SetVisible(false);
-// 	return true;
-// }
-
-//-----------------------------------------------------------------------------
-// Name : FrameAdvance 
-// Desc : calls every time a frame need to be rendered
-//        handles the rendering of all the objects in the scene
-//-----------------------------------------------------------------------------
-void CGameWin::FrameAdvance(float timeDelta)
+std::unordered_map<UINT,char*> CGameWin::InitDepthFormatMap()
 {
-	m_debugString.clear();
+	std::unordered_map<UINT,char*> m;
 
-	// check if the device need to be reset
-	if (m_deviceReset)
-		resetDevice();
+	m[D3DFMT_D24S8] = "D3DFMT_D24S8";
+	m[D3DFMT_D16] = "D3DFMT_D16";
 
-	HRESULT hr;
-
-	POINT cursor;
-	DWORD faceCount = -1;
-
-	//set cursor postion
-	cursor.x=1;
-	cursor.y=1;
-
-	static float angle  = (3.0f * D3DX_PI) / 2.0f;
-	static float height = 5.0f;
-	
-	DrawDebugText(); //draw debug info
-
-	RECT rc;//rect that says where the text should be drawn
-
-	HRESULT hRet = S_FALSE;
-
-	//ProcessInput(timeDelta,angle,height);
-
-	if (m_bPicking)
-		hRet = pick(cursor,faceCount);
-
-	addDebugText("cursor X:", cursor.x);
-	addDebugText("Y:", cursor.y);
-
-	if (hRet == S_OK)
-		m_debugString+=" Hit!!";
-	else
-		m_debugString+=" miss me NANA BANANA";
-
-	addDebugText("face index:", faceCount);
-
-	if (m_DrawingMethod == DRAW_ATTRIBOBJECT)
-		m_debugString+="\n DRAW_ATTRIBOBJECT\n";
-	else
-		m_debugString+="\n DRAW_OBJECTATTRIB\n";
-
-	D3DXVECTOR3 position( cosf(angle) * 7.0f, height, sinf(angle) * 7.0f );
-	D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
-	D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
-	D3DXMATRIX V;
-	D3DXVECTOR3 position2( 0, 0, -7);
-
-	m_pCameras[0]->UpdateRenderView( m_pD3DDevice );
-	
-	//
-	// Draw the scene:
-	//
-	//m_pD3DDevice->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x00000000, 1.0f, 0);
-	m_pD3DDevice->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, d3d::GRAY, 1.0f, 0);
-
-	m_pD3DDevice->BeginScene();
-
-	D3DXVECTOR3 cameraEye = m_pCameras[m_cameraIndex]->GetPosition();
-	m_outlineEffect->SetVector(m_vecEyeH, &D3DXVECTOR4(cameraEye.x, cameraEye.y, cameraEye.z, 0) );
-	//m_outlineEffect->SetVector("vecEye", &D3DXVECTOR4(cameraEye.x, cameraEye.y, cameraEye.z, 0) );
-
-	UINT numPasses = 0;
- 
-	m_pD3DDevice->SetFVF(VERTEX_FVF);
-
-	switch(m_DrawingMethod)
-	{
-	case DRAW_ATTRIBOBJECT:
-		{
-			for (UINT atribNum = 0; atribNum < m_assetManger.getAttribCount(); atribNum++)
-			{
-				setAttribute(atribNum);
-
-				m_outlineEffect->Begin(&numPasses, 0);
-
-				for (UINT numPass = 0; numPass < numPasses; numPass++ )
-				{
-					for (UINT objI = 0; objI < m_objects.size(); objI++)
-					{
-						D3DXMATRIX WorldViewProj;
-						D3DXMATRIX ViewProj;
-
-						WorldViewProj = m_objects[objI]->getWorldMatrix() * m_pCameras[0]->GetViewMatrix() * m_pCameras[0]->GetProjMatrix();
-						ViewProj = m_pCameras[0]->GetViewMatrix() * m_pCameras[0]->GetProjMatrix();
- 
-						if (objI == activeMeshIndex)
-							m_outlineEffect->SetBool(m_bHighLightH, TRUE);
-						else
-							m_outlineEffect->SetBool(m_bHighLightH, FALSE);
-
-						m_objects[objI]->drawSubset(m_pD3DDevice, atribNum, m_outlineEffect, numPass, ViewProj);
-					}
-				}
-				m_outlineEffect->End();
-			}
-		}break;
-
-	case DRAW_OBJECTATTRIB:
-		{
-			for (UINT objI = 0; objI < m_objects.size(); objI++)
-			{
-				D3DXMATRIX WorldViewProj, ViewProj;
-
-				WorldViewProj = m_objects[objI]->getWorldMatrix() * m_pCameras[0]->GetViewMatrix() * m_pCameras[0]->GetProjMatrix();
-				ViewProj = m_pCameras[0]->GetViewMatrix() * m_pCameras[0]->GetProjMatrix();
-
-				hr = m_outlineEffect->SetMatrix("matWorldViewProj", &WorldViewProj);
-				hr = m_outlineEffect->SetMatrix("matWorld", &m_objects[objI]->getWorldMatrix());
-
-				for (UINT attribNum = 0; attribNum < m_assetManger.getAttribCount(); attribNum++)
-				{
-					hr = setAttribute(attribNum);
-
-					hr = m_outlineEffect->Begin(&numPasses, 0);
-
-					for (UINT numPass = 0; numPass < numPasses; numPass++ )
-					{
-						m_objects[objI]->drawSubset(NULL, attribNum,m_outlineEffect, numPass, ViewProj);
-					}
-
-					m_outlineEffect->End();
-				}
-			}
-		}break;
-	}
-
-	//LPD3DXSPRITE sprite = m_assetManger.getSprite();
-	//CMySprite *  sprite = m_assetManger.getMySprite();
-	
-	D3DXHANDLE illSHaderTech = m_highLightEffect->GetTechniqueByName("illuminateShader");
-
-	hr = m_highLightEffect->SetTechnique(illSHaderTech);
-
-	LPD3DXFONT pFont = m_assetManger.getFontPtr(0);
-	LPD3DXSPRITE sprite = m_assetManger.getSprite();
-	LPD3DXSPRITE sprite2 = m_assetManger.getTopSprite();
-
-	sprite2->Begin(D3DXSPRITE_DONOTMODIFY_RENDERSTATE);
-
-	sprite->Begin(D3DXSPRITE_DONOTMODIFY_RENDERSTATE);
-
-// 	RECT rcDest;
-// 	SetRect(&rcDest, 550, 0, 1050, 15);
-// 	pFont->DrawTextA(sprite2, "Test!", -1, &rcDest, DT_LEFT , d3d::CYAN);
-
-	m_EditDialog.OnRender(timeDelta,  D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
-	m_GenDialog.OnRender(timeDelta, D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
-	m_OptionsDialog.OnRender(timeDelta, D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
-
- 	CMySprite* pMySprite = m_assetManger.getMySprite();
- 	pMySprite->render(m_highLightEffect);
-
-	sprite->End();
-,
-	pMySprite->renderTopQuads(m_highLightEffect);
-	sprite2->End();
-
-
-	m_pD3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
-	m_pD3DDevice->SetFVF(VERTEX_FVF);
-
-	SetRect( &rc, 0, 0, 30, 30 );
-	m_fpsFont->DrawText( NULL,
-		m_debugString.c_str(), -1, &rc,
-		DT_NOCLIP, D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
-
-
-//	m_GuiSelectPawn.OnRender(timeDelta);
-//	m_GuiDialog.OnRender(timeDelta);
-
-	hr = m_pD3DDevice->EndScene();
-	//TODO: add something that checks if the device was lost
-	hr = m_pD3DDevice->Present(0, 0, 0, 0);
-
-	m_pD3DDevice->SetFVF(VERTEX_FVF);
-	setRenderStates();
-
+	return m;
 }
 
 //-----------------------------------------------------------------------------
-// Name : DrawDebugText ()
-// Desc : render to screen the debug string that include info about fps, camera pos, etc..
+// Name : InitMultiSampleMap ()
 //-----------------------------------------------------------------------------
-void CGameWin::DrawDebugText()
+std::unordered_map<UINT,char*> CGameWin::InitMultiSampleMap()
 {
-	D3DXVECTOR3 camPos;
-	D3DXVECTOR3 camLook;
+	std::unordered_map<UINT,char*> m;
 
-	camPos=m_pCameras[m_cameraIndex]->GetPosition();
-	camLook=m_pCameras[m_cameraIndex]->GetLook();
+	m[D3DMULTISAMPLE_NONE]       = "D3DMULTISAMPLE_NONE";
+	m[D3DMULTISAMPLE_2_SAMPLES]  = "D3DMULTISAMPLE_2_SAMPLES";
+	m[D3DMULTISAMPLE_4_SAMPLES]  = "D3DMULTISAMPLE_4_SAMPLES";
+	m[D3DMULTISAMPLE_8_SAMPLES]  = "D3DMULTISAMPLE_8_SAMPLES";
+	m[D3DMULTISAMPLE_16_SAMPLES] = "D3DMULTISAMPLE_16_SAMPLES";
 
-	addDebugText("FPS:", m_timer->getFPS());
-	addDebugText("POS:", camPos.x);
-	addDebugText(NULL, camPos.y);
-	addDebugText(NULL, camPos.z);
-	addDebugText("LOOK: X:", camLook.x);
-	addDebugText("Y:", camLook.y);
-	addDebugText("Z:", camLook.z);
-	addDebugText("\ncurrent active mesh:", activeMeshIndex);
-
+	return m;
 }
 
 //-----------------------------------------------------------------------------
-// Name : setAttribute ()
-// Desc : selects the current attribute for rendering and sends it's data to shader
+// Name : InitVertexProcMap ()
 //-----------------------------------------------------------------------------
-HRESULT CGameWin::setAttribute(UINT attribNum)
+std::unordered_map<ULONG,char*> CGameWin::InitVertexProcMap()
 {
-	HRESULT hr;
-	long  MaterialIndex, TextureIndex;
-	const ATTRIBUTE_ITEM& attribComboItem = m_assetManger.getAtribItem(attribNum);
+	std::unordered_map<ULONG,char*> m;
 
-	//setup current matial info to shader
-	TextureIndex  = attribComboItem.TextureIndex;
+	m[D3DCREATE_HARDWARE_VERTEXPROCESSING] = "D3DCREATE_HARDWARE_VERTEXPROCESSING";
+	m[D3DCREATE_SOFTWARE_VERTEXPROCESSING] = "D3DCREATE_SOFTWARE_VERTEXPROCESSING";
 
-	if (TextureIndex >= 0)
-	{
-		hr = m_outlineEffect->SetTechnique(m_lightTexTechHandle);
-		hr = m_outlineEffect->SetTexture(m_MeshTextureH, m_assetManger.getTextureItem(TextureIndex)->Texture);
-		//hr = m_outlineEffect->SetTexture("MeshTexture", m_pTextureList[TextureIndex]->Texture);
-	}
-	else
-	{
-		hr = m_outlineEffect->SetTechnique(m_lightTechHnadle);
-	}
-
-	MaterialIndex = attribComboItem.MaterialIndex;
-
-	if ( MaterialIndex >= 0 )
-	{
-		const OBJMATERIAL& curMatterialItem = m_assetManger.getMaterialItem(MaterialIndex);
-		D3DXVECTOR4 matrialDiffuse = curMatterialItem.Diffuse; 
-
-		D3DXVECTOR4 matrialAmbient = curMatterialItem.Ambient;
-		matrialAmbient.x *= 0.6f;
-		matrialAmbient.y *= 0.6f;
-		matrialAmbient.z *= 0.6f;
-
-		D3DXVECTOR4 matrialSpecular = curMatterialItem.Specular;
-
-		m_outlineEffect->SetVector(m_vecDiffuseMtrlH, &matrialDiffuse);
-		m_outlineEffect->SetVector(m_vecAmbientMtrlH, &matrialAmbient);
-		m_outlineEffect->SetVector(m_vecSpecularMtrlH, &matrialSpecular);
-		m_outlineEffect->SetFloat(m_SpecularPowerH, curMatterialItem.Power);
-		// 		m_outlineEffect->SetVector("vecDiffuse", &matrialDiffuse);
-		// 		m_outlineEffect->SetVector("vecAmbient", &matrialAmbient);
-	}
-	else
-	{
-		m_outlineEffect->SetVector(m_vecDiffuseMtrlH, &D3DXVECTOR4( 1.0f, 1.0f, 1.0f, 1.0f) );
-		m_outlineEffect->SetVector(m_vecAmbientMtrlH, &D3DXVECTOR4( 1.0f * 0.6f, 1.0f * 0.6f, 1.0f * 0.6f, 1.0f) );
-		m_outlineEffect->SetVector(m_vecSpecularMtrlH, &D3DXVECTOR4( 1.0f, 1.0f, 1.0f, 1.0f));
-		m_outlineEffect->SetFloat(m_SpecularPowerH, 8.0f);
-		// 		m_outlineEffect->SetVector("vecDiffuse", &D3DXVECTOR4( 1.0f, 1.0f, 1.0f, 1.0f) );
-		// 		m_outlineEffect->SetVector("vecAmbient", &D3DXVECTOR4( 1.0f * 0.6f, 1.0f * 0.6f, 1.0f * 0.6f, 1.0f) );
-	}
-
-	return hr;
-}
-
-//-----------------------------------------------------------------------------
-// Name : setLight ()
-// Desc : selects the given light as an active light 
-//-----------------------------------------------------------------------------
-void CGameWin::setLight(LIGHT_PREFS& light, ID3DXEffect * effect, UINT index)
-{
-	effect->SetValue (m_lightPosH[index], &light.lightPos, sizeof(D3DXVECTOR3) );
-	effect->SetVector(m_vecLightDirH[index], &light.lightDir);
-	effect->SetValue (m_lightAttenH[index], &light.lightAtten, sizeof(D3DXVECTOR3) );
-
-	effect->SetVector(m_vecDiffuseLightH[index], &light.lightDiffuse);
-	effect->SetVector(m_vecSpecularLightH[index], &light.lightSpecular);
-	effect->SetVector(m_vecAmbientLightH[index], &light.lightAmbient);
-	effect->SetFloat (m_SpotPowerH[index], light.lightSpotPower);
-
-	//effect->SetFloat (m_SpecularPowerH, light.lightSpecularPower);
-}
-
-//-----------------------------------------------------------------------------
-// Name : setRenderStates ()
-// Desc : sets the render state that the game uses for rendering
-//-----------------------------------------------------------------------------
-void CGameWin::setRenderStates() 
-{
-	m_pD3DDevice->SetRenderState(D3DRS_FILLMODE,D3DFILL_SOLID);
-	//m_pD3DDevice->SetRenderState(D3DRS_FILLMODE,D3DFILL_WIREFRAME);
-	m_pD3DDevice->SetRenderState(D3DRS_SPECULARENABLE, FALSE);
-
-	m_pD3DDevice->SetRenderState( D3DRS_LIGHTING, FALSE );
-	m_pD3DDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
-
-	m_pD3DDevice->SetRenderState(D3DRS_NORMALIZENORMALS, FALSE);
-
-	m_pD3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-	m_pD3DDevice->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATEREQUAL);
-	//m_pD3DDevice->SetRenderState(D3DRS_ALPHAREF, (DWORD)8);
-	m_pD3DDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE); 
-
-	m_pD3DDevice->SetRenderState(D3DRS_SRCBLEND,D3DBLEND_SRCALPHA);
-	m_pD3DDevice->SetRenderState(D3DRS_DESTBLEND,D3DBLEND_INVSRCALPHA);
-	m_pD3DDevice->SetRenderState(D3DRS_BLENDOP,D3DBLENDOP_ADD);
-
-
-}
-//-----------------------------------------------------------------------------
-// Name : addDebugText ()
-// Desc : add a string to the debug text buffer also allows to give a variable that
-//		  has a conversion function to string
-//-----------------------------------------------------------------------------
-template <class ValueType> 
-void CGameWin::addDebugText(char* Text,ValueType value )
-{
-	std::stringstream out;
-
-	if (Text != NULL)
-		m_debugString += Text;
-
-	m_debugString += " ";
-
-	out << value;
-	m_debugString += out.str() + " ";
-
-
+	return m;
 }
 
 //-----------------------------------------------------------------------------
@@ -1510,14 +1194,18 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	pOptionsButton->connectToClick( boost::bind(&CGameWin::OptionsControlClicked, this, _1) );
 	pOptionsButton->setEnabled(true);
 
-	//---------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------
 	// Dialog initialization of the generated Dialog
 	//-----------------------------------------------------------------------------
 	m_GenDialog.init(500,200, 18,"Gendialog", "dialog.png", D3DCOLOR_ARGB(200,255,255,255), m_hWnd, m_assetManger);
 	m_GenDialog.setLocation(0, 50);
 
+	//-----------------------------------------------------------------------------
+	// initialization of Options Dialog
+	//-----------------------------------------------------------------------------
 	m_OptionsDialog.init(100,100, 18, "Gendlin", "dialog.png", D3DCOLOR_ARGB(200,255,255,255), m_hWnd, m_assetManger);
 	m_OptionsDialog.LoadDialogFromFile("settings.txt", m_timer);
+	m_OptionsDialog.setVisible(false);
 
 	m_OptionsDialog.getComboBox(IDC_APIVERCOM)->AddItem("Direct3D 9", nullptr);
 
@@ -1544,13 +1232,392 @@ void CGameWin::addDebugText(char* Text,ValueType value )
 	if (curDeviceInfo.bDepthEnable[DEVICETYPEINFO::WINDOWED])
 	{
 		for (UINT i = 0; i < curDeviceInfo.validDepths[DEVICETYPEINFO::WINDOWED].size(); i++)
-			m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->AddItem(D3DFORMAT)
+		{
+			std::vector<D3DFORMAT>& curValidDepths = curDeviceInfo.validDepths[DEVICETYPEINFO::WINDOWED];
+			m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->AddItem( s_depthFormatsString[ curValidDepths[i] ], &curValidDepths[i]);
+		}
 	}
 	else
 		m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->setEnabled(false);
 
+	std::vector<D3DMULTISAMPLE_TYPE> curValidMultiSampleTypes;
+	curValidMultiSampleTypes = curDeviceInfo.validMultiSampleTypes[DEVICETYPEINFO::WINDOWED];
+
+	for (UINT i = 0; i < curValidMultiSampleTypes.size(); i++)
+	{
+		m_OptionsDialog.getComboBox(IDC_MULSAMPLECOM)->AddItem(s_mutliSampleString[ curValidMultiSampleTypes[i] ], &curValidMultiSampleTypes[i]);
+	}
+
+	for (UINT i = 0; i < curDeviceInfo.vpTypes.size(); i++)
+	{
+		ULONG curVpType = curDeviceInfo.vpTypes[i];
+		if ( s_vertexProcString.find(curVpType) != std::unordered_map::end)
+			m_OptionsDialog.getComboBox(IDC_VERTEXPROCCOM)->AddItem(s_vertexProcString[curVpType], &curVpType);
+	}
 
 	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Name : CreateGUIObjects 
+//-----------------------------------------------------------------------------
+// bool CGameWin::CreateGUIObjects()
+// {
+// 	int DilaogX,DilaogY;
+// 	//setting GUI Items
+// 	m_GuiDilaogResManger.OnD3D9CreateDevice(m_pD3DDevice);
+// 	m_GuiDilaogResManger.OnD3D9ResetDevice();
+// 
+// 	m_GuiDialog.SetCallback(StaticOnGUIEvent);
+// 	m_GuiSelectPawn.SetCallback(StaticOnGUIEvent);
+// 	
+// 	//m_GuiDialog.AddButton(IDC_DISABLE, "Disable", 300 , 300, 125, 22);
+// 
+// 	m_GuiDialog.SetLocation(0, 0);
+// 	m_GuiDialog.SetSize( Width, Height );
+// 
+// 	m_GuiSelectPawn.LoadDialogFromFile("Pawns.txt");
+// 	DilaogX = ( Width / 2 ) - ( m_GuiSelectPawn.GetWidth() / 2);
+// 	DilaogY = ( Height / 2) - ( m_GuiSelectPawn.GetHeight() / 2);
+// 
+// 	m_GuiSelectPawn.SetLocation(DilaogX,DilaogY);
+// 	m_GuiSelectPawn.SetVisible(false);
+// 	return true;
+// }
+
+//-----------------------------------------------------------------------------
+// Name : FrameAdvance 
+// Desc : calls every time a frame need to be rendered
+//        handles the rendering of all the objects in the scene
+//-----------------------------------------------------------------------------
+void CGameWin::FrameAdvance(float timeDelta)
+{
+	m_debugString.clear();
+
+	// check if the device need to be reset
+	if (m_deviceReset)
+		resetDevice();
+
+	HRESULT hr;
+
+	POINT cursor;
+	DWORD faceCount = -1;
+
+	//set cursor postion
+	cursor.x=1;
+	cursor.y=1;
+
+	static float angle  = (3.0f * D3DX_PI) / 2.0f;
+	static float height = 5.0f;
+	
+	DrawDebugText(); //draw debug info
+
+	RECT rc;//rect that says where the text should be drawn
+
+	HRESULT hRet = S_FALSE;
+
+	//ProcessInput(timeDelta,angle,height);
+
+	if (m_bPicking)
+		hRet = pick(cursor,faceCount);
+
+	addDebugText("cursor X:", cursor.x);
+	addDebugText("Y:", cursor.y);
+
+	if (hRet == S_OK)
+		m_debugString+=" Hit!!";
+	else
+		m_debugString+=" miss me NANA BANANA";
+
+	addDebugText("face index:", faceCount);
+
+	if (m_DrawingMethod == DRAW_ATTRIBOBJECT)
+		m_debugString+="\n DRAW_ATTRIBOBJECT\n";
+	else
+		m_debugString+="\n DRAW_OBJECTATTRIB\n";
+
+	D3DXVECTOR3 position( cosf(angle) * 7.0f, height, sinf(angle) * 7.0f );
+	D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
+	D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
+	D3DXMATRIX V;
+	D3DXVECTOR3 position2( 0, 0, -7);
+
+	m_pCameras[0]->UpdateRenderView( m_pD3DDevice );
+	
+	//
+	// Draw the scene:
+	//
+	//m_pD3DDevice->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x00000000, 1.0f, 0);
+	m_pD3DDevice->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, d3d::GRAY, 1.0f, 0);
+
+	m_pD3DDevice->BeginScene();
+
+	D3DXVECTOR3 cameraEye = m_pCameras[m_cameraIndex]->GetPosition();
+	m_outlineEffect->SetVector(m_vecEyeH, &D3DXVECTOR4(cameraEye.x, cameraEye.y, cameraEye.z, 0) );
+	//m_outlineEffect->SetVector("vecEye", &D3DXVECTOR4(cameraEye.x, cameraEye.y, cameraEye.z, 0) );
+
+	UINT numPasses = 0;
+ 
+	m_pD3DDevice->SetFVF(VERTEX_FVF);
+
+	switch(m_DrawingMethod)
+	{
+	case DRAW_ATTRIBOBJECT:
+		{
+			for (UINT atribNum = 0; atribNum < m_assetManger.getAttribCount(); atribNum++)
+			{
+				setAttribute(atribNum);
+
+				m_outlineEffect->Begin(&numPasses, 0);
+
+				for (UINT numPass = 0; numPass < numPasses; numPass++ )
+				{
+					for (UINT objI = 0; objI < m_objects.size(); objI++)
+					{
+						D3DXMATRIX WorldViewProj;
+						D3DXMATRIX ViewProj;
+
+						WorldViewProj = m_objects[objI]->getWorldMatrix() * m_pCameras[0]->GetViewMatrix() * m_pCameras[0]->GetProjMatrix();
+						ViewProj = m_pCameras[0]->GetViewMatrix() * m_pCameras[0]->GetProjMatrix();
+ 
+						if (objI == activeMeshIndex)
+							m_outlineEffect->SetBool(m_bHighLightH, TRUE);
+						else
+							m_outlineEffect->SetBool(m_bHighLightH, FALSE);
+
+						m_objects[objI]->drawSubset(m_pD3DDevice, atribNum, m_outlineEffect, numPass, ViewProj);
+					}
+				}
+				m_outlineEffect->End();
+			}
+		}break;
+
+	case DRAW_OBJECTATTRIB:
+		{
+			for (UINT objI = 0; objI < m_objects.size(); objI++)
+			{
+				D3DXMATRIX WorldViewProj, ViewProj;
+
+				WorldViewProj = m_objects[objI]->getWorldMatrix() * m_pCameras[0]->GetViewMatrix() * m_pCameras[0]->GetProjMatrix();
+				ViewProj = m_pCameras[0]->GetViewMatrix() * m_pCameras[0]->GetProjMatrix();
+
+				hr = m_outlineEffect->SetMatrix("matWorldViewProj", &WorldViewProj);
+				hr = m_outlineEffect->SetMatrix("matWorld", &m_objects[objI]->getWorldMatrix());
+
+				for (UINT attribNum = 0; attribNum < m_assetManger.getAttribCount(); attribNum++)
+				{
+					hr = setAttribute(attribNum);
+
+					hr = m_outlineEffect->Begin(&numPasses, 0);
+
+					for (UINT numPass = 0; numPass < numPasses; numPass++ )
+					{
+						m_objects[objI]->drawSubset(NULL, attribNum,m_outlineEffect, numPass, ViewProj);
+					}
+
+					m_outlineEffect->End();
+				}
+			}
+		}break;
+	}
+
+	//LPD3DXSPRITE sprite = m_assetManger.getSprite();
+	//CMySprite *  sprite = m_assetManger.getMySprite();
+	
+	D3DXHANDLE illSHaderTech = m_highLightEffect->GetTechniqueByName("illuminateShader");
+
+	hr = m_highLightEffect->SetTechnique(illSHaderTech);
+
+	LPD3DXFONT pFont = m_assetManger.getFontPtr(0);
+	LPD3DXSPRITE sprite = m_assetManger.getSprite();
+	LPD3DXSPRITE sprite2 = m_assetManger.getTopSprite();
+
+	sprite2->Begin(D3DXSPRITE_DONOTMODIFY_RENDERSTATE);
+
+	sprite->Begin(D3DXSPRITE_DONOTMODIFY_RENDERSTATE);
+
+// 	RECT rcDest;
+// 	SetRect(&rcDest, 550, 0, 1050, 15);
+// 	pFont->DrawTextA(sprite2, "Test!", -1, &rcDest, DT_LEFT , d3d::CYAN);
+
+	m_EditDialog.OnRender(timeDelta,  D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
+	m_GenDialog.OnRender(timeDelta, D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
+	m_OptionsDialog.OnRender(timeDelta, D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
+
+ 	CMySprite* pMySprite = m_assetManger.getMySprite();
+ 	pMySprite->render(m_highLightEffect);
+
+	sprite->End();
+
+	pMySprite->renderTopQuads(m_highLightEffect);
+	sprite2->End();
+
+
+	m_pD3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+	m_pD3DDevice->SetFVF(VERTEX_FVF);
+
+	SetRect( &rc, 0, 0, 30, 30 );
+	m_fpsFont->DrawText( NULL,
+		m_debugString.c_str(), -1, &rc,
+		DT_NOCLIP, D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
+
+
+//	m_GuiSelectPawn.OnRender(timeDelta);
+//	m_GuiDialog.OnRender(timeDelta);
+
+	hr = m_pD3DDevice->EndScene();
+	//TODO: add something that checks if the device was lost
+	hr = m_pD3DDevice->Present(0, 0, 0, 0);
+
+	m_pD3DDevice->SetFVF(VERTEX_FVF);
+	setRenderStates();
+
+}
+
+//-----------------------------------------------------------------------------
+// Name : DrawDebugText ()
+// Desc : render to screen the debug string that include info about fps, camera pos, etc..
+//-----------------------------------------------------------------------------
+void CGameWin::DrawDebugText()
+{
+	D3DXVECTOR3 camPos;
+	D3DXVECTOR3 camLook;
+
+	camPos=m_pCameras[m_cameraIndex]->GetPosition();
+	camLook=m_pCameras[m_cameraIndex]->GetLook();
+
+	addDebugText("FPS:", m_timer->getFPS());
+	addDebugText("POS:", camPos.x);
+	addDebugText(NULL, camPos.y);
+	addDebugText(NULL, camPos.z);
+	addDebugText("LOOK: X:", camLook.x);
+	addDebugText("Y:", camLook.y);
+	addDebugText("Z:", camLook.z);
+	addDebugText("\ncurrent active mesh:", activeMeshIndex);
+
+}
+
+//-----------------------------------------------------------------------------
+// Name : setAttribute ()
+// Desc : selects the current attribute for rendering and sends it's data to shader
+//-----------------------------------------------------------------------------
+HRESULT CGameWin::setAttribute(UINT attribNum)
+{
+	HRESULT hr;
+	long  MaterialIndex, TextureIndex;
+	const ATTRIBUTE_ITEM& attribComboItem = m_assetManger.getAtribItem(attribNum);
+
+	//setup current matial info to shader
+	TextureIndex  = attribComboItem.TextureIndex;
+
+	if (TextureIndex >= 0)
+	{
+		hr = m_outlineEffect->SetTechnique(m_lightTexTechHandle);
+		hr = m_outlineEffect->SetTexture(m_MeshTextureH, m_assetManger.getTextureItem(TextureIndex)->Texture);
+		//hr = m_outlineEffect->SetTexture("MeshTexture", m_pTextureList[TextureIndex]->Texture);
+	}
+	else
+	{
+		hr = m_outlineEffect->SetTechnique(m_lightTechHnadle);
+	}
+
+	MaterialIndex = attribComboItem.MaterialIndex;
+
+	if ( MaterialIndex >= 0 )
+	{
+		const OBJMATERIAL& curMatterialItem = m_assetManger.getMaterialItem(MaterialIndex);
+		D3DXVECTOR4 matrialDiffuse = curMatterialItem.Diffuse; 
+
+		D3DXVECTOR4 matrialAmbient = curMatterialItem.Ambient;
+		matrialAmbient.x *= 0.6f;
+		matrialAmbient.y *= 0.6f;
+		matrialAmbient.z *= 0.6f;
+
+		D3DXVECTOR4 matrialSpecular = curMatterialItem.Specular;
+
+		m_outlineEffect->SetVector(m_vecDiffuseMtrlH, &matrialDiffuse);
+		m_outlineEffect->SetVector(m_vecAmbientMtrlH, &matrialAmbient);
+		m_outlineEffect->SetVector(m_vecSpecularMtrlH, &matrialSpecular);
+		m_outlineEffect->SetFloat(m_SpecularPowerH, curMatterialItem.Power);
+		// 		m_outlineEffect->SetVector("vecDiffuse", &matrialDiffuse);
+		// 		m_outlineEffect->SetVector("vecAmbient", &matrialAmbient);
+	}
+	else
+	{
+		m_outlineEffect->SetVector(m_vecDiffuseMtrlH, &D3DXVECTOR4( 1.0f, 1.0f, 1.0f, 1.0f) );
+		m_outlineEffect->SetVector(m_vecAmbientMtrlH, &D3DXVECTOR4( 1.0f * 0.6f, 1.0f * 0.6f, 1.0f * 0.6f, 1.0f) );
+		m_outlineEffect->SetVector(m_vecSpecularMtrlH, &D3DXVECTOR4( 1.0f, 1.0f, 1.0f, 1.0f));
+		m_outlineEffect->SetFloat(m_SpecularPowerH, 8.0f);
+		// 		m_outlineEffect->SetVector("vecDiffuse", &D3DXVECTOR4( 1.0f, 1.0f, 1.0f, 1.0f) );
+		// 		m_outlineEffect->SetVector("vecAmbient", &D3DXVECTOR4( 1.0f * 0.6f, 1.0f * 0.6f, 1.0f * 0.6f, 1.0f) );
+	}
+
+	return hr;
+}
+
+//-----------------------------------------------------------------------------
+// Name : setLight ()
+// Desc : selects the given light as an active light 
+//-----------------------------------------------------------------------------
+void CGameWin::setLight(LIGHT_PREFS& light, ID3DXEffect * effect, UINT index)
+{
+	effect->SetValue (m_lightPosH[index], &light.lightPos, sizeof(D3DXVECTOR3) );
+	effect->SetVector(m_vecLightDirH[index], &light.lightDir);
+	effect->SetValue (m_lightAttenH[index], &light.lightAtten, sizeof(D3DXVECTOR3) );
+
+	effect->SetVector(m_vecDiffuseLightH[index], &light.lightDiffuse);
+	effect->SetVector(m_vecSpecularLightH[index], &light.lightSpecular);
+	effect->SetVector(m_vecAmbientLightH[index], &light.lightAmbient);
+	effect->SetFloat (m_SpotPowerH[index], light.lightSpotPower);
+
+	//effect->SetFloat (m_SpecularPowerH, light.lightSpecularPower);
+}
+
+//-----------------------------------------------------------------------------
+// Name : setRenderStates ()
+// Desc : sets the render state that the game uses for rendering
+//-----------------------------------------------------------------------------
+void CGameWin::setRenderStates() 
+{
+	m_pD3DDevice->SetRenderState(D3DRS_FILLMODE,D3DFILL_SOLID);
+	//m_pD3DDevice->SetRenderState(D3DRS_FILLMODE,D3DFILL_WIREFRAME);
+	m_pD3DDevice->SetRenderState(D3DRS_SPECULARENABLE, FALSE);
+
+	m_pD3DDevice->SetRenderState( D3DRS_LIGHTING, FALSE );
+	m_pD3DDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
+
+	m_pD3DDevice->SetRenderState(D3DRS_NORMALIZENORMALS, FALSE);
+
+	m_pD3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+	m_pD3DDevice->SetRenderState(D3DRS_ALPHAFUNC, D3DCMP_GREATEREQUAL);
+	//m_pD3DDevice->SetRenderState(D3DRS_ALPHAREF, (DWORD)8);
+	m_pD3DDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE); 
+
+	m_pD3DDevice->SetRenderState(D3DRS_SRCBLEND,D3DBLEND_SRCALPHA);
+	m_pD3DDevice->SetRenderState(D3DRS_DESTBLEND,D3DBLEND_INVSRCALPHA);
+	m_pD3DDevice->SetRenderState(D3DRS_BLENDOP,D3DBLENDOP_ADD);
+
+
+}
+//-----------------------------------------------------------------------------
+// Name : addDebugText ()
+// Desc : add a string to the debug text buffer also allows to give a variable that
+//		  has a conversion function to string
+//-----------------------------------------------------------------------------
+template <class ValueType> 
+void CGameWin::addDebugText(char* Text,ValueType value )
+{
+	std::stringstream out;
+
+	if (Text != NULL)
+		m_debugString += Text;
+
+	m_debugString += " ";
+
+	out << value;
+	m_debugString += out.str() + " ";
+
+
 }
 
 //-----------------------------------------------------------------------------
@@ -2277,7 +2344,7 @@ void CGameWin::DeleteControlClicked(CButtonUI* pDeleteButton)
 //-----------------------------------------------------------------------------
 void CGameWin::OptionsControlClicked(CButtonUI* pOptionsButton)
 {
-	;
+	m_OptionsDialog.setVisible(true);
 }
 
 //-----------------------------------------------------------------------------

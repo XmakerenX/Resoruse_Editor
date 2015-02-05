@@ -9,6 +9,7 @@
 #include <sstream>
 #include <limits>
 #include <math.h>
+#include <unordered_map>
 #include <boost/signals2/signal.hpp>
 #include <boost/bind.hpp>
 
@@ -198,6 +199,11 @@ private:
 	bool        CreateDisplay		(HINSTANCE hInstance,bool windowed);
 	bool		CreateDisplayWindow (HINSTANCE hInstance);
 	HRESULT		CreateDevice		(bool windowed);
+
+	static std::unordered_map<UINT,char*> InitDepthFormatMap();
+	static std::unordered_map<UINT,char*> InitMultiSampleMap();
+	static std::unordered_map<ULONG,char*> InitVertexProcMap();
+
 	BOOL		EnumDepthStencil	(D3DFORMAT depthFormats[], UINT formatsCount, UINT adapter, D3DDEVTYPE deviceType, D3DFORMAT backBufferFromat, std::vector<D3DFORMAT>& validDepths);
 	void		EnumMultiSample		(UINT adapter, D3DDEVTYPE deviceType, D3DFORMAT backBufferFormat, bool windowed, std::vector<D3DMULTISAMPLE_TYPE>& validMultiSampleTypes);
 	//bool		CreateGUIObjects	();
@@ -273,6 +279,10 @@ private:
 	std::vector<MODEINFO> m_displayModes;
 	std::vector<D3DFORMAT> m_adapterFormats;
 	std::vector<ADAPTERINFO> m_adpatersInfo;
+
+	static const std::unordered_map<UINT,char*> s_depthFormatsString;
+	static const std::unordered_map<UINT,char*> s_mutliSampleString;
+	static const std::unordered_map<ULONG,char*> s_vertexProcString;
 
 	//-------------------------------------------------------------------------
 	// the scene objects data

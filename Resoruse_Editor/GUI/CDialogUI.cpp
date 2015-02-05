@@ -1334,6 +1334,14 @@ void CDialogUI::setLocation(int x, int y)
 }
 
 //-----------------------------------------------------------------------------
+// Name : setVisible()
+//-----------------------------------------------------------------------------
+void CDialogUI::setVisible(bool bVisible)
+{
+	m_bVisible = bVisible;
+}
+
+//-----------------------------------------------------------------------------
 // Name : UpdateRects()
 // Desc : Update the dialog bounding box and it's caption box every tine the dialog
 //		  is moved
