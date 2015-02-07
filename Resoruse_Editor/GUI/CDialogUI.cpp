@@ -483,6 +483,9 @@ HRESULT CDialogUI::OnRender(float fElapsedTime, D3DXVECTOR3 vPos, LPD3DXEFFECT e
 {
 	LPDIRECT3DTEXTURE9 pTexture = NULL;
 
+	if (!m_bVisible)
+		return S_OK;
+
 	if (m_texturePath[0] != '\0')
 	{
 		pTexture = assetManger.getTexture(m_texturePath);
@@ -601,6 +604,9 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 {
 	bool bHandled = false;
 	
+	if (!m_bVisible)
+		return false;
+
 	INPUT_STATE curInputState;
 
 	curInputState.bDoubleClick = uMsg == WM_LBUTTONDBLCLK;

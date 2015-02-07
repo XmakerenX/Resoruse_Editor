@@ -4,7 +4,7 @@
 
 const std::unordered_map<UINT,char*> CGameWin::s_depthFormatsString = InitDepthFormatMap();
 const std::unordered_map<UINT,char*> CGameWin::s_mutliSampleString = InitMultiSampleMap();
-const std::unordered_map<UINT,char*> CGameWin::s_vertexProcString = InitVertexProcMap();
+const std::unordered_map<ULONG,char*> CGameWin::s_vertexProcString = InitVertexProcMap();
 
 //-----------------------------------------------------------------------------
 // Name : CGameWin (constructor)
@@ -594,6 +594,7 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 		// --------------------------------------------------
 		DEVICETYPEINFO halDeviceType;
 		halDeviceType.deviceType = D3DDEVTYPE_HAL;
+		halDeviceType.deviceDescription = "HAL Device";
 		halDeviceType.bHardwareAcceleration[DEVICETYPEINFO::WINDOWED] = false;
 		halDeviceType.bHardwareAcceleration[DEVICETYPEINFO::FULLSCREEN] = false;
 
@@ -631,6 +632,7 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 		// --------------------------------------------------
 		DEVICETYPEINFO refDeviceType;
 		refDeviceType.deviceType = D3DDEVTYPE_REF;
+		refDeviceType.deviceDescription = "REF Device";
 		refDeviceType.bHardwareAcceleration[DEVICETYPEINFO::WINDOWED] = false;
 		refDeviceType.bHardwareAcceleration[DEVICETYPEINFO::FULLSCREEN] = false;
 
@@ -1002,6 +1004,56 @@ std::unordered_map<ULONG,char*> CGameWin::InitVertexProcMap()
 }
 
 //-----------------------------------------------------------------------------
+// Name : ChangeDisplayAdapter ()
+//-----------------------------------------------------------------------------
+bool CGameWin::ChangeDisplayAdapter(UINT adapterIndex)
+{
+	if (adapterIndex >= m_adpatersInfo.size() )
+		return false;
+
+	ADAPTERINFO& curAdapter = m_adpatersInfo[adapterIndex];
+
+	if (curAdapter.deviceTypes.size() == 0)
+		return false;
+
+	for (UINT i = 0; i < curAdapter.deviceTypes.size(); i++)
+		m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->AddItem(curAdapter.deviceTypes[i].deviceDescription.c_str(), nullptr);
+
+	DEVICETYPEINFO& curDeviceInfo = curAdapter.deviceTypes[0];
+
+	m_OptionsDialog.getComboBox(IDC_BBFORMATCOM)->AddItem("D3DFMT_X8R8G8B8",nullptr);
+
+	if (curDeviceInfo.bDepthEnable[DEVICETYPEINFO::WINDOWED])
+	{
+		for (UINT i = 0; i < curDeviceInfo.validDepths[DEVICETYPEINFO::WINDOWED].size(); i++)
+		{
+			std::vector<D3DFORMAT>& curValidDepths = curDeviceInfo.validDepths[DEVICETYPEINFO::WINDOWED];
+			if (s_depthFormatsString.find(curValidDepths[i] ) != s_depthFormatsString.end() )
+				m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->AddItem( s_depthFormatsString.at(curValidDepths[i]), &curValidDepths[i]);
+		}
+	}
+	else
+		m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->setEnabled(false);
+
+	std::vector<D3DMULTISAMPLE_TYPE> curValidMultiSampleTypes;
+	curValidMultiSampleTypes = curDeviceInfo.validMultiSampleTypes[DEVICETYPEINFO::WINDOWED];
+
+	for (UINT i = 0; i < curValidMultiSampleTypes.size(); i++)
+	{
+		if (s_mutliSampleString.find(curValidMultiSampleTypes[i] ) != s_mutliSampleString.end() )
+			m_OptionsDialog.getComboBox(IDC_MULSAMPLECOM)->AddItem(s_mutliSampleString.at(curValidMultiSampleTypes[i]),
+			&curValidMultiSampleTypes[i]);
+	}
+
+	for (UINT i = 0; i < curDeviceInfo.vpTypes.size(); i++)
+	{
+		ULONG curVpType = curDeviceInfo.vpTypes[i];
+		if ( s_vertexProcString.find(curVpType) != s_vertexProcString.end() )
+			m_OptionsDialog.getComboBox(IDC_VERTEXPROCCOM)->AddItem(s_vertexProcString.at(curVpType), &curVpType);
+	}
+}
+
+//-----------------------------------------------------------------------------
 // Name : BuildObjects 
 // Desc : creates all the object for the current scene
 //-----------------------------------------------------------------------------
@@ -1207,6 +1259,11 @@ std::unordered_map<ULONG,char*> CGameWin::InitVertexProcMap()
 	m_OptionsDialog.LoadDialogFromFile("settings.txt", m_timer);
 	m_OptionsDialog.setVisible(false);
 
+	m_OptionsDialog.getComboBox(IDC_ADAPFORMATCOM)->setEnabled(false);
+	m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->setEnabled(false);
+	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->setEnabled(false);
+	m_OptionsDialog.getCheckBox(IDC_ASPECTCHECK)->setEnabled(false);
+
 	m_OptionsDialog.getComboBox(IDC_APIVERCOM)->AddItem("Direct3D 9", nullptr);
 
 	for (UINT i = 0; i < m_adpatersInfo.size(); i++)
@@ -1214,46 +1271,7 @@ std::unordered_map<ULONG,char*> CGameWin::InitVertexProcMap()
 		m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)->AddItem(m_adpatersInfo[i].adapterDescription.c_str(), nullptr);
 	}
 
-	if (m_adpatersInfo.size() == 0 )
-		return false;
-
-	ADAPTERINFO& curAdapter = m_adpatersInfo[0];
-
-	if (curAdapter.deviceTypes.size() == 0)
-		return false;
-
-	for (UINT i = 0; i < curAdapter.deviceTypes.size(); i++)
-		m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->AddItem(curAdapter.deviceTypes[i].deviceDescription.c_str(), nullptr);
-
-	DEVICETYPEINFO& curDeviceInfo = curAdapter.deviceTypes[0];
-
-	m_OptionsDialog.getComboBox(IDC_BBFORMATCOM)->AddItem("D3DFMT_X8R8G8B8",nullptr);
-
-	if (curDeviceInfo.bDepthEnable[DEVICETYPEINFO::WINDOWED])
-	{
-		for (UINT i = 0; i < curDeviceInfo.validDepths[DEVICETYPEINFO::WINDOWED].size(); i++)
-		{
-			std::vector<D3DFORMAT>& curValidDepths = curDeviceInfo.validDepths[DEVICETYPEINFO::WINDOWED];
-			m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->AddItem( s_depthFormatsString[ curValidDepths[i] ], &curValidDepths[i]);
-		}
-	}
-	else
-		m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->setEnabled(false);
-
-	std::vector<D3DMULTISAMPLE_TYPE> curValidMultiSampleTypes;
-	curValidMultiSampleTypes = curDeviceInfo.validMultiSampleTypes[DEVICETYPEINFO::WINDOWED];
-
-	for (UINT i = 0; i < curValidMultiSampleTypes.size(); i++)
-	{
-		m_OptionsDialog.getComboBox(IDC_MULSAMPLECOM)->AddItem(s_mutliSampleString[ curValidMultiSampleTypes[i] ], &curValidMultiSampleTypes[i]);
-	}
-
-	for (UINT i = 0; i < curDeviceInfo.vpTypes.size(); i++)
-	{
-		ULONG curVpType = curDeviceInfo.vpTypes[i];
-		if ( s_vertexProcString.find(curVpType) != std::unordered_map::end)
-			m_OptionsDialog.getComboBox(IDC_VERTEXPROCCOM)->AddItem(s_vertexProcString[curVpType], &curVpType);
-	}
+	ChangeDisplayAdapter(0);
 
 	return true;
 }

@@ -204,6 +204,8 @@ private:
 	static std::unordered_map<UINT,char*> InitMultiSampleMap();
 	static std::unordered_map<ULONG,char*> InitVertexProcMap();
 
+	bool		ChangeDisplayAdapter(UINT adapterIndex);
+
 	BOOL		EnumDepthStencil	(D3DFORMAT depthFormats[], UINT formatsCount, UINT adapter, D3DDEVTYPE deviceType, D3DFORMAT backBufferFromat, std::vector<D3DFORMAT>& validDepths);
 	void		EnumMultiSample		(UINT adapter, D3DDEVTYPE deviceType, D3DFORMAT backBufferFormat, bool windowed, std::vector<D3DMULTISAMPLE_TYPE>& validMultiSampleTypes);
 	//bool		CreateGUIObjects	();
