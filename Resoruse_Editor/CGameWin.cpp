@@ -683,10 +683,8 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 // 				  std::cout << "Refresh= " << curMode.RefreshRate << std::endl;
 			  }
 		}
-
-		 m_adpatersInfo.push_back(curAdapterInfo);
 		
-	}
+	}	
 
 	//Checking for hardware vp.
 	//TODO add more checking for future use!!!
@@ -981,11 +979,11 @@ std::unordered_map<UINT,char*> CGameWin::InitMultiSampleMap()
 {
 	std::unordered_map<UINT,char*> m;
 
-	m[D3DMULTISAMPLE_NONE]       = "D3DMULTISAMPLE_NONE";
-	m[D3DMULTISAMPLE_2_SAMPLES]  = "D3DMULTISAMPLE_2_SAMPLES";
-	m[D3DMULTISAMPLE_4_SAMPLES]  = "D3DMULTISAMPLE_4_SAMPLES";
-	m[D3DMULTISAMPLE_8_SAMPLES]  = "D3DMULTISAMPLE_8_SAMPLES";
-	m[D3DMULTISAMPLE_16_SAMPLES] = "D3DMULTISAMPLE_16_SAMPLES";
+	m[D3DMULTISAMPLE_NONE]       = "None";
+	m[D3DMULTISAMPLE_2_SAMPLES]  = "x2";
+	m[D3DMULTISAMPLE_4_SAMPLES]  = "x4";
+	m[D3DMULTISAMPLE_8_SAMPLES]  = "x8";
+	m[D3DMULTISAMPLE_16_SAMPLES] = "x16";
 
 	return m;
 }
@@ -997,8 +995,8 @@ std::unordered_map<ULONG,char*> CGameWin::InitVertexProcMap()
 {
 	std::unordered_map<ULONG,char*> m;
 
-	m[D3DCREATE_HARDWARE_VERTEXPROCESSING] = "D3DCREATE_HARDWARE_VERTEXPROCESSING";
-	m[D3DCREATE_SOFTWARE_VERTEXPROCESSING] = "D3DCREATE_SOFTWARE_VERTEXPROCESSING";
+	m[D3DCREATE_HARDWARE_VERTEXPROCESSING] = "Hardware Vertex Processing";
+	m[D3DCREATE_SOFTWARE_VERTEXPROCESSING] = "Software Vertex Processing";
 
 	return m;
 }
@@ -1006,7 +1004,7 @@ std::unordered_map<ULONG,char*> CGameWin::InitVertexProcMap()
 //-----------------------------------------------------------------------------
 // Name : ChangeDisplayAdapter ()
 //-----------------------------------------------------------------------------
-bool CGameWin::ChangeDisplayAdapter(UINT adapterIndex)
+bool CGameWin::ChangeDisplayAdapter(UINT adapterIndex, D3DDEVTYPE deviceType/*= D3DDEVTYPE_HAL*/)
 {
 	if (adapterIndex >= m_adpatersInfo.size() )
 		return false;
@@ -1016,12 +1014,52 @@ bool CGameWin::ChangeDisplayAdapter(UINT adapterIndex)
 	if (curAdapter.deviceTypes.size() == 0)
 		return false;
 
+	m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->RemoveAllItems();
+
 	for (UINT i = 0; i < curAdapter.deviceTypes.size(); i++)
-		m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->AddItem(curAdapter.deviceTypes[i].deviceDescription.c_str(), nullptr);
+		m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->AddItem(curAdapter.deviceTypes[i].deviceDescription.c_str(), (void*)curAdapter.deviceTypes[i].deviceType);
 
-	DEVICETYPEINFO& curDeviceInfo = curAdapter.deviceTypes[0];
+	for (UINT i = 0; i < curAdapter.displayModes.size(); i++)
+	{
+		D3DDISPLAYMODE& curDisplayMode = curAdapter.displayModes[i];
+		std::string resWidth = std::to_string( (long long)curDisplayMode.Width);
+		std::string resHeight = std::to_string( (long long)curDisplayMode.Height);
+		std::string resoulation = resWidth + "X" + resHeight;
+		m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->AddItem(resoulation.c_str(), (void*)i);
+	}
 
-	m_OptionsDialog.getComboBox(IDC_BBFORMATCOM)->AddItem("D3DFMT_X8R8G8B8",nullptr);
+	ChangeDisplayDevice(adapterIndex, deviceType);
+}
+
+//-----------------------------------------------------------------------------
+// Name : ChangeDisplayDevice 
+//-----------------------------------------------------------------------------
+bool CGameWin::ChangeDisplayDevice(UINT adapterIndex, D3DDEVTYPE deviceType)
+{
+	UINT deviceIndex = -1;
+	if (adapterIndex < m_adpatersInfo.size() )
+	{
+		for (UINT i = 0; i < m_adpatersInfo[adapterIndex].deviceTypes.size(); i++)
+		{
+			DEVICETYPEINFO& curDeviceInfo = m_adpatersInfo[adapterIndex].deviceTypes[i];
+			if (curDeviceInfo.deviceType == deviceType)
+			{
+				deviceIndex = i;
+				break;
+			}
+		}
+		if (deviceIndex == -1)
+			return false;
+	}
+	else
+		return false;
+
+	DEVICETYPEINFO& curDeviceInfo = m_adpatersInfo[adapterIndex].deviceTypes[deviceIndex];
+
+	m_OptionsDialog.getComboBox(IDC_BBFORMATCOM)->RemoveAllItems();
+	m_OptionsDialog.getComboBox(IDC_BBFORMATCOM)->AddItem("X8R8G8B8",nullptr);
+
+	m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->RemoveAllItems();
 
 	if (curDeviceInfo.bDepthEnable[DEVICETYPEINFO::WINDOWED])
 	{
@@ -1038,6 +1076,8 @@ bool CGameWin::ChangeDisplayAdapter(UINT adapterIndex)
 	std::vector<D3DMULTISAMPLE_TYPE> curValidMultiSampleTypes;
 	curValidMultiSampleTypes = curDeviceInfo.validMultiSampleTypes[DEVICETYPEINFO::WINDOWED];
 
+	m_OptionsDialog.getComboBox(IDC_MULSAMPLECOM)->RemoveAllItems();
+
 	for (UINT i = 0; i < curValidMultiSampleTypes.size(); i++)
 	{
 		if (s_mutliSampleString.find(curValidMultiSampleTypes[i] ) != s_mutliSampleString.end() )
@@ -1045,11 +1085,13 @@ bool CGameWin::ChangeDisplayAdapter(UINT adapterIndex)
 			&curValidMultiSampleTypes[i]);
 	}
 
+	m_OptionsDialog.getComboBox(IDC_VERTEXPROCCOM)->RemoveAllItems();
+
 	for (UINT i = 0; i < curDeviceInfo.vpTypes.size(); i++)
 	{
 		ULONG curVpType = curDeviceInfo.vpTypes[i];
 		if ( s_vertexProcString.find(curVpType) != s_vertexProcString.end() )
-			m_OptionsDialog.getComboBox(IDC_VERTEXPROCCOM)->AddItem(s_vertexProcString.at(curVpType), &curVpType);
+			m_OptionsDialog.getComboBox(IDC_VERTEXPROCCOM)->AddItem(s_vertexProcString.at(curVpType), (void*)curVpType);
 	}
 }
 
@@ -1264,11 +1306,15 @@ bool CGameWin::ChangeDisplayAdapter(UINT adapterIndex)
 	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->setEnabled(false);
 	m_OptionsDialog.getCheckBox(IDC_ASPECTCHECK)->setEnabled(false);
 
+	m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)->ConnectToSelectChg( boost::bind(&CGameWin::AdapterSelChg, this, _1 ) );
+	m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->ConnectToSelectChg( boost::bind(&CGameWin::DeviceTypeSelChg, this, _1 ) );
+	m_OptionsDialog.getRadioButton(IDC_FULLSCREENRADIO)->connectToClick(  boost::bind(&CGameWin::FullscreenRadioClicked, this, _1 ) );
+
 	m_OptionsDialog.getComboBox(IDC_APIVERCOM)->AddItem("Direct3D 9", nullptr);
 
 	for (UINT i = 0; i < m_adpatersInfo.size(); i++)
 	{
-		m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)->AddItem(m_adpatersInfo[i].adapterDescription.c_str(), nullptr);
+		m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)->AddItem(m_adpatersInfo[i].adapterDescription.c_str(), (void*)m_adpatersInfo[i].adapterNum);
 	}
 
 	ChangeDisplayAdapter(0);
@@ -2402,6 +2448,58 @@ void CGameWin::ComboboxSelChg(CComboBoxUI* pCombobox)
 			SetComboBoxGUI();
 		}
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : AdapterSelChg ()
+//-----------------------------------------------------------------------------
+void CGameWin::AdapterSelChg(CComboBoxUI* pCombobox)
+{
+	UINT adapterIndex = (UINT)pCombobox->GetSelectedData();
+	ChangeDisplayAdapter(adapterIndex);
+}
+
+//-----------------------------------------------------------------------------
+// Name : DeviceTypeSelChg ()
+//-----------------------------------------------------------------------------
+void CGameWin::DeviceTypeSelChg(CComboBoxUI* pCombobox)
+{
+	UINT adapterIndex = (UINT)pCombobox->GetSelectedData();
+	D3DDEVTYPE deviceType = static_cast<D3DDEVTYPE>((UINT)pCombobox->GetSelectedData());
+	ChangeDisplayDevice(adapterIndex, deviceType);
+}
+
+//-----------------------------------------------------------------------------
+// Name : FullscreenRadioClicked ()
+//-----------------------------------------------------------------------------
+void CGameWin::FullscreenRadioClicked(CButtonUI* pRadio)
+{
+	m_OptionsDialog.getComboBox(IDC_ADAPFORMATCOM)->setEnabled(true);
+	m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->setEnabled(true);
+	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->setEnabled(true);
+	m_OptionsDialog.getCheckBox(IDC_ASPECTCHECK)->setEnabled(true);
+
+	UINT dislpayAdapterIndex = (UINT)m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)
+		->GetSelectedData();
+
+	ADAPTERINFO& curAdatperInfo = m_adpatersInfo[dislpayAdapterIndex];
+	if (curAdatperInfo.displayModes.size() == 0)
+		return;
+
+	D3DDISPLAYMODE& selDisplayMode = curAdatperInfo.displayModes[0];
+
+	for (UINT i = 0; i < curAdatperInfo.displayModes.size(); i++)
+	{
+		D3DDISPLAYMODE& curDisplayMode = curAdatperInfo.displayModes[i];
+		if (curDisplayMode.Width == selDisplayMode.Width && curDisplayMode.Height == selDisplayMode.Height)
+		{
+			std::string refreshRate = std::to_string((long long) selDisplayMode.RefreshRate);
+			m_OptionsDialog.getComboBox(IDC_REFRATECOM)->RemoveAllItems();
+			m_OptionsDialog.getComboBox(IDC_REFRATECOM)->AddItem(refreshRate.c_str(),
+				(void*)selDisplayMode.RefreshRate);
+		}
+	}
+
 }
 
 //-----------------------------------------------------------------------------

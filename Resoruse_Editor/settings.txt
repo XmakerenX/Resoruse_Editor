@@ -96,7 +96,7 @@ Render Device| Control Text
 | Control Text
 1 1 1 1| Control Text Color
 0| Button HotKey
-0| is CheckBox Checked
+1| is CheckBox Checked
 0| RadioButton Button Group
 /////////////////////////////////////////////////////////////////////////////
 0| Control Type
@@ -145,7 +145,7 @@ Clip to device when window spans acroos multiple monitors| Control Text
 | Control Text
 1 1 1 1| Control Text Color
 0| Button HotKey
-1| is CheckBox Checked
+0| is CheckBox Checked
 0| RadioButton Button Group
 /////////////////////////////////////////////////////////////////////////////
 0| Control Type

@@ -176,7 +176,7 @@ HRESULT CDialogUI::initDefControlElements(CAssetManager& assetManger)
 	UINT textureIndex, fontIndex;
 
 	// create the controls font
-	if (!assetManger.getFont(16, 20, FW_BOLD, FALSE, fontIndex))
+	if (!assetManger.getFont(12, 12, FW_BOLD, FALSE, fontIndex))
 		return S_FALSE;
 
 	UINT nFontHeight = assetManger.getFontItem(fontIndex).height;
@@ -190,7 +190,7 @@ HRESULT CDialogUI::initDefControlElements(CAssetManager& assetManger)
 	// sets the Static default font
 	// this font is also used for all other controls ... for now..
 	// create the controls font
-	if (!assetManger.getFont(16, 10, FW_BOLD, FALSE, fontIndex))
+	if (!assetManger.getFont(16, 8, FW_BOLD, FALSE, fontIndex))
 		return S_FALSE;
 
 	nFontHeight = assetManger.getFontItem(fontIndex).height;

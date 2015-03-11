@@ -462,8 +462,10 @@ HRESULT CAssetManager::addFont(int height, UINT width, UINT weight, BOOL Italic)
 
 	// creates the new Font
 	//TODO: add something that will initialize the static values  
+	//hr = D3DXCreateFont(m_pD3DDevice, height, width, weight, 1, Italic, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY
+	//	,DEFAULT_PITCH | FF_DONTCARE, "Arial", &pFont);
 	hr = D3DXCreateFont(m_pD3DDevice, height, width, weight, 1, Italic, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY
-		,DEFAULT_PITCH | FF_DONTCARE, "Arial", &pFont);
+		,DEFAULT_PITCH | FF_DONTCARE, "times new roman", &pFont);
 
 	if (FAILED(hr))
 	{
