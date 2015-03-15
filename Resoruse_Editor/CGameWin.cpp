@@ -676,14 +676,15 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 
 			  if (SUCCEEDED(hr))
 			  {
-				  curAdapterInfo.displayModes.push_back(curMode);
+				  curAdapterInfo.addDisplayMode(curMode);
 // 				  std::cout << "Width= "   << curMode.Width		  << std::endl;
 // 				  std::cout << "Height= "  << curMode.Height	  << std::endl;
 // 				  std::cout << "Format= "  << curMode.Format	  << std::endl;
 // 				  std::cout << "Refresh= " << curMode.RefreshRate << std::endl;
 			  }
 		}
-		
+
+		m_adpatersInfo.push_back(curAdapterInfo);
 	}	
 
 	//Checking for hardware vp.
@@ -890,6 +891,8 @@ void CGameWin::resetDevice()
 	// 	m_nViewWidth  = LOWORD( lParam );
 	// 	m_nViewHeight = HIWORD( lParam );
 
+	// width height backbuffer format multisampletype depthstencil format refresh rate 
+
 	RECT rc;
 	::GetClientRect( m_hWnd, &rc );
 	m_nViewX      = rc.left;
@@ -1019,13 +1022,18 @@ bool CGameWin::ChangeDisplayAdapter(UINT adapterIndex, D3DDEVTYPE deviceType/*= 
 	for (UINT i = 0; i < curAdapter.deviceTypes.size(); i++)
 		m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->AddItem(curAdapter.deviceTypes[i].deviceDescription.c_str(), (void*)curAdapter.deviceTypes[i].deviceType);
 
+	m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->RemoveAllItems();
 	for (UINT i = 0; i < curAdapter.displayModes.size(); i++)
 	{
-		D3DDISPLAYMODE& curDisplayMode = curAdapter.displayModes[i];
-		std::string resWidth = std::to_string( (long long)curDisplayMode.Width);
-		std::string resHeight = std::to_string( (long long)curDisplayMode.Height);
-		std::string resoulation = resWidth + "X" + resHeight;
-		m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->AddItem(resoulation.c_str(), (void*)i);
+		DISPLAYMODE& curDisplayMode = curAdapter.displayModes[i];
+
+
+				std::string resWidth = std::to_string( (long long)curDisplayMode.Width);
+				std::string resHeight = std::to_string( (long long)curDisplayMode.Height);
+				std::string resoulation = resWidth + "X" + resHeight;
+
+				m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->AddItem(resoulation.c_str(), (void*)i);
+
 	}
 
 	ChangeDisplayDevice(adapterIndex, deviceType);
@@ -1308,7 +1316,8 @@ bool CGameWin::ChangeDisplayDevice(UINT adapterIndex, D3DDEVTYPE deviceType)
 
 	m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)->ConnectToSelectChg( boost::bind(&CGameWin::AdapterSelChg, this, _1 ) );
 	m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->ConnectToSelectChg( boost::bind(&CGameWin::DeviceTypeSelChg, this, _1 ) );
-	m_OptionsDialog.getRadioButton(IDC_FULLSCREENRADIO)->connectToClick(  boost::bind(&CGameWin::FullscreenRadioClicked, this, _1 ) );
+	m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->ConnectToSelectChg( boost::bind(&CGameWin::ResoulationSelChg, this, _1) );
+	m_OptionsDialog.getRadioButton(IDC_FULLSCREENRADIO)->connectToClick( boost::bind(&CGameWin::FullscreenRadioClicked, this, _1 ) );
 
 	m_OptionsDialog.getComboBox(IDC_APIVERCOM)->AddItem("Direct3D 9", nullptr);
 
@@ -2486,19 +2495,44 @@ void CGameWin::FullscreenRadioClicked(CButtonUI* pRadio)
 	if (curAdatperInfo.displayModes.size() == 0)
 		return;
 
-	D3DDISPLAYMODE& selDisplayMode = curAdatperInfo.displayModes[0];
+	DISPLAYMODE& selDisplayMode = curAdatperInfo.displayModes[0];
 
-	for (UINT i = 0; i < curAdatperInfo.displayModes.size(); i++)
+	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->RemoveAllItems();
+	for (UINT j = 0; j < selDisplayMode.RefreshRates.size(); j++)
 	{
-		D3DDISPLAYMODE& curDisplayMode = curAdatperInfo.displayModes[i];
-		if (curDisplayMode.Width == selDisplayMode.Width && curDisplayMode.Height == selDisplayMode.Height)
-		{
-			std::string refreshRate = std::to_string((long long) selDisplayMode.RefreshRate);
-			m_OptionsDialog.getComboBox(IDC_REFRATECOM)->RemoveAllItems();
-			m_OptionsDialog.getComboBox(IDC_REFRATECOM)->AddItem(refreshRate.c_str(),
-				(void*)selDisplayMode.RefreshRate);
-		}
+		std::string refreshRate = std::to_string((long long) selDisplayMode.RefreshRates[j]);
+		m_OptionsDialog.getComboBox(IDC_REFRATECOM)->AddItem(refreshRate.c_str(),
+			(void*)selDisplayMode.RefreshRates[j]);
 	}
+
+}
+
+//-----------------------------------------------------------------------------
+// Name : ResoulationSelChg ()
+//-----------------------------------------------------------------------------
+void CGameWin::ResoulationSelChg(CComboBoxUI* pCombobox)
+{
+	UINT dislpayAdapterIndex = (UINT)m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)
+		->GetSelectedData();
+
+	UINT modeIndex = (UINT)pCombobox->GetSelectedData();
+	 
+	DISPLAYMODE curDisplayMode = m_adpatersInfo[dislpayAdapterIndex].displayModes[modeIndex];
+	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->RemoveAllItems();
+
+	for (UINT i = 0; i < curDisplayMode.RefreshRates.size(); i++)
+	{
+		std::string refreshRate = std::to_string((long long) curDisplayMode.RefreshRates[i]);
+		m_OptionsDialog.getComboBox(IDC_REFRATECOM)->AddItem(refreshRate.c_str(),
+			(void*)curDisplayMode.RefreshRates[i]);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : OptionDialogOKClicked ()
+//-----------------------------------------------------------------------------
+void CGameWin::OptionDialogOKClicked(CButtonUI* pButton)
+{
 
 }
 

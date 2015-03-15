@@ -124,13 +124,43 @@ struct DEVICETYPEINFO
 	std::vector<DWORD> vpTypes;
 };
 
+struct DISPLAYMODE
+{
+	UINT Width;
+	UINT Height;
+	std::vector<UINT> RefreshRates;
+	D3DFORMAT Format;
+
+	DISPLAYMODE::DISPLAYMODE(D3DDISPLAYMODE& displayMode)
+	{
+		this->Format = displayMode.Format;
+		this->Height = displayMode.Height;
+		this->RefreshRates.push_back(displayMode.RefreshRate);
+		this->Width = displayMode.Width;
+	}
+};
+
 struct ADAPTERINFO
 {
 	UINT adapterNum;
 	std::string adapterDescription;
 
 	std::vector<DEVICETYPEINFO> deviceTypes;
-	std::vector<D3DDISPLAYMODE> displayModes;
+	std::vector<DISPLAYMODE> displayModes;
+
+	void addDisplayMode(D3DDISPLAYMODE& displayMode)
+	{
+		for (UINT i = 0; i < displayModes.size(); i++)
+		{
+			if (displayMode.Width == displayModes[i].Width && displayMode.Height == displayModes[i].Height)
+			{
+				displayModes[i].RefreshRates.push_back(displayMode.RefreshRate);
+				return;
+			}
+		}
+
+		displayModes.push_back(DISPLAYMODE(displayMode));
+	}
 };
 
 struct MODEINFO
@@ -179,6 +209,8 @@ public:
 	void		 AdapterSelChg				(CComboBoxUI* pCombobox);
 	void		 DeviceTypeSelChg			(CComboBoxUI* pCombobox);
 	void		 FullscreenRadioClicked		(CButtonUI* pRadio);
+	void		 ResoulationSelChg			(CComboBoxUI* pCombobox);
+	void		 OptionDialogOKClicked		(CButtonUI* pButton);
 
 	void		 SetStaticGUI				( bool ControlSelected = false);
 	void		 SetRadioButtonGUI			( bool ControlSelected = false);
