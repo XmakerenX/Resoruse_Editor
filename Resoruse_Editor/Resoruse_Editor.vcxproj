@@ -86,6 +86,8 @@
     <ClCompile Include="GUI\CControlUI.cpp" />
     <ClCompile Include="GUI\CDialogUI.cpp" />
     <ClCompile Include="GUI\CEditBoxUI.cpp" />
+    <ClCompile Include="GUI\CEditDialogUI.cpp" />
+    <ClCompile Include="GUI\COptionDialogUI.cpp" />
     <ClCompile Include="GUI\CListBoxUI.cpp" />
     <ClCompile Include="GUI\CRadioButtonUI.cpp" />
     <ClCompile Include="GUI\CScrollBarUI.cpp" />
@@ -114,6 +116,8 @@
     <ClInclude Include="GUI\CControlUI.h" />
     <ClInclude Include="GUI\CDialogUI.h" />
     <ClInclude Include="GUI\CEditBoxUI.h" />
+    <ClInclude Include="GUI\CEditDialogUI.h" />
+    <ClInclude Include="GUI\COptionDialogUI.h" />
     <ClInclude Include="GUI\CListBoxUI.h" />
     <ClInclude Include="GUI\CRadioButtonUI.h" />
     <ClInclude Include="GUI\CScrollBarUI.h" />

@@ -44,7 +44,7 @@ CButtonUI::CButtonUI(std::istream& inputFile)
 }
 
 //-----------------------------------------------------------------------------
-// Name : CButtonUI (detractor)
+// Name : CButtonUI (destructor)
 //-----------------------------------------------------------------------------
 CButtonUI::~CButtonUI(void)
 {

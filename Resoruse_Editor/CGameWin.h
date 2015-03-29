@@ -175,6 +175,8 @@ struct MODEINFO
 	D3DDEVTYPE deviceType;
 };
 
+
+
 class CGameWin
 {
 public:
@@ -192,31 +194,7 @@ public:
 	LRESULT		 WinProc					(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 	void         OnGUIEvent					(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext );
 
-	void         CreateControlClicked		(CButtonUI* createControl);
-	void		 AddListBoxItemClicked		(CButtonUI* pAddListBoxItemButton);
-	void		 RemoveListBoxItemClikced	(CButtonUI* pRemoveListBoxItemButton);
-	void         AddComboBoxItemClicked		(CButtonUI* pAddComboBoxItemButton);
-	void		 RemoveComboBoxItemClicked  (CButtonUI* pRemoveComboBoxItemButton);
-	void		 SetChangesButtonClicked	(CButtonUI* pSetChangesButton);
-	void		 SaveDialogButtonClicked	(CButtonUI* pSaveButton);
-	void		 LoadDialogButtonClicked	(CButtonUI* pLoadButton);
-	void		 SetGenDialogSize			(CButtonUI* pDialogSetButton);
-	void		 RelocateControlClicked		(CButtonUI* pRecloateControlButton);
-	void		 DeleteControlClicked		(CButtonUI* pDeleteButton);
-	void		 OptionsControlClicked		(CButtonUI* pOptionsButton);
-	void         ComboboxSelChg				(CComboBoxUI* pCombobox);
-
-	void		 AdapterSelChg				(CComboBoxUI* pCombobox);
-	void		 DeviceTypeSelChg			(CComboBoxUI* pCombobox);
-	void		 FullscreenRadioClicked		(CButtonUI* pRadio);
-	void		 ResoulationSelChg			(CComboBoxUI* pCombobox);
 	void		 OptionDialogOKClicked		(CButtonUI* pButton);
-
-	void		 SetStaticGUI				( bool ControlSelected = false);
-	void		 SetRadioButtonGUI			( bool ControlSelected = false);
-	void		 SetSliderGUI				( bool ControlSelected = false);
-	void		 SetListBoxGUI				( bool ControlSelected = false);
-	void		 SetComboBoxGUI				( bool ControlSelected = false);
 
 	int          BeginGame					( );
 	bool         ShutDown					( );
@@ -315,6 +293,7 @@ private:
 	IDirect3D9             * m_pD3D;             // Direct3D Object
 	IDirect3DDevice9	   * m_pD3DDevice;       // Direct3D Device Object
 
+	bool m_windowed;
 	std::vector<MODEINFO> m_displayModes;
 	std::vector<D3DFORMAT> m_adapterFormats;
 	std::vector<ADAPTERINFO> m_adpatersInfo;
