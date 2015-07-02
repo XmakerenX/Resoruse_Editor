@@ -1,10 +1,11 @@
 #include "COptionDialogUI.h"
 
-const std::unordered_map<UINT,char*> CGameWin::s_depthFormatsString = InitDepthFormatMap();
-const std::unordered_map<UINT,char*> CGameWin::s_mutliSampleString = InitMultiSampleMap();
-const std::unordered_map<ULONG,char*> CGameWin::s_vertexProcString = InitVertexProcMap();
+const std::unordered_map<UINT,char*> COptionDialogUI::s_depthFormatsString = InitDepthFormatMap();
+const std::unordered_map<UINT,char*> COptionDialogUI::s_mutliSampleString = InitMultiSampleMap();
+const std::unordered_map<ULONG,char*> COptionDialogUI::s_vertexProcString = InitVertexProcMap();
 
-COptionDialogUI::COptionDialogUI(void)
+COptionDialogUI::COptionDialogUI(std::vector<D3DFORMAT>& adapterFormats, std::vector<ADAPTERINFO>& adapterInfo)
+	:m_adapterFormats(adapterFormats), m_adpatersInfo(adapterInfo)
 {
 }
 
@@ -63,7 +64,7 @@ bool COptionDialogUI::ChangeDisplayAdapter(UINT adapterIndex, D3DDEVTYPE deviceT
 	getComboBox(IDC_RENDERDEVCOM)->RemoveAllItems();
 
 	for (UINT i = 0; i < curAdapter.deviceTypes.size(); i++)
-		getComboBox(IDC_RENDERDEVCOM)->AddItem(curAdapter.deviceTypes[i].deviceDescription.c_str(), (void*)curAdapter.deviceTypes[i].deviceType);
+		getComboBox(IDC_RENDERDEVCOM)->AddItem(curAdapter.deviceTypes[i].deviceDescription.c_str(), (void*)&curAdapter.deviceTypes[i].deviceType);
 
 	getComboBox(IDC_RESOLUTIONCOM)->RemoveAllItems();
 	for (UINT i = 0; i < curAdapter.displayModes.size(); i++)
@@ -124,16 +125,15 @@ bool COptionDialogUI::ChangeDisplayDevice(UINT adapterIndex, D3DDEVTYPE deviceTy
 	else
 		getComboBox(IDC_DPETHSTENCOM)->setEnabled(false);
 
-	std::vector<D3DMULTISAMPLE_TYPE> curValidMultiSampleTypes;
-	curValidMultiSampleTypes = curDeviceInfo.validMultiSampleTypes[DEVICETYPEINFO::WINDOWED];
+	std::vector<D3DMULTISAMPLE_TYPE>& curValidMultiSampleTypes = curDeviceInfo.validMultiSampleTypes[DEVICETYPEINFO::WINDOWED];
 
 	getComboBox(IDC_MULSAMPLECOM)->RemoveAllItems();
 
 	for (UINT i = 0; i < curValidMultiSampleTypes.size(); i++)
 	{
 		if (s_mutliSampleString.find(curValidMultiSampleTypes[i] ) != s_mutliSampleString.end() )
-			m_OptionsDialog.getComboBox(IDC_MULSAMPLECOM)->AddItem(s_mutliSampleString.at(curValidMultiSampleTypes[i]),
-			&curValidMultiSampleTypes[i]);
+			getComboBox(IDC_MULSAMPLECOM)->AddItem(s_mutliSampleString.at(curValidMultiSampleTypes[i]),
+			&curValidMultiSampleTypes[i]);		
 	}
 
 	getComboBox(IDC_VERTEXPROCCOM)->RemoveAllItems();
@@ -166,7 +166,7 @@ void COptionDialogUI::WindowedRadioClicked(CButtonUI* pRadio)
 	getComboBox(IDC_REFRATECOM)->setEnabled(false);
 	getCheckBox(IDC_ASPECTCHECK)->setEnabled(false);
 
-	m_windowed = true;
+	//m_windowed = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -179,10 +179,9 @@ void COptionDialogUI::FullscreenRadioClicked(CButtonUI* pRadio)
 	getComboBox(IDC_REFRATECOM)->setEnabled(true);
 	getCheckBox(IDC_ASPECTCHECK)->setEnabled(true);
 
-	m_windowed = false;
+	//m_windowed = false;
 
-	UINT dislpayAdapterIndex = (UINT)m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)
-		->GetSelectedData();
+	UINT dislpayAdapterIndex = (UINT)getComboBox(IDC_DISPADAPCOM)->GetSelectedData();
 
 	ADAPTERINFO& curAdatperInfo = m_adpatersInfo[dislpayAdapterIndex];
 	if (curAdatperInfo.displayModes.size() == 0)
@@ -190,11 +189,11 @@ void COptionDialogUI::FullscreenRadioClicked(CButtonUI* pRadio)
 
 	DISPLAYMODE& selDisplayMode = curAdatperInfo.displayModes[0];
 
-	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->RemoveAllItems();
+	getComboBox(IDC_REFRATECOM)->RemoveAllItems();
 	for (UINT j = 0; j < selDisplayMode.RefreshRates.size(); j++)
 	{
 		std::string refreshRate = std::to_string((long long) selDisplayMode.RefreshRates[j]);
-		m_OptionsDialog.getComboBox(IDC_REFRATECOM)->AddItem(refreshRate.c_str(),
+		getComboBox(IDC_REFRATECOM)->AddItem(refreshRate.c_str(),
 			(void*)selDisplayMode.RefreshRates[j]);
 	}
 }
@@ -204,29 +203,22 @@ void COptionDialogUI::FullscreenRadioClicked(CButtonUI* pRadio)
 //-----------------------------------------------------------------------------
 void COptionDialogUI::ResoulationSelChg(CComboBoxUI* pCombobox)
 {
-	UINT dislpayAdapterIndex = (UINT)m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)
+	UINT dislpayAdapterIndex = (UINT)getComboBox(IDC_DISPADAPCOM)
 		->GetSelectedData();
 
 	UINT modeIndex = (UINT)pCombobox->GetSelectedData();
 
 	DISPLAYMODE curDisplayMode = m_adpatersInfo[dislpayAdapterIndex].displayModes[modeIndex];
-	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->RemoveAllItems();
+	getComboBox(IDC_REFRATECOM)->RemoveAllItems();
 
 	for (UINT i = 0; i < curDisplayMode.RefreshRates.size(); i++)
 	{
 		std::string refreshRate = std::to_string((long long) curDisplayMode.RefreshRates[i]);
-		m_OptionsDialog.getComboBox(IDC_REFRATECOM)->AddItem(refreshRate.c_str(),
+		getComboBox(IDC_REFRATECOM)->AddItem(refreshRate.c_str(),
 			(void*)curDisplayMode.RefreshRates[i]);
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Name : OptionDialogOKClicked ()
-//-----------------------------------------------------------------------------
-void COptionDialogUI::OptionDialogOKClicked(CButtonUI* pButton)
-{
-	;
-}
 
 //-----------------------------------------------------------------------------
 // Name : InitDepthFormatMap ()

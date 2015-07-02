@@ -175,3 +175,11 @@ bool CCheckboxUI::SaveToFile(std::ostream& SaveFile)
 
 	return true;
 }
+
+//-----------------------------------------------------------------------------
+// Name : getChecked ()
+//-----------------------------------------------------------------------------
+bool CCheckboxUI::getChecked()
+{
+	return m_bChecked;
+}

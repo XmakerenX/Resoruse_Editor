@@ -21,6 +21,8 @@ public:
 
 	virtual bool	SaveToFile			(std::ostream& SaveFile);
 
+	bool			getChecked			();
+
 protected:
 	bool m_bChecked;
 

@@ -97,7 +97,7 @@ HRESULT CAssetManager::AddMesh()
 // Desc : crate a mesh object and set it values based on the mesh file given
 // Note : Default loading options are D3DXMESH_MANAGED
 //-----------------------------------------------------------------------------
-HRESULT CAssetManager::AddMesh(char meshPath[MAX_PATH], DWORD meshOptions /*= D3DXMESH_MANAGED*/)
+HRESULT CAssetManager::AddMesh(const char meshPath[MAX_PATH], DWORD meshOptions /*= D3DXMESH_MANAGED*/)
 {
 	HRESULT hr;
 	long meshIndex;
@@ -318,8 +318,10 @@ ULONG CAssetManager::getAttributeID(LPCTSTR strTextureFile, const OBJMATERIAL * 
 	{
 		// We know it doesn't exist, but we can still use
 		// collect texture to do the work for us.
-		AttribItem.TextureIndex = m_nTextureCount;
-		getTexture(strTextureFile );
+		if (getTexture(strTextureFile ))
+			AttribItem.TextureIndex = m_nTextureCount - 1;
+		else
+			AttribItem.TextureIndex = -1;
 
 	} // End if no texture match
 	else
@@ -352,7 +354,7 @@ const ATTRIBUTE_ITEM& CAssetManager::getAtribItem(ULONG attribID) const
 // Note : There is no need to give texture format if one was registered in
 //		  the class unless you want a specific format for whatever reason
 //-----------------------------------------------------------------------------
-LPDIRECT3DTEXTURE9 CAssetManager::getTexture(LPCTSTR FileName, UINT* textureIndex/* = NULL*/, D3DFORMAT fmtTexture/* = D3DFMT_UNKNOWN*/)
+LPDIRECT3DTEXTURE9 CAssetManager::getTexture(LPCTSTR FileName, UINT* textureIndex/* = NULL*/, bool powerOf2/* = true*/, D3DFORMAT fmtTexture/*= D3DFMT_UNKNOWN*/)
 {
 	HRESULT        hRet;
 	TEXTURE_ITEM * pNewTexture = NULL;
@@ -393,9 +395,18 @@ LPDIRECT3DTEXTURE9 CAssetManager::getTexture(LPCTSTR FileName, UINT* textureInde
 	// 	_tcscat( Buffer, FileName);
 
 	// Create the texture (use 3 mip levels max)
-	hRet = D3DXCreateTextureFromFileEx(m_pD3DDevice, FileName, D3DX_DEFAULT, D3DX_DEFAULT, 3, 0,
-		fmtTexture, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT,
-		0, NULL, NULL, &pNewTexture->Texture );
+	if (powerOf2)
+	{
+		hRet = D3DXCreateTextureFromFileEx(m_pD3DDevice, FileName, D3DX_DEFAULT, D3DX_DEFAULT, 3, 0,
+			fmtTexture, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT,
+			0, NULL, NULL, &pNewTexture->Texture );
+	}
+	else
+	{
+		hRet = D3DXCreateTextureFromFileEx(m_pD3DDevice, FileName, D3DX_DEFAULT, D3DX_DEFAULT, 3, 0,
+			fmtTexture, D3DPOOL_MANAGED, D3DX_DEFAULT_NONPOW2, D3DX_DEFAULT_NONPOW2,
+			0, NULL, NULL, &pNewTexture->Texture );
+	}
 
 	if (FAILED(hRet)) 
 	{

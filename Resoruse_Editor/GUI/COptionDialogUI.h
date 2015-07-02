@@ -63,7 +63,7 @@ class COptionDialogUI :
 	public CDialogUI
 {
 public:
-	COptionDialogUI(void);
+	COptionDialogUI(std::vector<D3DFORMAT>& adapterFormats, std::vector<ADAPTERINFO>& adapterInfo);
 	virtual ~COptionDialogUI(void);
 
 	void CreateDialogUI();
@@ -76,12 +76,10 @@ public:
 	void  WindowedRadioClicked		(CButtonUI* pRadio);
 	void  FullscreenRadioClicked	(CButtonUI* pRadio);
 	void  ResoulationSelChg			(CComboBoxUI* pCombobox);
-	void  OptionDialogOKClicked		(CButtonUI* pButton);
 
 private:
-	bool m_windowed;
-	std::vector<D3DFORMAT> m_adapterFormats;
-	std::vector<ADAPTERINFO> m_adpatersInfo;
+	std::vector<D3DFORMAT>& m_adapterFormats;
+	std::vector<ADAPTERINFO>& m_adpatersInfo;
 
 	static const std::unordered_map<UINT,char*> s_depthFormatsString;
 	static const std::unordered_map<UINT,char*> s_mutliSampleString;

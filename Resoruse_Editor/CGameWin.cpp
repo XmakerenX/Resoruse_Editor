@@ -9,13 +9,17 @@ const std::unordered_map<ULONG,char*> CGameWin::s_vertexProcString = InitVertexP
 //-----------------------------------------------------------------------------
 // Name : CGameWin (constructor)
 //-----------------------------------------------------------------------------
-CGameWin::CGameWin() :Width(1024),Height(742)//640 480
+CGameWin::CGameWin() 
+	:Width(1024),Height(742)//640 480
+	,m_EditDialog(m_assetManger.getTimer()), m_OptionsDialog(m_adapterFormats, m_adpatersInfo)
 {
 	m_gameRunning = true;
 
 	//clearing cameras
 	for (UINT i = 0; i < 2; i++)
 		m_pCameras[i]		= NULL;
+
+	m_windowed = true;
 
 	//clearing handles to win32 and dirctx objects
 	m_hWnd          = NULL;
@@ -121,13 +125,10 @@ bool CGameWin::InitInstance(HINSTANCE hInstance, LPCTSTR lpCmdLine, int iCmdShow
 //-----------------------------------------------------------------------------
 LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	if (m_OptionsDialog.MsgProc(hWnd, message, wParam, lParam, m_timer))
+	if (m_OptionsDialog.MsgProc(hWnd, message, wParam, lParam, m_timer, m_windowed))
 		return 0;
 
-	if (m_GenDialog.MsgProc(hWnd,message,wParam,lParam, m_timer) )
-		return 0;
-
-	if (m_EditDialog.MsgProc(hWnd,message,wParam,lParam, m_timer) )
+	if (m_EditDialog.MsgProc(hWnd,message,wParam,lParam, m_timer, m_windowed) )
 		return 0;
 
 	// Determine message type
@@ -174,32 +175,6 @@ LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_LBUTTONDOWN:
 		{
-			if (m_controlInCreation)
-			{	
-				POINT genDailogLoc = m_GenDialog.getLocation();
-				genDailogLoc.y += m_GenDialog.getCaptionHeight();
-				int x = (int)LOWORD(lParam) - genDailogLoc.x;
-				int y = (int)HIWORD(lParam) - genDailogLoc.y;
-				m_GenDialog.getControl(m_curControlID + 1)->setLocation(x, y);
-				m_GenDialog.getControl(m_curControlID + 1)->setEnabled(true);
-				m_controlInCreation = false;
-				m_GenControlNum++;
-				m_curControlID++;
-			}
-
-			if (m_controlRelocate && m_pCurSelectedControl)
-			{
-				POINT mousePoint;
-				POINT dialogPoint = m_GenDialog.getLocation();
-				mousePoint.x = (int)LOWORD(lParam) - dialogPoint.x;
-				mousePoint.y = (int)HIWORD(lParam) - ( dialogPoint.y + m_GenDialog.getCaptionHeight() );
-				//ClientToScreen(m_hWnd,&mousePoint);
-
-				m_pCurSelectedControl->setLocation(mousePoint.x,mousePoint.y);
-				m_pCurSelectedControl->setEnabled(true);
-				m_controlRelocate = false;
-			}
-
 			// Capture the mouse
 			/*m_hWnd=hWnd;*/
 			SetCapture( hWnd );
@@ -208,31 +183,10 @@ LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 
-	case  WM_MOUSEMOVE:
-		{
-			if (m_controlInCreation)
-			{		
-				POINT genDialogLog = m_GenDialog.getLocation();
-				genDialogLog.y += m_GenDialog.getCaptionHeight();
-				int x = (int)LOWORD(lParam);
-				int y = (int)HIWORD(lParam);
-				m_GenDialog.getControl(m_curControlID + 1)->setLocation( x - genDialogLog.x, y - genDialogLog.y);
-
-			}
-
-			if (m_controlRelocate && m_pCurSelectedControl)
-			{
-				POINT mousePoint;
-				POINT dialogPoint = m_GenDialog.getLocation();
-				dialogPoint.y += m_GenDialog.getCaptionHeight();
-
-				mousePoint.x = (int)LOWORD(lParam);
-				mousePoint.y = (int)HIWORD(lParam);
-				//ClientToScreen(hWnd,&mousePoint);
-
-				m_pCurSelectedControl->setLocation(mousePoint.x - dialogPoint.x ,mousePoint.y - dialogPoint.y );
-			}
-		}break;
+// 	case  WM_MOUSEMOVE:
+// 		{
+// 
+// 		}break;
 
 	case WM_LBUTTONUP:
 		{		
@@ -246,96 +200,6 @@ LRESULT CGameWin::WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			SetCapture( m_hWnd );
 			m_bPicking = true;
-
-			POINT mousePoint;
-			CControlUI* pCurSelectedControl = nullptr;
-
-			GetCursorPos(&mousePoint);
-			ScreenToClient(hWnd,&mousePoint);
-
-			mousePoint.x -= m_GenDialog.getLocation().x;
-			mousePoint.y -= m_GenDialog.getLocation().y + m_GenDialog.getCaptionHeight();
-
-			pCurSelectedControl = m_GenDialog.getControlAtPoint(mousePoint);
-
-			if (pCurSelectedControl) 
-			{
-				m_EditDialog.getComboBox(IDC_COMBOX)->SetSelectedByIndex(pCurSelectedControl->getType());
-
-				long long controlWidth = pCurSelectedControl->getWidth();
-				long long controlHeight = pCurSelectedControl->getHeight();
-
-				m_EditDialog.getEditBox(IDC_WIDTHEDITBOX)->SetText( std::to_string( controlWidth ).c_str() );
-				m_EditDialog.getEditBox(IDC_HEIGHTEDITBOX)->SetText( std::to_string( controlHeight ).c_str() );
-
-				const char* pControlIDText = m_GenDialog.getControlIDText(pCurSelectedControl->getID()); 
-				m_EditDialog.getEditBox(IDC_IDEDITBOX)->SetText(pControlIDText);
-
-				long long ControlX = pCurSelectedControl->getX();
-				long long ControlY = pCurSelectedControl->getY();
-
-				m_EditDialog.getEditBox(IDC_CONTROLX)->SetText( std::to_string(ControlX).c_str() );
-				m_EditDialog.getEditBox(IDC_CONTROLY)->SetText( std::to_string(ControlY).c_str() );
-
-				switch (pCurSelectedControl->getType())
-				{
-				case CControlUI::STATIC:
-				case CControlUI::BUTTON:
-				case CControlUI::EDITBOX:
-				case CControlUI::CHECKBOX:
-					{
-						m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->SetText( static_cast<CStaticUI*>(pCurSelectedControl)->getText() );
-						SetStaticGUI(true);
-
-					}break;
-				case CControlUI::RADIOBUTTON:
-					{
-						m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->SetText( static_cast<CStaticUI*>(pCurSelectedControl)->getText() );
-
-						long long controlButtonGroup = static_cast<CRadioButtonUI*>(pCurSelectedControl)->getButtonGroup();
-						m_EditDialog.getEditBox(IDC_RADIOBUTTONGROUP)->SetText( std::to_string(controlButtonGroup).c_str() );
-
-						SetRadioButtonGUI(true);
-					}break;
-				case CControlUI::SLIDER:
-					{
-						int  sliderMin;
-						int  sliderMax;
-
-						static_cast<CSliderUI*>(pCurSelectedControl)->GetRange(sliderMin, sliderMax);
-
-						m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->SetText( std::to_string( static_cast<long long>( sliderMin ) ).c_str() );
-						m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->SetText( std::to_string( static_cast<long long>( sliderMax ) ).c_str() );
-
-						SetSliderGUI(true);
-					}break;
-				case CControlUI::LISTBOX:
-					{
-						m_EditDialog.getListBox(IDC_LISTBOXITEMS)->CopyItemsFrom( static_cast<CListBoxUI*>(pCurSelectedControl) );
-						m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->SetText("");
-
-						SetListBoxGUI(true);
-
-					}break;
-				case CControlUI::COMBOBOX:
-					{
-						m_EditDialog.getComboBox(IDC_COMBOXITEMS)->CopyItemsFrom( static_cast<CComboBoxUI*>(pCurSelectedControl) );
-						m_EditDialog.getEditBox(IDCLISTOXEDITBOX)->SetText("");
-
-						SetComboBoxGUI(true);
-					}break;
-				}
-				
-				m_pCurSelectedControl = pCurSelectedControl;
-				m_EditDialog.getButton(IDC_RELOCATEBUTTON)->setEnabled(true);
-			}
-			else
-			{
-				m_EditDialog.getButton(IDC_CREATECONTROL)->setVisible(true);
-				m_EditDialog.getButton(IDC_SETCHANGESBUTTON)->setVisible(false);
-				m_EditDialog.getButton(IDC_RELOCATEBUTTON)->setEnabled(false);
-			}
-
 		}break;
 
 	case WM_RBUTTONUP:
@@ -768,6 +632,8 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 		}
 	}
 
+	m_curD3dpp = d3dpp;
+
 	m_pD3DDevice->GetViewport(&m_viewPort);
 
 	// initialize the assetManger and create needed asset on the device aka the sprite
@@ -780,6 +646,7 @@ HRESULT CGameWin::CreateDevice(bool windowed)
 	m_nViewY      = rc.top;
 	m_nViewWidth  = rc.right - rc.left;
 	m_nViewHeight = rc.bottom - rc.top;
+	m_clientRC = rc;
 
 
 	//setting cameras settings 
@@ -881,40 +748,36 @@ void CGameWin::EnumMultiSample(UINT adapter, D3DDEVTYPE deviceType, D3DFORMAT ba
 // Name : resetDevice ()
 // Desc : reset the device and reload the resource that require it
 //-----------------------------------------------------------------------------
-void CGameWin::resetDevice()
+void CGameWin::resetDevice(D3DPRESENT_PARAMETERS& d3dpp)
 {
 	HRESULT hr;
 	// App is active
 	m_bActive = true;
 
-	// Store new viewport sizes
-	// 	m_nViewWidth  = LOWORD( lParam );
-	// 	m_nViewHeight = HIWORD( lParam );
-
 	// width height backbuffer format multisampletype depthstencil format refresh rate 
 
-	RECT rc;
-	::GetClientRect( m_hWnd, &rc );
-	m_nViewX      = rc.left;
-	m_nViewY      = rc.top;
-	m_nViewWidth  = rc.right - rc.left;
-	m_nViewHeight = rc.bottom - rc.top;
-
-	D3DPRESENT_PARAMETERS d3dpp;
-	d3dpp.BackBufferWidth            = m_nViewWidth;
-	d3dpp.BackBufferHeight           = m_nViewHeight;
-	d3dpp.BackBufferFormat           = D3DFMT_A8R8G8B8;
-	d3dpp.BackBufferCount            = 1;
-	d3dpp.MultiSampleType            = D3DMULTISAMPLE_NONE;
-	d3dpp.MultiSampleQuality         = 0;
-	d3dpp.SwapEffect                 = D3DSWAPEFFECT_DISCARD; 
-	d3dpp.hDeviceWindow              = m_hWnd;
-	d3dpp.Windowed                   = true; //TODO: set this to variable not static value
-	d3dpp.EnableAutoDepthStencil     = true; 
-	d3dpp.AutoDepthStencilFormat     = D3DFMT_D24S8;
-	d3dpp.Flags                      = 0;
-	d3dpp.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
-	d3dpp.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE;
+// 	RECT rc;
+// 	::GetClientRect( m_hWnd, &rc );
+// 	m_nViewX      = rc.left;
+// 	m_nViewY      = rc.top;
+// 	m_nViewWidth  = rc.right - rc.left;
+// 	m_nViewHeight = rc.bottom - rc.top;
+// 
+// 	D3DPRESENT_PARAMETERS d3dpp;
+// 	d3dpp.BackBufferWidth            = m_nViewWidth;
+// 	d3dpp.BackBufferHeight           = m_nViewHeight;
+// 	d3dpp.BackBufferFormat           = D3DFMT_A8R8G8B8;
+// 	d3dpp.BackBufferCount            = 1;
+// 	d3dpp.MultiSampleType            = D3DMULTISAMPLE_NONE;
+// 	d3dpp.MultiSampleQuality         = 0;
+// 	d3dpp.SwapEffect                 = D3DSWAPEFFECT_DISCARD; 
+// 	d3dpp.hDeviceWindow              = m_hWnd;
+// 	d3dpp.Windowed                   = true; //TODO: set this to variable not static value
+// 	d3dpp.EnableAutoDepthStencil     = true; 
+// 	d3dpp.AutoDepthStencilFormat     = D3DFMT_D24S8;
+// 	d3dpp.Flags                      = 0;
+// 	d3dpp.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+// 	d3dpp.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE;
 
 
 	// 	if (m_GuiDilaogResManger.m_pStateBlock != NULL)
@@ -1005,105 +868,6 @@ std::unordered_map<ULONG,char*> CGameWin::InitVertexProcMap()
 }
 
 //-----------------------------------------------------------------------------
-// Name : ChangeDisplayAdapter ()
-//-----------------------------------------------------------------------------
-bool CGameWin::ChangeDisplayAdapter(UINT adapterIndex, D3DDEVTYPE deviceType/*= D3DDEVTYPE_HAL*/)
-{
-	if (adapterIndex >= m_adpatersInfo.size() )
-		return false;
-
-	ADAPTERINFO& curAdapter = m_adpatersInfo[adapterIndex];
-
-	if (curAdapter.deviceTypes.size() == 0)
-		return false;
-
-	m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->RemoveAllItems();
-
-	for (UINT i = 0; i < curAdapter.deviceTypes.size(); i++)
-		m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->AddItem(curAdapter.deviceTypes[i].deviceDescription.c_str(), (void*)curAdapter.deviceTypes[i].deviceType);
-
-	m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->RemoveAllItems();
-	for (UINT i = 0; i < curAdapter.displayModes.size(); i++)
-	{
-		DISPLAYMODE& curDisplayMode = curAdapter.displayModes[i];
-
-
-				std::string resWidth = std::to_string( (long long)curDisplayMode.Width);
-				std::string resHeight = std::to_string( (long long)curDisplayMode.Height);
-				std::string resoulation = resWidth + "X" + resHeight;
-
-				m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->AddItem(resoulation.c_str(), (void*)i);
-
-	}
-
-	ChangeDisplayDevice(adapterIndex, deviceType);
-}
-
-//-----------------------------------------------------------------------------
-// Name : ChangeDisplayDevice 
-//-----------------------------------------------------------------------------
-bool CGameWin::ChangeDisplayDevice(UINT adapterIndex, D3DDEVTYPE deviceType)
-{
-	UINT deviceIndex = -1;
-	if (adapterIndex < m_adpatersInfo.size() )
-	{
-		for (UINT i = 0; i < m_adpatersInfo[adapterIndex].deviceTypes.size(); i++)
-		{
-			DEVICETYPEINFO& curDeviceInfo = m_adpatersInfo[adapterIndex].deviceTypes[i];
-			if (curDeviceInfo.deviceType == deviceType)
-			{
-				deviceIndex = i;
-				break;
-			}
-		}
-		if (deviceIndex == -1)
-			return false;
-	}
-	else
-		return false;
-
-	DEVICETYPEINFO& curDeviceInfo = m_adpatersInfo[adapterIndex].deviceTypes[deviceIndex];
-
-	m_OptionsDialog.getComboBox(IDC_BBFORMATCOM)->RemoveAllItems();
-	m_OptionsDialog.getComboBox(IDC_BBFORMATCOM)->AddItem("X8R8G8B8",nullptr);
-
-	m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->RemoveAllItems();
-
-	if (curDeviceInfo.bDepthEnable[DEVICETYPEINFO::WINDOWED])
-	{
-		for (UINT i = 0; i < curDeviceInfo.validDepths[DEVICETYPEINFO::WINDOWED].size(); i++)
-		{
-			std::vector<D3DFORMAT>& curValidDepths = curDeviceInfo.validDepths[DEVICETYPEINFO::WINDOWED];
-			if (s_depthFormatsString.find(curValidDepths[i] ) != s_depthFormatsString.end() )
-				m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->AddItem( s_depthFormatsString.at(curValidDepths[i]), &curValidDepths[i]);
-		}
-	}
-	else
-		m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->setEnabled(false);
-
-	std::vector<D3DMULTISAMPLE_TYPE> curValidMultiSampleTypes;
-	curValidMultiSampleTypes = curDeviceInfo.validMultiSampleTypes[DEVICETYPEINFO::WINDOWED];
-
-	m_OptionsDialog.getComboBox(IDC_MULSAMPLECOM)->RemoveAllItems();
-
-	for (UINT i = 0; i < curValidMultiSampleTypes.size(); i++)
-	{
-		if (s_mutliSampleString.find(curValidMultiSampleTypes[i] ) != s_mutliSampleString.end() )
-			m_OptionsDialog.getComboBox(IDC_MULSAMPLECOM)->AddItem(s_mutliSampleString.at(curValidMultiSampleTypes[i]),
-			&curValidMultiSampleTypes[i]);
-	}
-
-	m_OptionsDialog.getComboBox(IDC_VERTEXPROCCOM)->RemoveAllItems();
-
-	for (UINT i = 0; i < curDeviceInfo.vpTypes.size(); i++)
-	{
-		ULONG curVpType = curDeviceInfo.vpTypes[i];
-		if ( s_vertexProcString.find(curVpType) != s_vertexProcString.end() )
-			m_OptionsDialog.getComboBox(IDC_VERTEXPROCCOM)->AddItem(s_vertexProcString.at(curVpType), (void*)curVpType);
-	}
-}
-
-//-----------------------------------------------------------------------------
 // Name : BuildObjects 
 // Desc : creates all the object for the current scene
 //-----------------------------------------------------------------------------
@@ -1119,9 +883,9 @@ bool CGameWin::ChangeDisplayDevice(UINT adapterIndex, D3DDEVTYPE deviceType)
 	setRenderStates();
 
 	// TODO: check if m_hWnd is set to valid value!
-	m_EditDialog.SetCallback(StaticOnGUIEvent);
-	m_GenDialog.SetCallback (StaticOnGUIEvent);
-	m_OptionsDialog.SetCallback(StaticOnGUIEvent);
+	//m_EditDialog.SetCallback(StaticOnGUIEvent);
+	//m_GenDialog.SetCallback (StaticOnGUIEvent);
+	//m_OptionsDialog.SetCallback(StaticOnGUIEvent);
 
 	//-----------------------------------------------------------------------------
 	// Dialog initialization
@@ -1129,234 +893,26 @@ bool CGameWin::ChangeDisplayDevice(UINT adapterIndex, D3DDEVTYPE deviceType)
 	m_EditDialog.init(500,735,18, "Edit Dialog","", d3d::GREEN, m_hWnd, m_assetManger);
 	m_EditDialog.setLocation(550,0);
 
-	m_EditDialog.addStatic(IDC_CONTROLTYPESTATIC, "Control Type", 125, 0, 200, 24);
-
-	CComboBoxUI* pComboBox;
-	m_EditDialog.addComboBox(IDC_COMBOX, "", 125, 25, 200, 24, 0, &pComboBox);
-	pComboBox->AddItem("Static", (void*)CControlUI::STATIC );
-	pComboBox->AddItem("Button", (void*)CControlUI::BUTTON);
-	pComboBox->AddItem("CheckBox", (void*)CControlUI::CHECKBOX);
-	pComboBox->AddItem("RadioButton", (void*)CControlUI::RADIOBUTTON);
-	pComboBox->AddItem("ComboBox", (void*)CControlUI::COMBOBOX);
-	pComboBox->AddItem("Slider", (void*)CControlUI::SLIDER);
-	pComboBox->AddItem("ListBox", (void*)CControlUI::LISTBOX);
-	pComboBox->AddItem("EditBox", (void*)CControlUI::EDITBOX);
-	
-	pComboBox->ConnectToSelectChg( boost::bind(&CGameWin::ComboboxSelChg, this, _1) );
-
-	//TODO fix the add functions I have broken them...
-	m_EditDialog.addStatic(IDC_WIDTHSTATIC, "Width", 125, 50, 60, 24);
-	m_EditDialog.addStatic(IDC_HEIGHTSTATIC, "Height", 265, 50, 60, 24);
-
-	m_EditDialog.addEditbox(IDC_WIDTHEDITBOX, "", 125, 75, 70, 32, m_timer);
-	m_EditDialog.addEditbox(IDC_HEIGHTEDITBOX, "", 255, 75, 70, 32, m_timer);
-
-	m_EditDialog.addStatic(IDC_IDSTATIC, "Control ID",125, 110, 200, 24);
-	m_EditDialog.addEditbox(IDC_IDEDITBOX, "IDC_", 125, 134, 200, 34, m_timer);
-
-	m_EditDialog.addStatic(IDC_CONTROLTEXT, "Control Text", 125, 168, 200, 34);
-	m_EditDialog.addEditbox(IDC_TEXTEDITBOX, "", 125, 202, 200, 34, m_timer);
-
-	//-----------------------------------------------------------------------------
-	// Radio button menu initialization
-	//-----------------------------------------------------------------------------
-	CStaticUI* pRadioLabel = nullptr;
-	CEditBoxUI* pRadioEditbox = nullptr;
-	m_EditDialog.addStatic(IDC_RADIOGROUPTEXT, "Radio Button Group", 125, 236, 200, 34, &pRadioLabel);
-	m_EditDialog.addEditbox(IDC_RADIOBUTTONGROUP, "0", 125, 270, 30, 34, m_timer, &pRadioEditbox);
-
-	pRadioLabel->setVisible(false);
-	pRadioEditbox->setVisible(false);
-
-	//-----------------------------------------------------------------------------
-	// Slider menu initialization
-	//-----------------------------------------------------------------------------
-	CStaticUI* pSliderLabel = nullptr;
-	CEditBoxUI* pSliderMinEditbox = nullptr;
-	CEditBoxUI* pSliderMaxEditbox = nullptr;
-
-	m_EditDialog.addStatic(IDC_SLIDERSTATIC, "Slider Range", 125, 236, 200, 34, &pSliderLabel);
-	m_EditDialog.addEditbox(IDC_SLIDERMINEDITBOX, "0", 125, 270, 50, 34, m_timer, &pSliderMinEditbox);
-	m_EditDialog.addEditbox(IDC_SLIDERMAXEDITBOX, "100", 275, 270, 50, 34, m_timer, &pSliderMaxEditbox);
-
-	pSliderLabel->setVisible(false);
-	pSliderMinEditbox->setVisible(false);
-	pSliderMaxEditbox->setVisible(false);
-
-	//-----------------------------------------------------------------------------
-	// listbox menu initialization
-	//-----------------------------------------------------------------------------
-	CListBoxUI* pListBoxNewItems = nullptr;
-	CStaticUI* pListBoxStatic = nullptr;
-	CEditBoxUI* pListBoxEditBox = nullptr;
-	CButtonUI* pAddItem = nullptr;
-	CButtonUI* pRemoveItem = nullptr;
-
-	m_EditDialog.addListBox(IDC_LISTBOXITEMS, 125, 190, 200, 170, 0, &pListBoxNewItems);
-	m_EditDialog.addStatic(IDC_LISTBOXSTATIC, "ListBox Item text", 125, 341, 200, 34, &pListBoxStatic);
-	m_EditDialog.addEditbox(IDCLISTOXEDITBOX,"", 125, 380, 200, 34, m_timer, &pListBoxEditBox);
-	m_EditDialog.addButton(IDC_LISTBOXITEMSADD, "Add Item", 125, 424, 85, 34, 0, &pAddItem);
-	m_EditDialog.addButton(IDC_LISTBOXITEMSREMOVE, "Remove Item", 220, 424, 105, 34, 0, &pRemoveItem);
-
-	pListBoxNewItems->setVisible(false);
-	pListBoxStatic->setVisible(false);
-	pListBoxEditBox->setVisible(false);
-	pAddItem->setVisible(false);
-	pRemoveItem->setVisible(false);
-
-	pAddItem->connectToClick( boost::bind(&CGameWin::AddListBoxItemClicked, this, _1) );
-	pRemoveItem->connectToClick( boost::bind(&CGameWin::RemoveListBoxItemClikced, this, _1) );
-
-	//-----------------------------------------------------------------------------
-	// Combobox menu initialization
-	//-----------------------------------------------------------------------------
-	CComboBoxUI* pComboboxNewItems = nullptr;
-	CButtonUI* pComboAddItems = nullptr;
-	CButtonUI* pComboRemoveItems = nullptr;
-
-
-	m_EditDialog.addComboBox(IDC_COMBOXITEMS,"", 125, 190, 200, 95, 0, &pComboboxNewItems);
-	m_EditDialog.addButton(IDC_COMBOBOXITEMSADD, "Add Items", 125, 424, 85, 34, 0, &pComboAddItems);
-	m_EditDialog.addButton(IDC_COMBOBOXITEMSREMOVE, "Remove Items", 220, 424, 105, 34, 0, &pComboRemoveItems);
-
-	pComboboxNewItems->setVisible(false);
-	pComboAddItems->setVisible(false);
-	pComboRemoveItems->setVisible(false);
-
-	pComboAddItems->connectToClick( boost::bind(&CGameWin::AddComboBoxItemClicked, this, _1) );
-	pComboRemoveItems->connectToClick( boost::bind(&CGameWin::RemoveComboBoxItemClicked, this, _1));
-
-	//-----------------------------------------------------------------------------
-	// The end of Dialog initialization and creation of create control button
- 	//-----------------------------------------------------------------------------
-	CButtonUI* pCreateControlButton = nullptr;
-	CButtonUI* pSetChangesButton = nullptr;
-
-	m_EditDialog.addButton(IDC_CREATECONTROL, "Create Control",150, 310, 150, 25, 0, &pCreateControlButton);
-	pCreateControlButton->connectToClick( boost::bind(&CGameWin::CreateControlClicked, this, _1) );
-
-	m_EditDialog.addButton(IDC_SETCHANGESBUTTON, "Set Changes", 150, 310, 150, 25,0, &pSetChangesButton);
-	pSetChangesButton->connectToClick( boost::bind(&CGameWin::SetChangesButtonClicked, this, _1) );
-	pSetChangesButton->setVisible(false);
-
-	//m_EditDialog.
-
-	//-----------------------------------------------------------------------------
-	// Dialog resize menu creation
-	//-----------------------------------------------------------------------------
-	CStaticUI* pDialogStatic = nullptr;
-	CEditBoxUI* pDialogWidth = nullptr;
-	CEditBoxUI* pDialogHeight = nullptr;
-	CButtonUI* pDialogSet = nullptr;
-
-	m_EditDialog.addStatic(IDC_DIALOGSTATIC,"Dialog Size", 125, 480, 200, 60, &pDialogStatic);
-	m_EditDialog.addEditbox(IDC_DIALOGWIDTH, "", 125, 530, 50, 34, m_timer, &pDialogWidth);
-	m_EditDialog.addEditbox(IDC_DIALOGHEIGHT, "", 275, 530, 50, 34, m_timer, &pDialogHeight );
-	m_EditDialog.addButton(IDC_DIALOGSETSIZE, "Set Size", 150, 569, 150, 25, 0,&pDialogSet);
-
-	pDialogSet->connectToClick( boost::bind(&CGameWin::SetGenDialogSize, this, _1) );
-
-	//-----------------------------------------------------------------------------
-	// Dialog resize menu creation
-	//-----------------------------------------------------------------------------
-	CStaticUI* pFileNameStatic = nullptr;
-	CEditBoxUI* pFileNameEditBox = nullptr;
-	CButtonUI* pLoadFileButton = nullptr;
-	CButtonUI* pSaveFilButton = nullptr;
-
-	m_EditDialog.addStatic(IDC_FILENAMESTATIC,"FIle Name", 125, 579, 200, 60, &pFileNameStatic);
-	m_EditDialog.addEditbox(IDC_FILENAMEEDITBOX, "", 125, 624, 200, 34, m_timer, &pFileNameEditBox);
-	m_EditDialog.addButton(IDC_LOADFILEBUTTON, "Load",125, 663, 70, 34, 0, &pLoadFileButton);
-	m_EditDialog.addButton(IDC_SAVEFILEBUTTON, "Save", 255, 663,70, 34, 0, &pSaveFilButton);
-
-	pLoadFileButton->connectToClick( boost::bind(&CGameWin::LoadDialogButtonClicked, this, _1) );
-	pSaveFilButton->connectToClick( boost::bind(&CGameWin::SaveDialogButtonClicked, this, _1) );
-
-	CEditBoxUI* pControlXEditBox = nullptr;
-	CEditBoxUI* pControlYEditBox = nullptr;
-
-	m_EditDialog.addStatic(IDC_CONTROLXSTATIC, "X", 330, 592, 50, 34);
-	m_EditDialog.addStatic(IDC_CONTROLYSTATIC, "Y", 385, 592, 50, 34);
-
-	m_EditDialog.addEditbox(IDC_CONTROLX, "", 330, 625, 50, 34, m_timer, &pControlXEditBox);
-	m_EditDialog.addEditbox(IDC_CONTROLY, "", 385, 625, 50, 34, m_timer, &pControlYEditBox);
-
-	CButtonUI* pRelocateButton = nullptr;
-	m_EditDialog.addButton(IDC_RELOCATEBUTTON, "Relocate Control", 330, 553, 100, 34, 0, &pRelocateButton);
-	pRelocateButton->connectToClick( boost::bind(&CGameWin::RelocateControlClicked, this, _1) );
-	pRelocateButton->setEnabled(false);
-
-	CButtonUI* pDeleteButton = nullptr;
-	m_EditDialog.addButton(IDC_DELETEBUTTON, "Delete Contorl", 330, 500, 100, 34, 0, &pDeleteButton);
-	pDeleteButton->connectToClick( boost::bind(&CGameWin::DeleteControlClicked, this, _1) );
-	pDeleteButton->setEnabled(false);
+	m_EditDialog.CreateDialogUI(m_assetManger);
 
 	CButtonUI* pOptionsButton = nullptr;
-	m_EditDialog.addButton(IDC_OPTIONSBUTTON, "Options", 450, 75, 100, 34, 0, &pOptionsButton);
+	pOptionsButton = m_EditDialog.getButton(IDC_OPTIONSBUTTON);
 	pOptionsButton->connectToClick( boost::bind(&CGameWin::OptionsControlClicked, this, _1) );
-	pOptionsButton->setEnabled(true);
-
-	//-----------------------------------------------------------------------------
-	// Dialog initialization of the generated Dialog
-	//-----------------------------------------------------------------------------
-	m_GenDialog.init(500,200, 18,"Gendialog", "dialog.png", D3DCOLOR_ARGB(200,255,255,255), m_hWnd, m_assetManger);
-	m_GenDialog.setLocation(0, 50);
 
 	//-----------------------------------------------------------------------------
 	// initialization of Options Dialog
 	//-----------------------------------------------------------------------------
 	m_OptionsDialog.init(100,100, 18, "Gendlin", "dialog.png", D3DCOLOR_ARGB(200,255,255,255), m_hWnd, m_assetManger);
 	m_OptionsDialog.LoadDialogFromFile("settings.txt", m_timer);
+	m_OptionsDialog.CreateDialogUI();
 	m_OptionsDialog.setVisible(false);
 
-	m_OptionsDialog.getComboBox(IDC_ADAPFORMATCOM)->setEnabled(false);
-	m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->setEnabled(false);
-	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->setEnabled(false);
-	m_OptionsDialog.getCheckBox(IDC_ASPECTCHECK)->setEnabled(false);
-
-	m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)->ConnectToSelectChg( boost::bind(&CGameWin::AdapterSelChg, this, _1 ) );
-	m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->ConnectToSelectChg( boost::bind(&CGameWin::DeviceTypeSelChg, this, _1 ) );
-	m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->ConnectToSelectChg( boost::bind(&CGameWin::ResoulationSelChg, this, _1) );
-	m_OptionsDialog.getRadioButton(IDC_FULLSCREENRADIO)->connectToClick( boost::bind(&CGameWin::FullscreenRadioClicked, this, _1 ) );
-
-	m_OptionsDialog.getComboBox(IDC_APIVERCOM)->AddItem("Direct3D 9", nullptr);
-
-	for (UINT i = 0; i < m_adpatersInfo.size(); i++)
-	{
-		m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)->AddItem(m_adpatersInfo[i].adapterDescription.c_str(), (void*)m_adpatersInfo[i].adapterNum);
-	}
-
-	ChangeDisplayAdapter(0);
+	CButtonUI* pOptionsOKbutton = nullptr;
+	pOptionsOKbutton = m_OptionsDialog.getButton(IDC_OKBUTTON);
+	pOptionsOKbutton->connectToClick( boost::bind(&CGameWin::OptionDialogOKClicked, this, _1) );
 
 	return true;
 }
-
-//-----------------------------------------------------------------------------
-// Name : CreateGUIObjects 
-//-----------------------------------------------------------------------------
-// bool CGameWin::CreateGUIObjects()
-// {
-// 	int DilaogX,DilaogY;
-// 	//setting GUI Items
-// 	m_GuiDilaogResManger.OnD3D9CreateDevice(m_pD3DDevice);
-// 	m_GuiDilaogResManger.OnD3D9ResetDevice();
-// 
-// 	m_GuiDialog.SetCallback(StaticOnGUIEvent);
-// 	m_GuiSelectPawn.SetCallback(StaticOnGUIEvent);
-// 	
-// 	//m_GuiDialog.AddButton(IDC_DISABLE, "Disable", 300 , 300, 125, 22);
-// 
-// 	m_GuiDialog.SetLocation(0, 0);
-// 	m_GuiDialog.SetSize( Width, Height );
-// 
-// 	m_GuiSelectPawn.LoadDialogFromFile("Pawns.txt");
-// 	DilaogX = ( Width / 2 ) - ( m_GuiSelectPawn.GetWidth() / 2);
-// 	DilaogY = ( Height / 2) - ( m_GuiSelectPawn.GetHeight() / 2);
-// 
-// 	m_GuiSelectPawn.SetLocation(DilaogX,DilaogY);
-// 	m_GuiSelectPawn.SetVisible(false);
-// 	return true;
-// }
 
 //-----------------------------------------------------------------------------
 // Name : FrameAdvance 
@@ -1369,7 +925,21 @@ void CGameWin::FrameAdvance(float timeDelta)
 
 	// check if the device need to be reset
 	if (m_deviceReset)
-		resetDevice();
+	{
+		if(m_windowed)
+		{
+			RECT rc/* = m_clientRC*/;
+			::GetClientRect( m_hWnd, &rc );
+			m_nViewX      = rc.left;
+			m_nViewY      = rc.top;
+			m_nViewWidth  = rc.right - rc.left;
+			m_nViewHeight = rc.bottom - rc.top;
+			 
+			m_curD3dpp.BackBufferWidth = Width;
+			m_curD3dpp.BackBufferHeight = Height;
+		}
+		resetDevice(m_curD3dpp);
+	}
 
 	HRESULT hr;
 
@@ -1514,7 +1084,6 @@ void CGameWin::FrameAdvance(float timeDelta)
 // 	pFont->DrawTextA(sprite2, "Test!", -1, &rcDest, DT_LEFT , d3d::CYAN);
 
 	m_EditDialog.OnRender(timeDelta,  D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
-	m_GenDialog.OnRender(timeDelta, D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
 	m_OptionsDialog.OnRender(timeDelta, D3DXVECTOR3(m_nViewWidth - m_nViewX - 255, 0.0f, 0.0f), m_highLightEffect, m_assetManger);
 
  	CMySprite* pMySprite = m_assetManger.getMySprite();
@@ -1996,126 +1565,126 @@ HRESULT CGameWin::pick(POINT& cursor,DWORD& faceCount)
 //-----------------------------------------------------------------------------
 // Name : StaticOnGUIEvent 
 //-----------------------------------------------------------------------------
-void CALLBACK CGameWin::StaticOnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext )
-{
-	// Obtain the correct destination for this message
-	CGameWin* Destination = (CGameWin*)GetWindowLong( hWnd, GWL_USERDATA );
-
-	// If the hWnd has a related class, pass it through
-	if (Destination) return Destination->OnGUIEvent(hWnd,nEvent, nControlID,  pUserContext);
-}
+// void CALLBACK CGameWin::StaticOnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext )
+// {
+// 	// Obtain the correct destination for this message
+// 	CGameWin* Destination = (CGameWin*)GetWindowLong( hWnd, GWL_USERDATA );
+// 
+// 	// If the hWnd has a related class, pass it through
+// 	if (Destination) return Destination->OnGUIEvent(hWnd,nEvent, nControlID,  pUserContext);
+// }
 
 //-----------------------------------------------------------------------------
 // Name : OnGUIEvent 
 //-----------------------------------------------------------------------------
-void CGameWin::OnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext )
-{
-	switch(nControlID)
- 	{
-	case IDC_CREATECONTROL:
-		{
-			POINT cursorPoint;
-			LPCTSTR pControlText;
-			
-			ULONG selectedItem = (ULONG)m_EditDialog.getComboBox(IDC_COMBOX)->GetSelectedData();
-			UINT  controlWidth =  atoi( m_EditDialog.getEditBox(IDC_WIDTHEDITBOX)->GetText() );
-			UINT  controlHeight = atoi( m_EditDialog.getEditBox(IDC_HEIGHTEDITBOX)->GetText() );
-
-			pControlText = m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->GetText();
-
-			GetCursorPos( &cursorPoint );
-			ScreenToClient( m_hWnd, &cursorPoint );
-
-			switch(selectedItem)
-			{
-			case CControlUI::BUTTON:
-				{
-					m_GenDialog.addButton(m_curControlID + 1, pControlText, cursorPoint.x,
-						cursorPoint.y, controlWidth, controlWidth, 0);
-					m_controlInCreation = true;
-				}break;
-
-			case CControlUI::CHECKBOX:
-				{
-					m_GenDialog.addCheckBox(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
-						controlWidth, controlHeight, 0);
-					m_controlInCreation = true;
-				}break;
-
-			case CControlUI::RADIOBUTTON:
-				{
-					m_GenDialog.addRadioButton(m_curControlID + 1, cursorPoint.x,
-						cursorPoint.y, controlWidth, controlHeight, 0, 0);
-					m_controlInCreation = true;
-				}break;
-
-			case CControlUI::COMBOBOX:
-				{
-					m_GenDialog.addComboBox(m_curControlID + 1, pControlText, cursorPoint.x,
-						cursorPoint.y, controlWidth, controlHeight, 0);
-					m_controlInCreation = true;
-				}break;
-
-			case CControlUI::STATIC:
-				{
-					m_GenDialog.addStatic(m_curControlID + 1, pControlText, cursorPoint.x,
-						cursorPoint.y, controlWidth, controlHeight);
-					m_controlInCreation = true;
-				}break;
-
-			case CControlUI::EDITBOX:
-				{
-					m_GenDialog.addEditbox(m_curControlID + 1, pControlText, cursorPoint.x,
-						cursorPoint.y, controlWidth, controlHeight, m_timer);
-					m_controlInCreation = true;
-				}break;
-
-			case CControlUI::LISTBOX:
-				{
-					m_GenDialog.addListBox(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
-						controlWidth, controlHeight);
-					m_controlInCreation = true;
-				}break;
-
-			case CControlUI::SLIDER:
-				{
-					m_GenDialog.addSlider(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
-						controlWidth, controlHeight, 0, 0, 0);
-					m_controlInCreation = true;
-				}break;
-			}
-
-			//MessageBox(m_hWnd,"lolz button pressed","lolz lolz lolz",MB_OK);
-		}break;
-
-	case IDC_COMBOX: 
-		{
-			switch (nEvent)
-			{
-			case EVENT_COMBOBOX_SELECTION_CHANGED: 
-				{
-					CComboBoxUI* pSelectionBox =  m_EditDialog.getComboBox(IDC_COMBOX);
-					ComboBoxItem* pSelectedItem =  pSelectionBox->GetSelectedItem();
-
-					UINT selectedItem = (UINT)pSelectedItem->pData;
-
-					switch(selectedItem)
-					{
-					case CControlUI::STATIC:
-						{
-							m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(false);
-							m_EditDialog.getComboBox(IDC_RADIOBUTTONGROUP)->setVisible(false);
-						}break;
-					case CControlUI::RADIOBUTTON:
-						{
-							m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(true);
-							m_EditDialog.getComboBox(IDC_RADIOBUTTONGROUP)->setVisible(true);
-						}break;
-					}
-				}break;
-			}
-
-		}break;
+// void CGameWin::OnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext )
+// {
+// 	switch(nControlID)
+//  	{
+// 	case IDC_CREATECONTROL:
+// 		{
+// 			POINT cursorPoint;
+// 			LPCTSTR pControlText;
+// 			
+// 			ULONG selectedItem = (ULONG)m_EditDialog.getComboBox(IDC_COMBOX)->GetSelectedData();
+// 			UINT  controlWidth =  atoi( m_EditDialog.getEditBox(IDC_WIDTHEDITBOX)->GetText() );
+// 			UINT  controlHeight = atoi( m_EditDialog.getEditBox(IDC_HEIGHTEDITBOX)->GetText() );
+// 
+// 			pControlText = m_EditDialog.getEditBox(IDC_TEXTEDITBOX)->GetText();
+// 
+// 			GetCursorPos( &cursorPoint );
+// 			ScreenToClient( m_hWnd, &cursorPoint );
+// 
+// 			switch(selectedItem)
+// 			{
+// 			case CControlUI::BUTTON:
+// 				{
+// 					m_GenDialog.addButton(m_curControlID + 1, pControlText, cursorPoint.x,
+// 						cursorPoint.y, controlWidth, controlWidth, 0);
+// 					m_controlInCreation = true;
+// 				}break;
+// 
+// 			case CControlUI::CHECKBOX:
+// 				{
+// 					m_GenDialog.addCheckBox(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
+// 						controlWidth, controlHeight, 0);
+// 					m_controlInCreation = true;
+// 				}break;
+// 
+// 			case CControlUI::RADIOBUTTON:
+// 				{
+// 					m_GenDialog.addRadioButton(m_curControlID + 1, cursorPoint.x,
+// 						cursorPoint.y, controlWidth, controlHeight, 0, 0);
+// 					m_controlInCreation = true;
+// 				}break;
+// 
+// 			case CControlUI::COMBOBOX:
+// 				{
+// 					m_GenDialog.addComboBox(m_curControlID + 1, pControlText, cursorPoint.x,
+// 						cursorPoint.y, controlWidth, controlHeight, 0);
+// 					m_controlInCreation = true;
+// 				}break;
+// 
+// 			case CControlUI::STATIC:
+// 				{
+// 					m_GenDialog.addStatic(m_curControlID + 1, pControlText, cursorPoint.x,
+// 						cursorPoint.y, controlWidth, controlHeight);
+// 					m_controlInCreation = true;
+// 				}break;
+// 
+// 			case CControlUI::EDITBOX:
+// 				{
+// 					m_GenDialog.addEditbox(m_curControlID + 1, pControlText, cursorPoint.x,
+// 						cursorPoint.y, controlWidth, controlHeight, m_timer);
+// 					m_controlInCreation = true;
+// 				}break;
+// 
+// 			case CControlUI::LISTBOX:
+// 				{
+// 					m_GenDialog.addListBox(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
+// 						controlWidth, controlHeight);
+// 					m_controlInCreation = true;
+// 				}break;
+// 
+// 			case CControlUI::SLIDER:
+// 				{
+// 					m_GenDialog.addSlider(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
+// 						controlWidth, controlHeight, 0, 0, 0);
+// 					m_controlInCreation = true;
+// 				}break;
+// 			}
+// 
+// 			//MessageBox(m_hWnd,"lolz button pressed","lolz lolz lolz",MB_OK);
+// 		}break;
+// 
+// 	case IDC_COMBOX: 
+// 		{
+// 			switch (nEvent)
+// 			{
+// 			case EVENT_COMBOBOX_SELECTION_CHANGED: 
+// 				{
+// 					CComboBoxUI* pSelectionBox =  m_EditDialog.getComboBox(IDC_COMBOX);
+// 					ComboBoxItem* pSelectedItem =  pSelectionBox->GetSelectedItem();
+// 
+// 					UINT selectedItem = (UINT)pSelectedItem->pData;
+// 
+// 					switch(selectedItem)
+// 					{
+// 					case CControlUI::STATIC:
+// 						{
+// 							m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(false);
+// 							m_EditDialog.getComboBox(IDC_RADIOBUTTONGROUP)->setVisible(false);
+// 						}break;
+// 					case CControlUI::RADIOBUTTON:
+// 						{
+// 							m_EditDialog.getStatic(IDC_RADIOGROUPTEXT)->setVisible(true);
+// 							m_EditDialog.getComboBox(IDC_RADIOBUTTONGROUP)->setVisible(true);
+// 						}break;
+// 					}
+// 				}break;
+// 			}
+// 
+// 		}break;
 // 	case IDC_KNIGHT:
 // 		{
 // 			gameBoard->PromoteUnit(KNIGHT);
@@ -2140,91 +1709,15 @@ void CGameWin::OnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserCon
 // 			m_GuiSelectPawn.SetVisible(false);
 // 		}break;
 // 
- 	}
-}
+ 	//}
+//}
 
 //-----------------------------------------------------------------------------
-// Name : AdapterSelChg ()
+// Name : OptionsControlClicked ()
 //-----------------------------------------------------------------------------
-void CGameWin::AdapterSelChg(CComboBoxUI* pCombobox)
+void CGameWin::OptionsControlClicked(CButtonUI* pButton)
 {
-	UINT adapterIndex = (UINT)pCombobox->GetSelectedData();
-	ChangeDisplayAdapter(adapterIndex);
-}
-
-//-----------------------------------------------------------------------------
-// Name : DeviceTypeSelChg ()
-//-----------------------------------------------------------------------------
-void CGameWin::DeviceTypeSelChg(CComboBoxUI* pCombobox)
-{
-	UINT adapterIndex = (UINT)pCombobox->GetSelectedData();
-	D3DDEVTYPE deviceType = static_cast<D3DDEVTYPE>((UINT)pCombobox->GetSelectedData());
-	ChangeDisplayDevice(adapterIndex, deviceType);
-}
-
-//-----------------------------------------------------------------------------
-// Name : WindowedRadioClicked ()
-//-----------------------------------------------------------------------------
-void CGameWin::WindowedRadioClicked(CButtonUI* pRadio)
-{
-	m_OptionsDialog.getComboBox(IDC_ADAPFORMATCOM)->setEnabled(false);
-	m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->setEnabled(false);
-	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->setEnabled(false);
-	m_OptionsDialog.getCheckBox(IDC_ASPECTCHECK)->setEnabled(false);
-
-	m_windowed = true;
-}
-
-//-----------------------------------------------------------------------------
-// Name : FullscreenRadioClicked ()
-//-----------------------------------------------------------------------------
-void CGameWin::FullscreenRadioClicked(CButtonUI* pRadio)
-{
-	m_OptionsDialog.getComboBox(IDC_ADAPFORMATCOM)->setEnabled(true);
-	m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->setEnabled(true);
-	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->setEnabled(true);
-	m_OptionsDialog.getCheckBox(IDC_ASPECTCHECK)->setEnabled(true);
-
-	m_windowed = false;
-
-	UINT dislpayAdapterIndex = (UINT)m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)
-		->GetSelectedData();
-
-	ADAPTERINFO& curAdatperInfo = m_adpatersInfo[dislpayAdapterIndex];
-	if (curAdatperInfo.displayModes.size() == 0)
-		return;
-
-	DISPLAYMODE& selDisplayMode = curAdatperInfo.displayModes[0];
-
-	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->RemoveAllItems();
-	for (UINT j = 0; j < selDisplayMode.RefreshRates.size(); j++)
-	{
-		std::string refreshRate = std::to_string((long long) selDisplayMode.RefreshRates[j]);
-		m_OptionsDialog.getComboBox(IDC_REFRATECOM)->AddItem(refreshRate.c_str(),
-			(void*)selDisplayMode.RefreshRates[j]);
-	}
-
-}
-
-//-----------------------------------------------------------------------------
-// Name : ResoulationSelChg ()
-//-----------------------------------------------------------------------------
-void CGameWin::ResoulationSelChg(CComboBoxUI* pCombobox)
-{
-	UINT dislpayAdapterIndex = (UINT)m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)
-		->GetSelectedData();
-
-	UINT modeIndex = (UINT)pCombobox->GetSelectedData();
-	 
-	DISPLAYMODE curDisplayMode = m_adpatersInfo[dislpayAdapterIndex].displayModes[modeIndex];
-	m_OptionsDialog.getComboBox(IDC_REFRATECOM)->RemoveAllItems();
-
-	for (UINT i = 0; i < curDisplayMode.RefreshRates.size(); i++)
-	{
-		std::string refreshRate = std::to_string((long long) curDisplayMode.RefreshRates[i]);
-		m_OptionsDialog.getComboBox(IDC_REFRATECOM)->AddItem(refreshRate.c_str(),
-			(void*)curDisplayMode.RefreshRates[i]);
-	}
+	m_OptionsDialog.setVisible(!m_OptionsDialog.getVisible());
 }
 
 //-----------------------------------------------------------------------------
@@ -2234,58 +1727,123 @@ void CGameWin::OptionDialogOKClicked(CButtonUI* pButton)
 {
 	D3DPRESENT_PARAMETERS deviceParams;
 
+	if (m_OptionsDialog.getRadioButton(IDC_WINRADIO)->getChecked())
+		m_windowed = true;
+	else
+		m_windowed = false;
+
+	UINT adapterIndex =  (UINT)m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)->GetSelectedData();
+	UINT modeIndex = (UINT)m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->GetSelectedData();
+
 	if (m_windowed)
 	{
-		RECT rc;
+
+
+// 		std::string s;
+// 		DWORD n;
+// 
+// 		s = "new line \n";
+// 		WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), s.c_str(), s.size(), &n, 0);
+// 		std::stringstream out;
+// 		out << rc.left;
+// 		s = out.str() + '\n';
+// 		WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), s.c_str(), s.size(), &n, 0);
+// 
+// 		std::stringstream out2;
+// 		out2 << rc.top;
+// 		s = out2.str() + '\n';
+// 		WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), s.c_str(), s.size(), &n, 0);
+// 
+// 		std::stringstream out3;
+// 		out3 << rc.right - rc.left;
+// 		s = out3.str() + '\n';
+// 		WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), s.c_str(), s.size(), &n, 0);
+// 
+// 		std::stringstream out4;
+// 		out4 << rc.bottom - rc.top;
+// 		s = out4.str() + '\n';
+// 		WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), s.c_str(), s.size(), &n, 0);
+
+		RECT windowRect;
+		windowRect.top = 0;
+		windowRect.left = 0;
+		windowRect.right = Width;
+		windowRect.bottom = 768;
+		SetWindowPos(m_hWnd, HWND_TOPMOST, 0, 0, 1024, 768, 0);
+
+		RECT rc; //= m_clientRC;
 		::GetClientRect( m_hWnd, &rc );
 		m_nViewX      = rc.left;
 		m_nViewY      = rc.top;
 		m_nViewWidth  = rc.right - rc.left;
 		m_nViewHeight = rc.bottom - rc.top;
 
-		deviceParams.BackBufferWidth = m_nViewWidth;
-		deviceParams.BackBufferHeight = m_nViewHeight;
+		deviceParams.BackBufferWidth = Width;
+		deviceParams.BackBufferHeight = Height;
 	}
 	else
 	{
 		m_nViewX = 0;
 		m_nViewY = 0;
-		UINT adapterIndex = (UINT)m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)->GetSelectedData();
-		UINT modeIndex = (UINT)m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->GetSelectedData();
+		//adapterIndex = (UINT)m_OptionsDialog.getComboBox(IDC_DISPADAPCOM)->GetSelectedData();
+		//modeIndex = (UINT)m_OptionsDialog.getComboBox(IDC_RESOLUTIONCOM)->GetSelectedData();
 		m_nViewWidth = m_adpatersInfo[adapterIndex].displayModes[modeIndex].Width;
 		m_nViewHeight = m_adpatersInfo[adapterIndex].displayModes[modeIndex].Height;
 
 		deviceParams.BackBufferWidth = m_nViewWidth;
 		deviceParams.BackBufferHeight = m_nViewHeight;
+
+		DWORD n;
+		std::string s;
+		std::stringstream out;
+		out << m_nViewWidth;
+		s = out.str() + '\n';
+		WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), s.c_str(), s.size(), &n, 0);
+
+		std::stringstream out2;
+		out2 << m_nViewHeight;
+		s = out2.str() + '\n';
+		WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), s.c_str(), s.size(), &n, 0);
 	}
 
 	deviceParams.BackBufferFormat = D3DFMT_A8R8G8B8;
 	deviceParams.BackBufferCount = 1;
-	UINT multiSampleType = (UINT)m_OptionsDialog.getComboBox(IDC_MULSAMPLECOM)
-		->GetSelectedData();
-	deviceParams.MultiSampleType = static_cast<D3DMULTISAMPLE_TYPE>(multiSampleType);
+
+	D3DMULTISAMPLE_TYPE multiSampleType = 
+		*(static_cast<D3DMULTISAMPLE_TYPE*>(m_OptionsDialog.getComboBox(IDC_MULSAMPLECOM)->GetSelectedData()));
+	deviceParams.MultiSampleType = multiSampleType;
 	deviceParams.MultiSampleQuality = 0;
 	deviceParams.SwapEffect = D3DSWAPEFFECT_DISCARD;
 	deviceParams.hDeviceWindow = m_hWnd;
 	deviceParams.Windowed = m_windowed;
-	deviceParams.EnableAutoDepthStencil =
+	D3DDEVTYPE deviceType = *( static_cast<D3DDEVTYPE*>(m_OptionsDialog.getComboBox(IDC_RENDERDEVCOM)->GetSelectedData() ) );
+	UINT deviceIndex;
+	for (UINT i = 0; i < m_adpatersInfo[adapterIndex].deviceTypes.size(); i++)
+	{
+		if (deviceType == m_adpatersInfo[adapterIndex].deviceTypes[i].deviceType)
+		{
+			deviceIndex = i;
+			break;
+		}
+		
+	}
 
+	deviceParams.EnableAutoDepthStencil = m_adpatersInfo[adapterIndex].deviceTypes[deviceIndex].bDepthEnable[m_windowed];
+	deviceParams.AutoDepthStencilFormat = *(static_cast<D3DFORMAT*>(m_OptionsDialog.getComboBox(IDC_DPETHSTENCOM)->GetSelectedData()));
+	deviceParams.Flags                  = 0;
 
-	d3dpp.BackBufferWidth            = m_nViewWidth;
-	d3dpp.BackBufferHeight           = m_nViewHeight;
-	d3dpp.BackBufferFormat           = D3DFMT_A8R8G8B8;
-	d3dpp.BackBufferCount            = 1;
-	d3dpp.MultiSampleType            = D3DMULTISAMPLE_NONE;
-	d3dpp.MultiSampleQuality         = 0;
-	d3dpp.SwapEffect                 = D3DSWAPEFFECT_DISCARD; 
-	d3dpp.hDeviceWindow              = m_hWnd;
-	d3dpp.Windowed                   = true; //TODO: set this to variable not static value
-	d3dpp.EnableAutoDepthStencil     = true; 
-	d3dpp.AutoDepthStencilFormat     = D3DFMT_D24S8;
-	d3dpp.Flags                      = 0;
-	d3dpp.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
-	d3dpp.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE;
+	if (!m_windowed)
+	{
+		deviceParams.FullScreen_RefreshRateInHz = (UINT)m_OptionsDialog.getComboBox(IDC_REFRATECOM)->GetSelectedData();
+	}
+	else
+		deviceParams.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
 
+	deviceParams.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE;
+
+	m_curD3dpp = deviceParams;
+	m_deviceReset = true;
+	resetDevice(m_curD3dpp);
 }
 
 //-----------------------------------------------------------------------------

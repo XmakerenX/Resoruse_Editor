@@ -3,9 +3,15 @@
 //-----------------------------------------------------------------------------
 // Name : CEditDialogUI (constructor)
 //-----------------------------------------------------------------------------
-CEditDialogUI::CEditDialogUI()
+CEditDialogUI::CEditDialogUI(CTimer* timer)
 {
-
+	m_timer = timer;
+	
+	m_GenControlNum = 0;
+	m_curControlID = IDC_GENCONTROLID + m_GenControlNum;
+	m_controlInCreation = false;
+	m_controlRelocate= false;
+	m_pCurSelectedControl = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -16,9 +22,108 @@ CEditDialogUI::~CEditDialogUI(void)
 }
 
 //-----------------------------------------------------------------------------
+// Name : MsgProc ()
+//-----------------------------------------------------------------------------
+bool CEditDialogUI::MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTimer* timer, bool windowed )
+{
+	// Send the message first for the generated dialog
+	if (m_GenDialog.MsgProc(hWnd,uMsg, wParam, lParam, timer, windowed))
+		return 0;
+	else
+	{
+		switch (uMsg)
+		{
+
+		case WM_LBUTTONDOWN:
+			{
+				//set new control in the his location
+				if (m_controlInCreation)
+				{
+					POINT genDailogLoc = m_GenDialog.getLocation();
+					genDailogLoc.y += m_GenDialog.getCaptionHeight();
+					int x = (int)LOWORD(lParam) - genDailogLoc.x;
+					int y = (int)HIWORD(lParam) - genDailogLoc.y;
+					m_GenDialog.getControl(m_curControlID + 1)->setLocation(x, y);
+					m_GenDialog.getControl(m_curControlID + 1)->setEnabled(true);
+					m_controlInCreation = false;
+					m_GenControlNum++;
+					m_curControlID++;
+				}
+
+				// relocate the selected control to his new location
+				if (m_controlRelocate && m_pCurSelectedControl)
+				{
+					POINT mousePoint;
+					POINT dialogPoint = m_GenDialog.getLocation();
+					mousePoint.x = (int)LOWORD(lParam) - dialogPoint.x;
+					mousePoint.y = (int)HIWORD(lParam) - ( dialogPoint.y + m_GenDialog.getCaptionHeight() );
+					//ClientToScreen(m_hWnd,&mousePoint);
+
+					m_pCurSelectedControl->setLocation(mousePoint.x,mousePoint.y);
+					m_pCurSelectedControl->setEnabled(true);
+					m_controlRelocate = false;
+				}
+			}break;
+
+		case WM_MOUSEMOVE:
+			{
+				// move the control being created with the mouse
+				if (m_controlInCreation)
+				{		
+					POINT genDialogLog = m_GenDialog.getLocation();
+					genDialogLog.y += m_GenDialog.getCaptionHeight();
+					int x = (int)LOWORD(lParam);
+					int y = (int)HIWORD(lParam);
+					m_GenDialog.getControl(m_curControlID + 1)->setLocation( x - genDialogLog.x, y - genDialogLog.y);
+				}
+
+				// move the control being relocated with the mouse
+				if (m_controlRelocate && m_pCurSelectedControl)
+				{
+					POINT mousePoint;
+					POINT dialogPoint = m_GenDialog.getLocation();
+					dialogPoint.y += m_GenDialog.getCaptionHeight();
+
+					mousePoint.x = (int)LOWORD(lParam);
+					mousePoint.y = (int)HIWORD(lParam);
+					//ClientToScreen(hWnd,&mousePoint);
+
+					m_pCurSelectedControl->setLocation(mousePoint.x - dialogPoint.x ,mousePoint.y - dialogPoint.y );
+				}
+			}break;
+		case WM_RBUTTONDOWN:
+			{
+				// if RightButton was pressed but not handled by Gendailog then no control 
+				// in it was pressed , reset to defualt ui state
+				getButton(IDC_CREATECONTROL)->setVisible(true);
+				getButton(IDC_SETCHANGESBUTTON)->setVisible(false);
+				getButton(IDC_RELOCATEBUTTON)->setEnabled(false);
+			}break;
+		}
+
+		// do Regular Dialog Message handling
+		return CDialogUI::MsgProc(hWnd,uMsg,wParam,lParam,timer, windowed);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : OnRender ()
+//-----------------------------------------------------------------------------
+HRESULT CEditDialogUI::OnRender(float fElapsedTime, D3DXVECTOR3 vPos, LPD3DXEFFECT effect, CAssetManager& assetManger)
+{
+	HRESULT hr = CDialogUI::OnRender(fElapsedTime, vPos, effect, assetManger);
+
+	if (hr == S_OK)
+		return m_GenDialog.OnRender(fElapsedTime, vPos, effect, assetManger);
+	else
+		return hr;
+
+}
+
+//-----------------------------------------------------------------------------
 // Name : CreateDialogGUI ()
 //-----------------------------------------------------------------------------
-void CEditDialogUI::CreateDialogUI(CTimer* m_timer)
+void CEditDialogUI::CreateDialogUI(CAssetManager& assetManager)
 {
 	RemoveAllControls();
 
@@ -191,7 +296,90 @@ void CEditDialogUI::CreateDialogUI(CTimer* m_timer)
 	addButton(IDC_OPTIONSBUTTON, "Options", 450, 75, 100, 34, 0, &pOptionsButton);
 	pOptionsButton->connectToClick( boost::bind(&CEditDialogUI::OptionsControlClicked, this, _1) );
 	pOptionsButton->setEnabled(true);
+
+	//-----------------------------------------------------------------------------
+	// Dialog initialization of the generated Dialog
+	//-----------------------------------------------------------------------------
+	m_GenDialog.init(500,200, 18,"Gendialog", "dialog.png", D3DCOLOR_ARGB(200,255,255,255), m_hWnd, assetManager);
+	m_GenDialog.setLocation(0, 50);
 }
+
+//-----------------------------------------------------------------------------
+// Name : GenControlRightClicked ()
+//-----------------------------------------------------------------------------
+void CEditDialogUI::GenControlRightClicked(CControlUI* pRClickedControl)
+{
+	getComboBox(IDC_COMBOX)->SetSelectedByIndex(pRClickedControl->getType());
+
+	long long controlWidth = pRClickedControl->getWidth();
+	long long controlHeight = pRClickedControl->getHeight();
+
+	getEditBox(IDC_WIDTHEDITBOX)->SetText( std::to_string( controlWidth ).c_str() );
+	getEditBox(IDC_HEIGHTEDITBOX)->SetText( std::to_string( controlHeight ).c_str() );
+
+	const char* pControlIDText = m_GenDialog.getControlIDText(pRClickedControl->getID()); 
+	getEditBox(IDC_IDEDITBOX)->SetText(pControlIDText);
+
+	long long ControlX = pRClickedControl->getX();
+	long long ControlY = pRClickedControl->getY();
+
+	getEditBox(IDC_CONTROLX)->SetText( std::to_string(ControlX).c_str() );
+	getEditBox(IDC_CONTROLY)->SetText( std::to_string(ControlY).c_str() );
+
+	switch (pRClickedControl->getType())
+	{
+	case CControlUI::STATIC:
+	case CControlUI::BUTTON:
+	case CControlUI::EDITBOX:
+	case CControlUI::CHECKBOX:
+		{
+			getEditBox(IDC_TEXTEDITBOX)->SetText( static_cast<CStaticUI*>(pRClickedControl)->getText() );
+			SetStaticGUI(true);
+
+		}break;
+	case CControlUI::RADIOBUTTON:
+		{
+			getEditBox(IDC_TEXTEDITBOX)->SetText( static_cast<CStaticUI*>(pRClickedControl)->getText() );
+
+			long long controlButtonGroup = static_cast<CRadioButtonUI*>(pRClickedControl)->getButtonGroup();
+			getEditBox(IDC_RADIOBUTTONGROUP)->SetText( std::to_string(controlButtonGroup).c_str() );
+
+			SetRadioButtonGUI(true);
+		}break;
+	case CControlUI::SLIDER:
+		{
+			int  sliderMin;
+			int  sliderMax;
+
+			static_cast<CSliderUI*>(pRClickedControl)->GetRange(sliderMin, sliderMax);
+
+			getEditBox(IDC_SLIDERMINEDITBOX)->SetText( std::to_string( static_cast<long long>( sliderMin ) ).c_str() );
+			getEditBox(IDC_SLIDERMAXEDITBOX)->SetText( std::to_string( static_cast<long long>( sliderMax ) ).c_str() );
+
+			SetSliderGUI(true);
+		}break;
+	case CControlUI::LISTBOX:
+		{
+			getListBox(IDC_LISTBOXITEMS)->CopyItemsFrom( static_cast<CListBoxUI*>(pRClickedControl) );
+			getEditBox(IDCLISTOXEDITBOX)->SetText("");
+
+			SetListBoxGUI(true);
+
+		}break;
+	case CControlUI::COMBOBOX:
+		{
+			getComboBox(IDC_COMBOXITEMS)->CopyItemsFrom( static_cast<CComboBoxUI*>(pRClickedControl) );
+			getEditBox(IDCLISTOXEDITBOX)->SetText("");
+
+			SetComboBoxGUI(true);
+		}break;
+	}
+
+	m_pCurSelectedControl = pRClickedControl;
+	getButton(IDC_RELOCATEBUTTON)->setEnabled(true);
+
+}
+
 
 //-----------------------------------------------------------------------------
 // Name : CreateControlClicked ()
@@ -240,16 +428,16 @@ void CEditDialogUI::CreateControlClicked(CButtonUI* createControl)
 			m_GenDialog.addComboBox(m_curControlID + 1, pControlText, cursorPoint.x,
 				cursorPoint.y, controlWidth, controlHeight, 0, nullptr, pControlIDText);
 
-			UINT comboboxSize = m_EditDialog.getComboBox(IDC_COMBOXITEMS)->GetNumItems();
+			UINT comboboxSize = getComboBox(IDC_COMBOXITEMS)->GetNumItems();
 
 			for (UINT itemIndex = 0; itemIndex < comboboxSize; itemIndex++)
 			{
-				ComboBoxItem* pCurItem = m_EditDialog.getComboBox(IDC_COMBOXITEMS)->GetItem(itemIndex);
+				ComboBoxItem* pCurItem = getComboBox(IDC_COMBOXITEMS)->GetItem(itemIndex);
 				m_GenDialog.getComboBox(m_curControlID + 1)->
 					AddItem(pCurItem->strText, pCurItem->pData);
 			}
 
-			m_EditDialog.getComboBox(IDC_COMBOXITEMS)->RemoveAllItems();
+			getComboBox(IDC_COMBOXITEMS)->RemoveAllItems();
 
 			m_controlInCreation = true;
 		}break;
@@ -273,24 +461,24 @@ void CEditDialogUI::CreateControlClicked(CButtonUI* createControl)
 			m_GenDialog.addListBox(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
 				controlWidth, controlHeight, 0, nullptr, pControlIDText);
 
-			UINT listboxSize = m_EditDialog.getListBox(IDC_LISTBOXITEMS)->GetSize();
+			UINT listboxSize = getListBox(IDC_LISTBOXITEMS)->GetSize();
 
 			for (UINT itemIndex = 0; itemIndex < listboxSize; itemIndex++)
 			{
-				ListBoxItemUI* pCurItem = m_EditDialog.getListBox(IDC_LISTBOXITEMS)->GetItem(itemIndex);
+				ListBoxItemUI* pCurItem = getListBox(IDC_LISTBOXITEMS)->GetItem(itemIndex);
 				m_GenDialog.getListBox(m_curControlID + 1)->
 					AddItem(pCurItem->strText, pCurItem->pData);
 			}
 
-			m_EditDialog.getListBox(IDC_LISTBOXITEMS)->RemoveAllItems();
+			getListBox(IDC_LISTBOXITEMS)->RemoveAllItems();
 
 			m_controlInCreation = true;
 		}break;
 
 	case CControlUI::SLIDER:
 		{
-			int minValue = atoi ( m_EditDialog.getEditBox(IDC_SLIDERMINEDITBOX)->GetText() );
-			int maxValue = atoi ( m_EditDialog.getEditBox(IDC_SLIDERMAXEDITBOX)->GetText() );
+			int minValue = atoi ( getEditBox(IDC_SLIDERMINEDITBOX)->GetText() );
+			int maxValue = atoi ( getEditBox(IDC_SLIDERMAXEDITBOX)->GetText() );
 
 			m_GenDialog.addSlider(m_curControlID + 1, cursorPoint.x, cursorPoint.y,
 				controlWidth, controlHeight, minValue, maxValue, (maxValue - minValue) / 2, nullptr, pControlIDText);
@@ -464,7 +652,7 @@ void CEditDialogUI::DeleteControlClicked(CButtonUI* pDeleteButton)
 //-----------------------------------------------------------------------------
 void CEditDialogUI::OptionsControlClicked(CButtonUI* pOptionsButton)
 {
-	m_OptionsDialog.setVisible(true);
+	setVisible(true);
 }
 
 //-----------------------------------------------------------------------------

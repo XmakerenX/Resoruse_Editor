@@ -159,6 +159,7 @@ HRESULT CDialogUI::init(UINT width, UINT height, int nCaptionHeight, LPCTSTR cap
 // 	m_button.SetID(2);
 // 	m_button.setParent(this);
 	initDefControlElements(assetManger);
+	//initWoodControlElements(assetManger);
 
 	return S_OK;
 }
@@ -476,6 +477,321 @@ HRESULT CDialogUI::initDefControlElements(CAssetManager& assetManger)
 }
 
 //-----------------------------------------------------------------------------
+// Name : initWoodControlElements ()
+//-----------------------------------------------------------------------------
+HRESULT CDialogUI::initWoodControlElements(CAssetManager& assetManager)
+{
+	std::vector<ELEMENT_GFX>  elementGFXvec;
+	std::vector<ELEMENT_FONT> elementFontVec;
+	CONTROL_GFX	controlGFX;
+
+	UINT textureIndex, fontIndex;
+
+	// create the controls font
+	if (!assetManager.getFont(12, 12, FW_BOLD, FALSE, fontIndex))
+		return S_FALSE;
+
+	UINT nFontHeight = assetManager.getFontItem(fontIndex).height;
+	ELEMENT_FONT elementFont(fontIndex,nFontHeight, assetManager.getFontItem(fontIndex).width);
+
+	ELEMENT_GFX elementGFX;
+
+	//-------------------------------------
+	// Init Static elements
+	//-------------------------------------
+	// sets the Static default font
+	// this font is also used for all other controls ... for now..
+	// create the controls font
+	if (!assetManager.getFont(16, 8, FW_BOLD, FALSE, fontIndex))
+		return S_FALSE;
+
+	nFontHeight = assetManager.getFontItem(fontIndex).height;
+	ELEMENT_FONT elementFont2(fontIndex,nFontHeight, assetManager.getFontItem(fontIndex).width);
+
+	elementFontVec.push_back(elementFont2);
+
+	elementGFXvec.clear();
+
+	controlGFX.nControlType =  CControlUI::STATIC;
+	controlGFX.elementsGFXvec = elementGFXvec;
+	controlGFX.elementsFontVec = elementFontVec;
+	m_DefControlsGFX.push_back(controlGFX);
+
+	//-------------------------------------
+	// Init Button elements
+	//-------------------------------------
+	// loads our wood GUI texture
+	elementGFXvec.clear();
+
+	if (!assetManager.getTexture("woodGUI.png", &textureIndex, true))
+		return S_FALSE;
+
+	// sets what parts of the texture to use for the button
+	RECT rcTexture, rcTexMouseOver;
+	SetRect(&rcTexture, 0, 0, 84, 34);
+	//SetRect(&rcTexture, 257, 71, 357, 139);
+	//InflateRect(&rcTexture, 10,10);
+
+	// add the main button element
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	// add the mouse over button element
+	SetRect(&rcTexMouseOver, 0, 34, 84, 68);
+	elementGFX.setGFX(textureIndex, rcTexMouseOver, rcTexMouseOver);
+	elementGFXvec.push_back(elementGFX);
+
+	// create the button control default GFX and adds to the vector
+	controlGFX.nControlType =  CControlUI::BUTTON;
+	controlGFX.elementsGFXvec = elementGFXvec;
+	controlGFX.elementsFontVec = elementFontVec;
+	m_DefControlsGFX.push_back(controlGFX);
+
+	//-------------------------------------
+	// Init CheckBox elements
+	//-------------------------------------
+	elementGFXvec.clear();
+	// sets what parts of the texture to use for the main element of the CheckBox
+	SetRect( &rcTexture, 0, 114, 16, 130 );
+	// add the main CheckBox element to the vector
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	// sets what parts of the texture to use for the CheckBox mouse over
+	SetRect( &rcTexMouseOver, 60, 112, 77, 131 );
+	// add the mouse over CheckBox element to the vector
+	elementGFX.setGFX(textureIndex, rcTexMouseOver, rcTexMouseOver);
+	elementGFXvec.push_back(elementGFX);
+
+	// create the CheckBox control default GFX and adds to the vector
+	controlGFX.nControlType = CControlUI::CHECKBOX;
+	controlGFX.elementsGFXvec = elementGFXvec;
+	controlGFX.elementsFontVec = elementFontVec;
+	m_DefControlsGFX.push_back(controlGFX);
+
+	//-------------------------------------
+	// Init RadioButton elements
+	//-------------------------------------
+	elementGFXvec.clear();
+
+	// sets what parts of the texture to use for the main element of the RadioButton
+	SetRect( &rcTexture, 1, 145, 17, 161 );
+	// add the main element of  RadioButton elements to the vector
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	// sets what parts of the texture to use for the mouse over element of the RadioButton
+	SetRect( &rcTexMouseOver, 61, 145, 76, 161 );
+	// add the mouse over element of  RadioButton elements to the vector
+	elementGFX.setGFX(textureIndex, rcTexMouseOver, rcTexMouseOver);
+	elementGFXvec.push_back(elementGFX);
+
+	// create the RadioButton control default GFX and adds to the vector
+	controlGFX.nControlType =  CControlUI::RADIOBUTTON;
+	controlGFX.elementsGFXvec = elementGFXvec;
+	controlGFX.elementsFontVec = elementFontVec;
+	m_DefControlsGFX.push_back(controlGFX);
+
+	//-------------------------------------
+	// Init ComboBox elements
+	//-------------------------------------
+	elementGFXvec.clear();
+
+	//-------------------------------------
+	// ComboBox - Main
+	//-------------------------------------
+	SetRect( &rcTexture, 97, 0, 323, 34 );
+
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	//-------------------------------------
+	// ComboBox - Button
+	//-------------------------------------
+	SetRect( &rcTexture, 323, 0, 367, 34 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	//-------------------------------------
+	// ComboBox - Dropdown
+	//-------------------------------------
+	SetRect( &rcTexture, 102, 116, 461, 331 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	//-------------------------------------
+	// ComboBox - Selection
+	//-------------------------------------
+	SetRect( &rcTexture, 359, 215, 586, 323 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	// create the ComboBox control default GFX and adds to the vector
+	controlGFX.nControlType =  CControlUI::COMBOBOX;
+	controlGFX.elementsGFXvec = elementGFXvec;
+	controlGFX.elementsFontVec = elementFontVec;
+	m_DefControlsGFX.push_back(controlGFX);
+
+	//-------------------------------------
+	// Init ListBox elements
+	//-------------------------------------
+	elementGFXvec.clear();
+
+	//-------------------------------------
+	// ListBox - Main
+	//-------------------------------------
+	SetRect( &rcTexture, 102, 116, 461, 331 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	//Element.SetFont( 0, D3DCOLOR_ARGB( 255, 0, 0, 0 ), DT_LEFT | DT_TOP );
+
+	//-------------------------------------
+	//ListBox - Selection
+	//-------------------------------------
+	SetRect( &rcTexture, 359, 215, 586, 323 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	// create the ListBox control default GFX and adds to the vector
+	controlGFX.nControlType =  CControlUI::LISTBOX;
+	controlGFX.elementsGFXvec = elementGFXvec;
+	controlGFX.elementsFontVec = elementFontVec;
+	m_DefControlsGFX.push_back(controlGFX);
+
+	//-------------------------------------
+	// Init Slider elements
+	//-------------------------------------
+	elementGFXvec.clear();
+
+	//-------------------------------------
+	// Slider - Track
+	//-------------------------------------
+	SetRect( &rcTexture, 102, 84, 243, 90 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	//-------------------------------------
+	// Slider - Button
+	//-------------------------------------
+	SetRect( &rcTexture, 243, 81, 259, 100 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	// create the Slider control default GFX and adds to the vector
+	controlGFX.nControlType =  CControlUI::SLIDER;
+	controlGFX.elementsGFXvec = elementGFXvec;
+	controlGFX.elementsFontVec = elementFontVec;
+	m_DefControlsGFX.push_back(controlGFX);
+
+	//-------------------------------------
+	// EditBox
+	//-------------------------------------
+	elementGFXvec.clear();
+
+	// Element assignment:
+	//   0 - text area
+	//   1 - top left border
+	//   2 - top border
+	//   3 - top right border
+	//   4 - left border
+	//   5 - right border
+	//   6 - lower left border
+	//   7 - lower border
+	//   8 - lower right border
+
+	//Element.SetFont( 0, D3DCOLOR_ARGB( 255, 0, 0, 0 ), DT_LEFT | DT_TOP );
+
+	// Assign the style
+	SetRect( &rcTexture, 91, 36, 321, 66 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	SetRect( &rcTexture, 97, 34, 100, 37 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	SetRect( &rcTexture, 100, 34, 354, 36 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	SetRect( &rcTexture, 354, 34, 357, 37 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	SetRect( &rcTexture, 97, 38, 99, 65 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	SetRect( &rcTexture, 355, 37, 357, 65 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	SetRect( &rcTexture, 97, 65, 100, 98 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	SetRect( &rcTexture, 100, 66, 354, 68 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	SetRect( &rcTexture, 354, 65, 357, 68 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	// create the EditBox control default GFX and adds to the vector
+	controlGFX.nControlType =  CControlUI::EDITBOX;
+	controlGFX.elementsGFXvec = elementGFXvec;
+	controlGFX.elementsFontVec = elementFontVec;
+	m_DefControlsGFX.push_back(controlGFX);
+
+	//-------------------------------------
+	// Init ScrollBar elements
+	//-------------------------------------
+	elementGFXvec.clear();
+
+	//loads the CheckBox default texture
+	if (!assetManager.getTexture("tex.dds", &textureIndex))
+		return S_FALSE;
+
+	//-------------------------------------
+	// ScrollBar - Track
+	//-------------------------------------
+	int nScrollBarStartX = 196;
+	int nScrollBarStartY = 191;
+	SetRect( &rcTexture, nScrollBarStartX + 0, nScrollBarStartY + 21, nScrollBarStartX + 22, nScrollBarStartY + 32 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	//-------------------------------------
+	// ScrollBar - Up Arrow
+	//-------------------------------------
+	SetRect( &rcTexture, nScrollBarStartX + 0, nScrollBarStartY + 1, nScrollBarStartX + 22, nScrollBarStartY + 21 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	//-------------------------------------
+	// ScrollBar - Down Arrow
+	//-------------------------------------
+	SetRect( &rcTexture, nScrollBarStartX + 0, nScrollBarStartY + 32, nScrollBarStartX + 22, nScrollBarStartY + 53 );
+	elementGFX.setGFX(textureIndex, rcTexture, rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	//-------------------------------------
+	// ScrollBar - Button
+	//-------------------------------------
+	SetRect( &rcTexture, 220, 192, 238, 234 );
+	elementGFX.setGFX(textureIndex, rcTexture,rcTexture);
+	elementGFXvec.push_back(elementGFX);
+
+	// create the ScrollBar control default GFX and adds to the vector
+	controlGFX.nControlType =  CControlUI::SCROLLBAR;
+	controlGFX.elementsGFXvec = elementGFXvec;
+	controlGFX.elementsFontVec = elementFontVec;
+	m_DefControlsGFX.push_back(controlGFX);
+}
+
+//-----------------------------------------------------------------------------
 // Name : OnRender ()
 // Desc : renders the dialog and all of his controls
 //-----------------------------------------------------------------------------
@@ -600,7 +916,7 @@ void CDialogUI::SendEvent(UINT nEvent, bool bTriggeredByUser, int nControlID, HW
 // Name : MsgProc ()
 // Desc : process messages that were sent to the dialog
 //-----------------------------------------------------------------------------
-bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTimer* timer )
+bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTimer* timer , bool windowed)
 {
 	bool bHandled = false;
 	
@@ -669,7 +985,8 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 
 			GetCursorPos(&mousePoint);
 			//ClientToScreen(hWnd,&mousePoint);
-			ScreenToClient(hWnd,&mousePoint);
+			if (windowed)
+				ScreenToClient(hWnd,&mousePoint);
 
 			mousePoint.x -= m_x;
 			mousePoint.y -= m_y;
@@ -702,7 +1019,8 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 			//next let controls handle the mouse message
 			POINT mousePoint;
 			GetCursorPos(&mousePoint);
-			ScreenToClient(hWnd,&mousePoint);
+			if (windowed)
+				ScreenToClient(hWnd,&mousePoint);
 			mousePoint.x -= m_x;
 			mousePoint.y -= m_y + getCaptionHeight();
 
@@ -750,7 +1068,8 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 			// check if we need to highlight a control as the mouse is over it
 			POINT mousePoint;
 			GetCursorPos(&mousePoint);
-			ScreenToClient(hWnd,&mousePoint);
+			if (windowed)
+				ScreenToClient(hWnd,&mousePoint);
 			//mousePoint.y -=  m_rcCaptionBox.bottom;
 // 			mousePoint.x -= m_x;
 // 			mousePoint.y -= m_y;
@@ -764,7 +1083,8 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 	case WM_LBUTTONDOWN:
 		{
 			GetCursorPos(&m_startDragPos);
-			ScreenToClient(hWnd,&m_startDragPos);
+			if (windowed)
+				ScreenToClient(hWnd,&m_startDragPos);
 
 			if (PtInRect(&m_rcCaptionBox, m_startDragPos))
 			{
@@ -782,6 +1102,27 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 				ReleaseCapture();
 				return true;
 			}
+		}break;
+
+	case WM_RBUTTONDOWN:
+		{
+			SetCapture( m_hWnd );
+
+			POINT mousePoint;
+			CControlUI* pCurSelectedControl = nullptr;
+
+			GetCursorPos(&mousePoint);
+			if (windowed)
+				ScreenToClient(hWnd,&mousePoint);
+
+			mousePoint.x -= getLocation().x;
+			mousePoint.y -= getLocation().y + getCaptionHeight();
+
+			pCurSelectedControl = getControlAtPoint(mousePoint);
+
+			if (pCurSelectedControl != nullptr)
+				m_controlRightClkSig(pCurSelectedControl);
+
 		}break;
 	}
 
@@ -801,6 +1142,15 @@ void CDialogUI::SetCallback( PCALLBACKGUIEVENT pCallback)
 {
 	m_pCallbackEvent = pCallback;
 }
+
+//-----------------------------------------------------------------------------
+// Name : connectToControlRightClicked 
+//-----------------------------------------------------------------------------
+void CDialogUI::connectToControlRightClicked(const signal_controlClicked::slot_type& subscriber)
+{
+	m_controlRightClkSig.connect(subscriber);
+}
+
 
 //-----------------------------------------------------------------------------
 // Name : ClearRadioButtonGruop
@@ -1368,6 +1718,22 @@ POINT CDialogUI::getLocation()
 }
 
 //-----------------------------------------------------------------------------
+// Name : getWidth()
+//-----------------------------------------------------------------------------
+UINT CDialogUI::getWidth()
+{
+	return m_width;
+}
+
+//-----------------------------------------------------------------------------
+// Name : getHeight()
+//-----------------------------------------------------------------------------
+UINT CDialogUI::getHeight()
+{
+	return m_height;
+}
+
+//-----------------------------------------------------------------------------
 // Name : getCaptionStartPoint()
 //-----------------------------------------------------------------------------
 LONG CDialogUI::getCaptionHeight()
@@ -1715,4 +2081,12 @@ const char* CDialogUI::getControlIDText(int ID)
 		if (m_defInfo[i].controlID == ID)
 			return m_defInfo[i].controlIDText.c_str();
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Name : getVisible 
+//-----------------------------------------------------------------------------
+bool CDialogUI::getVisible()
+{
+	return m_bVisible;
 }

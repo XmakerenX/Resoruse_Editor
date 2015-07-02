@@ -139,7 +139,7 @@ bool CControlUI::Scrolled( int nScrollAmount)
 }
 
 //-----------------------------------------------------------------------------
-// Name : HandleMouse() 
+// Name : MsgProc() 
 // Desc : handles windows messages while control is focused
 // Note : returns false by default for the basic control class which means
 //        the control does nothing with the windows messages

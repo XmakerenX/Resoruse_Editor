@@ -9,6 +9,8 @@
 #include <string>
 #include <fstream>
 #include <d3dx9.h>
+#include <boost/signals2/signal.hpp>
+#include <boost/bind/bind.hpp>
 #include "../rendering/d3d.h"
 #include "../CAssetManager.h"
 #include "CControlUI.h"
@@ -59,19 +61,23 @@ struct CONTROL_GFX
 class CDialogUI
 {
 public:
+	typedef boost::signals2::signal<void (CControlUI*)>  signal_controlClicked;
+
 	CDialogUI(void);
 	virtual ~CDialogUI(void);
 
 	HRESULT init	 (UINT width, UINT height, int nCaptionHeight, LPCTSTR captionText, char newTexturePath[MAX_PATH], D3DXCOLOR dialogColor, HWND hWnd, CAssetManager& assetManger);
 	HRESULT initDefControlElements(CAssetManager& assetManger);
+	HRESULT initWoodControlElements(CAssetManager& assetManager);
 
-	bool    MsgProc	 ( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTimer* timer );
+	virtual bool    MsgProc	 ( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTimer* timer, bool windowed );
 	void	OnMouseMove(POINT pt);
 
 	void    SendEvent(UINT nEvent, bool bTriggeredByUser, int nControlID, HWND hWnd = NULL );
 	void    SetCallback( PCALLBACKGUIEVENT pCallback);
+	void    connectToControlRightClicked( const signal_controlClicked::slot_type& subscriber);
 
-	HRESULT OnRender   (float fElapsedTime, D3DXVECTOR3 vPos, LPD3DXEFFECT effect, CAssetManager& assetManger);
+	virtual HRESULT OnRender   (float fElapsedTime, D3DXVECTOR3 vPos, LPD3DXEFFECT effect, CAssetManager& assetManger);
 
 	void	UpdateRects();
 
@@ -114,6 +120,7 @@ public:
 	CListBoxUI	   * getListBox			    ( int ID );
 	int				 getControlsNum			();
 	const char	   * getControlIDText		( int ID);
+	bool			 getVisible				();
 
 	void		     ClearRadioButtonGruop	( UINT nButtonGroup);
 
@@ -137,9 +144,13 @@ public:
 	void	setVisible		 (bool bVisible);
 
 	POINT   getLocation	     ();
+	UINT	getWidth	     ();
+	UINT	getHeight		 ();
+
 	LONG	getCaptionHeight ();
 
-
+protected:
+	HWND m_hWnd; // a handle to the window the dialog sends the event messages through the callback function
 
 private:
 	RECT m_rcBoundingBox;
@@ -157,8 +168,6 @@ private:
 	//TODO: delete the  vars that aren't needed for the drag operation
 	POINT m_startDragPos;
 	POINT m_curDragPos;
-
-	HWND m_hWnd; // a handle to the window the dialog sends the event messages through the callback function
 
 	bool m_bVisible;
 	bool m_bCaption;
@@ -181,6 +190,7 @@ private:
 
 	// Pointer to the callback event function that the dialog sends events to
 	PCALLBACKGUIEVENT m_pCallbackEvent;
+	boost::signals2::signal<void (CControlUI*)> m_controlRightClkSig;
 };
 
 #endif  //_CDIALOGUI_H

@@ -54,10 +54,15 @@ class CEditDialogUI :
 	public CDialogUI
 {
 public:
-	CEditDialogUI();
+	CEditDialogUI(CTimer* timer);
 	virtual ~CEditDialogUI(void);
 
-	void		 CreateDialogUI(CTimer* m_timer);
+	bool		 MsgProc					(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTimer* timer, bool windowed );
+	HRESULT		 OnRender					(float fElapsedTime, D3DXVECTOR3 vPos, LPD3DXEFFECT effect, CAssetManager& assetManger);
+
+	void		 CreateDialogUI				(CAssetManager& assetManager);
+	
+	void		 GenControlRightClicked		(CControlUI* pRClickedControl);		 
 
 	void         CreateControlClicked		(CButtonUI* createControl);
 	void		 AddListBoxItemClicked		(CButtonUI* pAddListBoxItemButton);
@@ -81,11 +86,14 @@ public:
 
 private:
 	CDialogUI m_GenDialog;
+	ULONG m_GenControlNum;
+
 	UINT m_curControlID;
 	bool m_controlInCreation;
 	bool m_controlRelocate;
 	CControlUI * m_pCurSelectedControl;
-	ULONG m_GenControlNum;
+
+	CTimer* m_timer;
 };
 
 #endif  //_CBUTTONUI_H

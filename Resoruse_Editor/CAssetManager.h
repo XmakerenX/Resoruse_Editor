@@ -80,7 +80,7 @@ public:
 	long				  AllocMesh		   ( ULONG Count  = 1);
 
 	HRESULT				  AddMesh		   ( );
-	HRESULT			   	  AddMesh		   ( char meshPath[MAX_PATH], DWORD meshOptions = D3DXMESH_MANAGED);
+	HRESULT			   	  AddMesh		   ( const char meshPath[MAX_PATH], DWORD meshOptions = D3DXMESH_MANAGED);
 	HRESULT				  AddMesh		   ( MESH_ATTRIB_DATA AttribData[], ULONG attribCount, LPD3DXMESH pD3DMesh, char meshPath[MAX_PATH]);
 
 	CMyMesh *			  getMesh		   ( ULONG meshIndex);
@@ -93,7 +93,7 @@ public:
 	ULONG				  getAttributeID   (LPCTSTR strTextureFile, const OBJMATERIAL * pMaterial, const D3DXEFFECTINSTANCE * pEffectInstance = NULL );
 	const ATTRIBUTE_ITEM& getAtribItem	   (ULONG attribID) const;
 
-	LPDIRECT3DTEXTURE9	  getTexture	   (LPCTSTR FileName, UINT* textureIndex = NULL, D3DFORMAT fmtTexture = D3DFMT_UNKNOWN);
+	LPDIRECT3DTEXTURE9	  getTexture	   (LPCTSTR FileName, UINT* textureIndex = NULL, bool powerOf2 = true, D3DFORMAT fmtTexture = D3DFMT_UNKNOWN);
 	const TEXTURE_ITEM*   getTextureItem   (ULONG textureIndex)	 const;
 	LPDIRECT3DTEXTURE9	  getTexturePtr    (ULONG textureIndex);
 	const OBJMATERIAL&	  getMaterialItem  (ULONG materialIndex) const;

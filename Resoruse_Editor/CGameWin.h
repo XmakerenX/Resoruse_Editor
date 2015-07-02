@@ -33,6 +33,8 @@
 //#include "chess engine/board.h"
 
 #include "GUI/CDialogUI.h"
+#include "GUI/CEditDialogUI.h"
+#include "GUI/COptionDialogUI.h"
 
 #include "rendering/CMySprite.h"
 // #include "GUI\CDialog3D.h"
@@ -109,71 +111,71 @@ enum DrawingMethod{DRAW_SIMPLE,DRAW_ATTRIBOBJECT,DRAW_OBJECTATTRIB};
 
 const char	piecesMeshesPath[6][MAX_PATH] = {"pawn.x","knight.x","bishop.x","rook.x","queen.x","king.x"};//store the paths to the pieces meshes 
 
-struct DEVICETYPEINFO
-{
-	enum MODE{WINDOWED, FULLSCREEN};
-
-	D3DDEVTYPE deviceType;
-	std::string deviceDescription;
-	D3DFORMAT fomrat;
-
-	bool bHardwareAcceleration[2];
-	BOOL bDepthEnable[2];
-	std::vector<D3DFORMAT> validDepths[2];
-	std::vector<D3DMULTISAMPLE_TYPE> validMultiSampleTypes[2];
-	std::vector<DWORD> vpTypes;
-};
-
-struct DISPLAYMODE
-{
-	UINT Width;
-	UINT Height;
-	std::vector<UINT> RefreshRates;
-	D3DFORMAT Format;
-
-	DISPLAYMODE::DISPLAYMODE(D3DDISPLAYMODE& displayMode)
-	{
-		this->Format = displayMode.Format;
-		this->Height = displayMode.Height;
-		this->RefreshRates.push_back(displayMode.RefreshRate);
-		this->Width = displayMode.Width;
-	}
-};
-
-struct ADAPTERINFO
-{
-	UINT adapterNum;
-	std::string adapterDescription;
-
-	std::vector<DEVICETYPEINFO> deviceTypes;
-	std::vector<DISPLAYMODE> displayModes;
-
-	void addDisplayMode(D3DDISPLAYMODE& displayMode)
-	{
-		for (UINT i = 0; i < displayModes.size(); i++)
-		{
-			if (displayMode.Width == displayModes[i].Width && displayMode.Height == displayModes[i].Height)
-			{
-				displayModes[i].RefreshRates.push_back(displayMode.RefreshRate);
-				return;
-			}
-		}
-
-		displayModes.push_back(DISPLAYMODE(displayMode));
-	}
-};
-
-struct MODEINFO
-{
-	MODEINFO::MODEINFO(D3DDISPLAYMODE newMode, D3DDEVTYPE newDeviceType)
-	{
-		mode = newMode;
-		deviceType = newDeviceType;
-	}
-
-	D3DDISPLAYMODE mode;
-	D3DDEVTYPE deviceType;
-};
+// struct DEVICETYPEINFO
+// {
+// 	enum MODE{WINDOWED, FULLSCREEN};
+// 
+// 	D3DDEVTYPE deviceType;
+// 	std::string deviceDescription;
+// 	D3DFORMAT fomrat;
+// 
+// 	bool bHardwareAcceleration[2];
+// 	BOOL bDepthEnable[2];
+// 	std::vector<D3DFORMAT> validDepths[2];
+// 	std::vector<D3DMULTISAMPLE_TYPE> validMultiSampleTypes[2];
+// 	std::vector<DWORD> vpTypes;
+// };
+// 
+// struct DISPLAYMODE
+// {
+// 	UINT Width;
+// 	UINT Height;
+// 	std::vector<UINT> RefreshRates;
+// 	D3DFORMAT Format;
+// 
+// 	DISPLAYMODE::DISPLAYMODE(D3DDISPLAYMODE& displayMode)
+// 	{
+// 		this->Format = displayMode.Format;
+// 		this->Height = displayMode.Height;
+// 		this->RefreshRates.push_back(displayMode.RefreshRate);
+// 		this->Width = displayMode.Width;
+// 	}
+// };
+// 
+// struct ADAPTERINFO
+// {
+// 	UINT adapterNum;
+// 	std::string adapterDescription;
+// 
+// 	std::vector<DEVICETYPEINFO> deviceTypes;
+// 	std::vector<DISPLAYMODE> displayModes;
+// 
+// 	void addDisplayMode(D3DDISPLAYMODE& displayMode)
+// 	{
+// 		for (UINT i = 0; i < displayModes.size(); i++)
+// 		{
+// 			if (displayMode.Width == displayModes[i].Width && displayMode.Height == displayModes[i].Height)
+// 			{
+// 				displayModes[i].RefreshRates.push_back(displayMode.RefreshRate);
+// 				return;
+// 			}
+// 		}
+// 
+// 		displayModes.push_back(DISPLAYMODE(displayMode));
+// 	}
+// };
+// 
+// struct MODEINFO
+// {
+// 	MODEINFO::MODEINFO(D3DDISPLAYMODE newMode, D3DDEVTYPE newDeviceType)
+// 	{
+// 		mode = newMode;
+// 		deviceType = newDeviceType;
+// 	}
+// 
+// 	D3DDISPLAYMODE mode;
+// 	D3DDEVTYPE deviceType;
+// };
 
 
 
@@ -192,8 +194,9 @@ public:
 	//-------------------------------------------------------------------------
 	bool         InitInstance				(HINSTANCE hInstance, LPCTSTR lpCmdLine, int iCmdShow );
 	LRESULT		 WinProc					(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-	void         OnGUIEvent					(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext );
+	//void         OnGUIEvent					(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext );
 
+	void		 OptionsControlClicked		(CButtonUI* pButton);
 	void		 OptionDialogOKClicked		(CButtonUI* pButton);
 
 	int          BeginGame					( );
@@ -205,7 +208,7 @@ private:
 	// Private Static Functions For This Class
 	//-------------------------------------------------------------------------
 	static LRESULT CALLBACK StaticWndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
-	static void    CALLBACK StaticOnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext );
+	//static void    CALLBACK StaticOnGUIEvent(HWND hWnd, UINT nEvent, int nControlID, void* pUserContext );
 
 	//-------------------------------------------------------------------------
 	// Private  Functions that handle display window and the directx device
@@ -218,14 +221,11 @@ private:
 	static std::unordered_map<UINT,char*> InitMultiSampleMap();
 	static std::unordered_map<ULONG,char*> InitVertexProcMap();
 
-	bool		ChangeDisplayAdapter(UINT adapterIndex, D3DDEVTYPE deviceType = D3DDEVTYPE_HAL);
-	bool		ChangeDisplayDevice (UINT adapterIndex, D3DDEVTYPE deviceType);
-
 	BOOL		EnumDepthStencil	(D3DFORMAT depthFormats[], UINT formatsCount, UINT adapter, D3DDEVTYPE deviceType, D3DFORMAT backBufferFromat, std::vector<D3DFORMAT>& validDepths);
 	void		EnumMultiSample		(UINT adapter, D3DDEVTYPE deviceType, D3DFORMAT backBufferFormat, bool windowed, std::vector<D3DMULTISAMPLE_TYPE>& validMultiSampleTypes);
 	//bool		CreateGUIObjects	();
 
-	void		resetDevice			();
+	void		resetDevice			(D3DPRESENT_PARAMETERS& d3dpp);
 
 	//-------------------------------------------------------------------------
 	// Functions that handles rendering logic
@@ -292,9 +292,11 @@ private:
 	//-------------------------------------------------------------------------
 	IDirect3D9             * m_pD3D;             // Direct3D Object
 	IDirect3DDevice9	   * m_pD3DDevice;       // Direct3D Device Object
+	D3DPRESENT_PARAMETERS    m_curD3dpp;         // active D3DPRESENT_PARAMETERS
+	bool					 m_windowed;
 
-	bool m_windowed;
-	std::vector<MODEINFO> m_displayModes;
+	//bool m_windowed;
+	//std::vector<MODEINFO> m_displayModes;
 	std::vector<D3DFORMAT> m_adapterFormats;
 	std::vector<ADAPTERINFO> m_adpatersInfo;
 
@@ -314,9 +316,8 @@ private:
 	// attributes data pools
 	CAssetManager			 m_assetManger;
 
-	CDialogUI				 m_GenDialog;
-	CDialogUI				 m_EditDialog;
-	CDialogUI				 m_OptionsDialog;
+	CEditDialogUI			 m_EditDialog;
+	COptionDialogUI			 m_OptionsDialog;
 	ULONG					 m_GenControlNum;
 	ULONG					 m_curControlID;
 	bool					 m_controlInCreation;
@@ -407,6 +408,7 @@ private:
 
 	boost::signals2::signal<void ()> m_keyboardSig;
 
+	RECT							 m_clientRC;
 // 	CDialog3D				 m_GuiDialog;
 // 	CDialog3D				 m_GuiSelectPawn;
 // 	CDialogResourceManager3D m_GuiDilaogResManger;
