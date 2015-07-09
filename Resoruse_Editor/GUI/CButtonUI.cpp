@@ -184,7 +184,7 @@ bool CButtonUI::HandleKeyboard(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 					if ( m_bPressed == true )
 					{
 						m_bPressed = false;
-						m_pParentDialog->SendEvent(1, true, m_ID, hWnd);
+						//m_pParentDialog->SendEvent(1, true, m_ID, hWnd);
 						return true;
 					}
 				}break;

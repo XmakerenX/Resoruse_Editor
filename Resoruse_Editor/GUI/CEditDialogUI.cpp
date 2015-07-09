@@ -10,8 +10,10 @@ CEditDialogUI::CEditDialogUI(CTimer* timer)
 	m_GenControlNum = 0;
 	m_curControlID = IDC_GENCONTROLID + m_GenControlNum;
 	m_controlInCreation = false;
-	m_controlRelocate= false;
+	m_controlRelocate= false; 
 	m_pCurSelectedControl = nullptr;
+
+	m_GenDialog.connectToControlRightClicked( boost::bind(&CEditDialogUI::GenControlRightClicked, this, _1) );
 }
 
 //-----------------------------------------------------------------------------

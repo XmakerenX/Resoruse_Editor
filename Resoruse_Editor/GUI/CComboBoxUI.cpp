@@ -698,7 +698,7 @@ HRESULT CComboBoxUI::SetSelectedByIndex( UINT index )
 
 	m_iFocused = m_iSelected = index;
 	//m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, false, NULL );
-	m_pParentDialog->SendEvent( 9, false, NULL );
+	//m_pParentDialog->SendEvent( 9, false, NULL );
 
 	return S_OK;
 }
@@ -717,7 +717,7 @@ HRESULT CComboBoxUI::SetSelectedByText( const char* strText )
 
 	m_iFocused = m_iSelected = index;
 	//m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, false, NULL );
-	m_pParentDialog->SendEvent( 9, false, NULL );
+	//m_pParentDialog->SendEvent( 9, false, NULL );
 
 	return S_OK;
 }
@@ -735,7 +735,7 @@ HRESULT CComboBoxUI::SetSelectedByData( void* pData )
 		{
 			m_iFocused = m_iSelected = i;
 			//m_pParentDialog->SendEvent( EVENT_COMBOBOX_SELECTION_CHANGED, false, NULL );
-			m_pParentDialog->SendEvent( 9, false, NULL );
+			//m_pParentDialog->SendEvent( 9, false, NULL );
 			return S_OK;
 		}
 	}

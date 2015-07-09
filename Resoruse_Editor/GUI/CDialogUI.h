@@ -73,7 +73,7 @@ public:
 	virtual bool    MsgProc	 ( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTimer* timer, bool windowed );
 	void	OnMouseMove(POINT pt);
 
-	void    SendEvent(UINT nEvent, bool bTriggeredByUser, int nControlID, HWND hWnd = NULL );
+	//void    SendEvent(UINT nEvent, bool bTriggeredByUser, int nControlID, HWND hWnd = NULL );
 	void    SetCallback( PCALLBACKGUIEVENT pCallback);
 	void    connectToControlRightClicked( const signal_controlClicked::slot_type& subscriber);
 

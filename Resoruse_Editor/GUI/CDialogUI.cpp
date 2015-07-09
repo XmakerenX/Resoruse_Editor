@@ -900,17 +900,17 @@ HRESULT CDialogUI::OnRender(float fElapsedTime, D3DXVECTOR3 vPos, LPD3DXEFFECT e
 // Name : SendEvent ()
 // Desc : sends an event to the guiEvent message handler
 //-----------------------------------------------------------------------------
-void CDialogUI::SendEvent(UINT nEvent, bool bTriggeredByUser, int nControlID, HWND hWnd /*= NULL */)
-{
-	if (m_pCallbackEvent == NULL)
-		return;
-
-	// if a window handle was given use it instead of the window handle stored in the class
-	if (hWnd != NULL)
-		m_pCallbackEvent(hWnd, nEvent, nControlID, NULL);
-	else
-		m_pCallbackEvent(hWnd, nEvent, nControlID, NULL);
-}
+// void CDialogUI::SendEvent(UINT nEvent, bool bTriggeredByUser, int nControlID, HWND hWnd /*= NULL */)
+// {
+// 	if (m_pCallbackEvent == NULL)
+// 		return;
+// 
+// 	// if a window handle was given use it instead of the window handle stored in the class
+// 	if (hWnd != NULL)
+// 		m_pCallbackEvent(hWnd, nEvent, nControlID, NULL);
+// 	else
+// 		m_pCallbackEvent(hWnd, nEvent, nControlID, NULL);
+// }
 
 //-----------------------------------------------------------------------------
 // Name : MsgProc ()
@@ -1006,7 +1006,7 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 	case WM_LBUTTONUP:
 	case WM_MBUTTONDOWN:
 	case WM_MBUTTONUP:
-	case WM_RBUTTONDOWN:
+	//case WM_RBUTTONDOWN:
 	case WM_RBUTTONUP:
 	case WM_XBUTTONDOWN:
 	case WM_XBUTTONUP:
@@ -1122,6 +1122,8 @@ bool CDialogUI::MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, CTi
 
 			if (pCurSelectedControl != nullptr)
 				m_controlRightClkSig(pCurSelectedControl);
+
+			return true;
 
 		}break;
 	}

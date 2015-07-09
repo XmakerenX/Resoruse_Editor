@@ -597,7 +597,7 @@ void CListBoxUI::RemoveItem( int nIndex )
 	if( m_nSelected >= ( int )m_Items.size() )
 		m_nSelected = m_Items.size() - 1;
 
-	m_pParentDialog->SendEvent(5, false, m_ID, NULL);
+	//m_pParentDialog->SendEvent(5, false, m_ID, NULL);
 	//m_pParentDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
 }
 
@@ -705,7 +705,7 @@ void CListBoxUI::SelectItem( int nNewIndex )
 		m_ScrollBar.ShowItem( m_nSelected );
 	}
 
-	m_pParentDialog->SendEvent(5, false, m_ID, false);
+	//m_pParentDialog->SendEvent(5, false, m_ID, false);
 	//m_pDialog->SendEvent( EVENT_LISTBOX_SELECTION, true, this );
 }
 
